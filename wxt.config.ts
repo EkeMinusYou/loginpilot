@@ -4,11 +4,11 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   srcDir: 'src',
   manifest: {
-    name: 'Auto Sign-in',
+    name: 'loginpilot',
     description: 'Automatically submits registered login forms after autofill.',
     permissions: ['activeTab', 'notifications', 'storage'],
     action: {
-      default_title: 'Auto Sign-in',
+      default_title: 'loginpilot',
     },
   },
   vite: () => ({

@@ -17,6 +17,29 @@ function markUserInteraction(state: FormState): void {
   state.userInteracted = true;
 }
 
+function notifyPageOfAutofill(candidate: LoginFormCandidate): void {
+  for (const input of [candidate.usernameInput, candidate.passwordInput]) {
+    input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+  }
+}
+
+function submitLoginForm(candidate: LoginFormCandidate): void {
+  notifyPageOfAutofill(candidate);
+
+  const submitter = candidate.form.querySelector<HTMLElement>(
+    '[onclick*="onLogin"], button[type="submit"], button:not([type]), input[type="submit"], input[type="image"]',
+  );
+
+  const isDisabled = submitter && 'disabled' in submitter && Boolean(submitter.disabled);
+  if (submitter && !isDisabled && submitter.getClientRects().length > 0) {
+    submitter.click();
+    return;
+  }
+
+  candidate.form.requestSubmit();
+}
+
 export default defineContentScript({
   matches: ['<all_urls>'],
   runAt: 'document_idle',
@@ -91,8 +114,9 @@ export default defineContentScript({
 
       if (response.ok && response.action === 'submit') {
         try {
-          candidate.form.requestSubmit();
+          submitLoginForm(candidate);
         } catch {
+          inFlightForms.delete(candidate.form);
           return;
         }
         reportedForms.add(candidate.form);

@@ -100,7 +100,7 @@ function render(): void {
   const header = element('header', 'flex items-start justify-between gap-3');
   const titleGroup = element('div', 'space-y-1');
   const title = element('h1', 'text-lg font-semibold tracking-tight text-slate-950');
-  title.textContent = 'Auto Sign-in';
+  title.textContent = 'loginpilot';
   const subtitle = element('p', 'text-xs leading-5 text-slate-500');
   subtitle.textContent = '登録済みサイトで自動入力後にログインします。';
   titleGroup.append(title, subtitle);

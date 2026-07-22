@@ -31,7 +31,7 @@ async function notifySiteDetected(origin: string): Promise<void> {
     await browser.notifications.create(NOTIFICATION_ID, {
       type: 'basic',
       iconUrl: browser.runtime.getURL('/icon.svg'),
-      title: 'Auto Sign-in',
+      title: 'loginpilot',
       message: `${origin} でログイン情報の自動入力を検知しました。拡張機能を開いて登録できます。`,
     });
   } catch {

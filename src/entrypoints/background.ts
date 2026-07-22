@@ -8,7 +8,13 @@ import {
   setPendingSite,
   setRegisteredOrigins,
 } from '../shared/storage';
-import { MESSAGE_TYPES, type PopupResponse, type PopupState, type RuntimeMessage } from '../shared/messages';
+import {
+  MESSAGE_TYPES,
+  type PopupResponse,
+  type PopupState,
+  type PrepareAutofillResponse,
+  type RuntimeMessage,
+} from '../shared/messages';
 import { normalizeOrigin } from '../shared/origins';
 
 const NOTIFICATION_ID = 'auto-signin-site-detected';
@@ -52,7 +58,7 @@ async function getPopupState(currentOrigin: string | null): Promise<PopupRespons
 async function handleMessage(
   message: RuntimeMessage,
   sender: Browser.runtime.MessageSender,
-): Promise<PopupResponse | { ok: true; action: 'submit' | 'ignore' | 'pending' } | { ok: false; error: string }> {
+): Promise<PopupResponse | PrepareAutofillResponse | { ok: true; action: 'submit' | 'ignore' | 'pending' } | { ok: false; error: string }> {
   if (message.type === MESSAGE_TYPES.autofillDetected) {
     const senderUrl = sender.url ?? sender.tab?.url;
     const senderOrigin = senderUrl ? normalizeOrigin(senderUrl) : null;
@@ -66,6 +72,13 @@ async function handleMessage(
 
     await notifySiteDetected(message.origin);
     return { ok: true, action: 'pending' };
+  }
+
+  if (message.type === MESSAGE_TYPES.prepareAutofill) {
+    const senderUrl = sender.url ?? sender.tab?.url;
+    const senderOrigin = senderUrl ? normalizeOrigin(senderUrl) : null;
+    const registered = senderOrigin === message.origin && (await isRegistered(message.origin));
+    return { ok: true, registered };
   }
 
   if (message.type === MESSAGE_TYPES.getPopupState) {

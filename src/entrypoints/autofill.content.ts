@@ -1,12 +1,18 @@
 import { browser } from 'wxt/browser';
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { findLoginForm, hasAutofillMarker, hasCredentials, type LoginFormCandidate } from '../shared/form-detector';
-import { MESSAGE_TYPES, type AutofillResponse, type ContentMessage } from '../shared/messages';
+import {
+  MESSAGE_TYPES,
+  type AutofillResponse,
+  type ContentMessage,
+  type PrepareAutofillResponse,
+} from '../shared/messages';
 import { normalizeOrigin } from '../shared/origins';
 
 interface FormState {
   lastShape: string;
   userInteracted: boolean;
+  autofillRequested: boolean;
 }
 
 function valueShape(candidate: LoginFormCandidate): string {
@@ -15,6 +21,14 @@ function valueShape(candidate: LoginFormCandidate): string {
 
 function markUserInteraction(state: FormState): void {
   state.userInteracted = true;
+}
+
+function addAutocompleteHint(input: HTMLInputElement): void {
+  if (input.getAttribute('autocomplete')) {
+    return;
+  }
+
+  input.setAttribute('autocomplete', input.type.toLowerCase() === 'password' ? 'current-password' : 'username');
 }
 
 function notifyPageOfAutofill(candidate: LoginFormCandidate): void {
@@ -42,7 +56,7 @@ function submitLoginForm(candidate: LoginFormCandidate): void {
 
 export default defineContentScript({
   matches: ['<all_urls>'],
-  runAt: 'document_idle',
+  runAt: 'document_start',
   main(ctx) {
     const origin = normalizeOrigin(location.href);
     if (!origin) {
@@ -60,9 +74,32 @@ export default defineContentScript({
         return existing;
       }
 
-      const state: FormState = { lastShape: '', userInteracted: false };
+      const state: FormState = { lastShape: '', userInteracted: false, autofillRequested: false };
       formStates.set(form, state);
       return state;
+    }
+
+    async function requestAutofillFocus(candidate: LoginFormCandidate, state: FormState): Promise<void> {
+      state.autofillRequested = true;
+
+      let response: PrepareAutofillResponse;
+      try {
+        response = (await browser.runtime.sendMessage({
+          type: MESSAGE_TYPES.prepareAutofill,
+          origin,
+        })) as PrepareAutofillResponse;
+      } catch {
+        return;
+      }
+
+      if (!response.ok || !response.registered || state.userInteracted || hasCredentials(candidate)) {
+        return;
+      }
+
+      candidate.usernameInput.focus({ preventScroll: true });
+      for (const delay of [100, 500, 1500]) {
+        ctx.setTimeout(() => void evaluate(), delay);
+      }
     }
 
     async function evaluate(): Promise<void> {
@@ -80,6 +117,9 @@ export default defineContentScript({
         state.lastShape = shape;
         if (candidate.usernameInput.value.length === 0 && candidate.passwordInput.value.length === 0) {
           state.userInteracted = false;
+        }
+        if (!state.autofillRequested && !state.userInteracted) {
+          void requestAutofillFocus(candidate, state);
         }
         return;
       }
@@ -159,6 +199,13 @@ export default defineContentScript({
       for (const input of Array.from(document.querySelectorAll('input'))) {
         observeInput(input);
       }
+
+      const candidate = findLoginForm();
+      if (candidate) {
+        addAutocompleteHint(candidate.usernameInput);
+        addAutocompleteHint(candidate.passwordInput);
+      }
+
       void evaluate();
     }
 
@@ -177,6 +224,7 @@ export default defineContentScript({
       const state = getFormState(candidate.form);
       state.lastShape = '';
       state.userInteracted = false;
+      state.autofillRequested = false;
       void evaluate();
     }
 
@@ -192,7 +240,8 @@ export default defineContentScript({
     const observer = new MutationObserver(() => {
       observeForms();
     });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    observer.observe(document, { childList: true, subtree: true });
+    ctx.setInterval(() => void evaluate(), 1000);
     ctx.onInvalidated(() => {
       observer.disconnect();
       browser.runtime.onMessage.removeListener(onRuntimeMessage);

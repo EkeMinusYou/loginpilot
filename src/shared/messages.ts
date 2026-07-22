@@ -1,5 +1,6 @@
 export const MESSAGE_TYPES = {
   autofillDetected: 'autofill-detected',
+  prepareAutofill: 'prepare-autofill',
   getPopupState: 'get-popup-state',
   registerOrigin: 'register-origin',
   removeOrigin: 'remove-origin',
@@ -9,6 +10,10 @@ export const MESSAGE_TYPES = {
 export type RuntimeMessage =
   | {
       type: typeof MESSAGE_TYPES.autofillDetected;
+      origin: string;
+    }
+  | {
+      type: typeof MESSAGE_TYPES.prepareAutofill;
       origin: string;
     }
   | {
@@ -33,6 +38,8 @@ export type ContentMessage = {
 export type AutofillResponse =
   | { ok: true; action: 'submit' | 'ignore' | 'pending' }
   | { ok: false; error: string };
+
+export type PrepareAutofillResponse = { ok: true; registered: boolean } | { ok: false; error: string };
 
 export interface PendingSite {
   origin: string;

@@ -1,4 +1,4 @@
-# loginpilot
+# Login Pilot
 
 Googleパスワードマネージャーによるログインフォームの自動入力を検知し、登録済みサイトでログインフォームを自動送信するChrome拡張機能です。
 
@@ -25,6 +25,16 @@ npm run dev
 npm test
 npm run typecheck
 npm run build
+```
+
+## アイコン
+
+入口と進行方向の矢印を組み合わせたアイコンです。`public/icon.svg`を元データとし、Chromeのツールバー・拡張機能一覧・通知には`public/icon/`内のPNG（16・32・48・128px）を使用します。
+
+SVGを変更したら、以下のコマンドでPNGを再生成してください。生成したPNGもリポジトリに含めます。
+
+```sh
+npm run icons:generate
 ```
 
 ## 動作仕様

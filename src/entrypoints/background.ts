@@ -36,8 +36,8 @@ async function notifySiteDetected(origin: string): Promise<void> {
   try {
     await browser.notifications.create(NOTIFICATION_ID, {
       type: 'basic',
-      iconUrl: browser.runtime.getURL('/icon.svg'),
-      title: 'loginpilot',
+      iconUrl: browser.runtime.getURL('/icon/128.png'),
+      title: 'Login Pilot',
       message: `${origin} でログイン情報の自動入力を検知しました。拡張機能を開いて登録できます。`,
     });
   } catch {

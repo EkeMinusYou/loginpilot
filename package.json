@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "icons:generate": "node scripts/generate-icons.mjs",
     "build": "wxt build",
     "dev": "wxt",
     "typecheck": "wxt prepare && tsc --noEmit",
@@ -16,6 +17,7 @@
     "wxt": "0.20.27"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "2.6.2",
     "typescript": "7.0.2",
     "vitest": "4.1.10"
   }

@@ -3,58 +3,13 @@
   "children": [
     {
       "type": "frame",
-      "id": "bi8Au",
-      "x": 0,
-      "y": 0,
-      "name": "Login Pilot / Design direction",
-      "clip": true,
-      "width": 1200,
-      "fill": "#F1F5F9",
-      "layout": "vertical",
-      "gap": 12,
-      "padding": 28,
-      "children": [
-        {
-          "type": "text",
-          "id": "y0jTQ",
-          "name": "Design title",
-          "fill": "$ink",
-          "content": "Login Pilot — Popup redesign",
-          "fontFamily": "Inter",
-          "fontSize": 28,
-          "fontWeight": "600"
-        },
-        {
-          "type": "text",
-          "id": "r378J",
-          "name": "Design purpose",
-          "fill": "$ink",
-          "content": "現在の状態と、次の操作がひと目でわかる。",
-          "fontFamily": "$body",
-          "fontSize": 17,
-          "fontWeight": "500"
-        },
-        {
-          "type": "text",
-          "id": "y6smk",
-          "name": "Design specifications",
-          "fill": "$secondary",
-          "content": "360px幅を維持  /  既存アイコンを継続  /  白・ネイビー・水色  /  サイト名は確認用のサンプル",
-          "fontFamily": "$body",
-          "fontSize": 12,
-          "fontWeight": "normal"
-        }
-      ]
-    },
-    {
-      "type": "frame",
       "id": "eDXDX",
       "x": 0,
-      "y": 189,
+      "y": 0,
       "name": "Component / Popup header",
       "reusable": true,
       "width": 360,
-      "height": 72,
+      "height": 64,
       "fill": "$bg",
       "stroke": "$line",
       "strokeWidth": {
@@ -68,70 +23,37 @@
       "alignItems": "center",
       "children": [
         {
-          "type": "frame",
-          "id": "k0R25t",
-          "name": "Existing Login Pilot icon",
+          "id": "Yxgy8",
+          "type": "ref",
+          "ref": "G4tNVN",
+          "name": "Approved Pilot icon C / Header 32px",
           "width": 32,
           "height": 32,
-          "layout": "none",
-          "children": [
-            {
-              "type": "rectangle",
-              "cornerRadius": 7,
-              "id": "EIA0k",
-              "x": 1,
-              "y": 1,
-              "name": "Original navy icon background",
-              "fill": "#0F172A",
-              "width": 30,
-              "height": 30
-            },
-            {
-              "type": "path",
-              "id": "ZLvLl",
+          "descendants": {
+            "rOZIe": {
               "x": 0,
               "y": 0,
-              "name": "Original doorway",
-              "geometry": "M56 40v-8h40v64h-40v-8",
-              "viewBox": [
-                0,
-                0,
-                128,
-                128
-              ],
               "width": 32,
-              "height": 32,
-              "stroke": "#38BDF8",
-              "strokeWidth": 2,
-              "strokeLinejoin": "round",
-              "strokeLinecap": "round"
+              "height": 32
             },
-            {
-              "type": "path",
-              "id": "W2Vqy",
-              "x": 0,
-              "y": 0,
-              "name": "Original forward arrow",
-              "geometry": "M28 64h48m-16-16l16 16-16 16",
-              "viewBox": [
-                0,
-                0,
-                128,
-                128
-              ],
-              "width": 32,
-              "height": 32,
-              "stroke": "#F8FAFC",
-              "strokeWidth": 2.5,
-              "strokeLinejoin": "round",
-              "strokeLinecap": "round"
+            "qx2W6": {
+              "x": 8.338675,
+              "y": 8.94,
+              "width": 15.2834,
+              "height": 15.623925
+            },
+            "y0NGHZ": {
+              "x": 6.05,
+              "y": 4.95,
+              "width": 19.9,
+              "height": 14.0368
             }
-          ]
+          }
         },
         {
           "type": "frame",
           "id": "Qi7MJ",
-          "name": "Brand and description",
+          "name": "Brand",
           "width": "fill_container",
           "layout": "vertical",
           "gap": 2,
@@ -145,16 +67,6 @@
               "fontFamily": "Inter",
               "fontSize": 17,
               "fontWeight": "600"
-            },
-            {
-              "type": "text",
-              "id": "f1Y5zN",
-              "name": "Brand description",
-              "fill": "$secondary",
-              "content": "自動入力から、ログインまで。",
-              "fontFamily": "$body",
-              "fontSize": 11,
-              "fontWeight": "normal"
             }
           ]
         }
@@ -164,7 +76,7 @@
       "type": "frame",
       "id": "cUCBX",
       "x": 392,
-      "y": 189,
+      "y": 0,
       "name": "Component / Registered site row",
       "reusable": true,
       "width": 320,
@@ -228,94 +140,10 @@
     },
     {
       "type": "frame",
-      "id": "M9dNg",
-      "x": 744,
-      "y": 189,
-      "name": "Component / Register button",
-      "reusable": true,
-      "width": 320,
-      "height": 44,
-      "fill": "$accent",
-      "cornerRadius": 8,
-      "gap": 8,
-      "justifyContent": "center",
-      "alignItems": "center",
-      "children": [
-        {
-          "type": "text",
-          "id": "y72n17",
-          "name": "Register label",
-          "fill": "#FFFFFF",
-          "content": "登録して自動ログイン",
-          "fontFamily": "$body",
-          "fontSize": 13,
-          "fontWeight": "600"
-        },
-        {
-          "type": "icon",
-          "id": "tto97",
-          "name": "Register arrow",
-          "width": 16,
-          "height": 16,
-          "icon": "arrow-right",
-          "library": "lucide",
-          "fill": "#FFFFFF"
-        }
-      ]
-    },
-    {
-      "type": "frame",
-      "id": "FAeBH",
-      "x": 0,
-      "y": 333,
-      "name": "Review / Main state labels",
-      "width": 1200,
-      "gap": 60,
-      "children": [
-        {
-          "type": "text",
-          "id": "z0pxKa",
-          "name": "01  登録済み / 通常",
-          "fill": "$ink",
-          "textGrowth": "fixed-width",
-          "width": 360,
-          "content": "01  登録済み / 通常",
-          "fontFamily": "$body",
-          "fontSize": 14,
-          "fontWeight": "600"
-        },
-        {
-          "type": "text",
-          "id": "xJF14",
-          "name": "02  新しいサイト / 登録確認",
-          "fill": "$ink",
-          "textGrowth": "fixed-width",
-          "width": 360,
-          "content": "02  新しいサイト / 登録確認",
-          "fontFamily": "$body",
-          "fontSize": 14,
-          "fontWeight": "600"
-        },
-        {
-          "type": "text",
-          "id": "D8awp",
-          "name": "03  登録なし / はじめて",
-          "fill": "$ink",
-          "textGrowth": "fixed-width",
-          "width": 360,
-          "content": "03  登録なし / はじめて",
-          "fontFamily": "$body",
-          "fontSize": 14,
-          "fontWeight": "600"
-        }
-      ]
-    },
-    {
-      "type": "frame",
       "id": "MuvWt",
       "x": 0,
-      "y": 377,
-      "name": "Popup / Registered current site / 360px",
+      "y": 180,
+      "name": "Adopted popup / Registered current site / 360px",
       "clip": true,
       "width": 360,
       "fill": "$bg",
@@ -364,7 +192,8 @@
                   "content": "現在のサイト",
                   "lineHeight": 1.6,
                   "fontFamily": "$body",
-                  "fontSize": 11
+                  "fontSize": 11,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -418,7 +247,8 @@
                   "content": "自動入力を検知すると、ログインフォームを送信します。",
                   "lineHeight": 1.6,
                   "fontFamily": "$body",
-                  "fontSize": 12
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -555,7 +385,8 @@
               "content": "ID・パスワードは保存しません。",
               "lineHeight": 1.6,
               "fontFamily": "$body",
-              "fontSize": 11
+              "fontSize": 11,
+              "fontWeight": "normal"
             }
           ]
         }
@@ -563,542 +394,313 @@
     },
     {
       "type": "frame",
-      "id": "zrs6F",
+      "id": "cE7ia",
       "x": 420,
-      "y": 377,
-      "name": "Popup / Autofill detected on new site / 360px",
+      "y": 180,
+      "name": "Login Pilot / Approved icon C",
       "clip": true,
-      "width": 360,
-      "fill": "$bg",
-      "cornerRadius": 12,
-      "stroke": "$line",
-      "strokeWidth": 1,
+      "width": 640,
+      "fill": "#F1F5F9",
       "layout": "vertical",
+      "gap": 32,
+      "padding": 40,
       "children": [
         {
-          "id": "i2q1J",
-          "type": "ref",
-          "ref": "eDXDX",
-          "name": "Popup header",
-          "width": "fill_container"
+          "type": "text",
+          "id": "Z6FVY",
+          "name": "Icon exploration title",
+          "fill": "$ink",
+          "content": "Login Pilot / 採用アイコン C",
+          "fontFamily": "$body",
+          "fontSize": 30,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "Bj8GN",
+          "name": "Icon exploration subtitle",
+          "fill": "$secondary",
+          "content": "進路を示す、Pilotのシンボル。",
+          "fontFamily": "$body",
+          "fontSize": 15,
+          "fontWeight": "normal"
         },
         {
           "type": "frame",
-          "id": "L1AhL",
-          "name": "Content",
+          "id": "V1qOM",
+          "name": "Approved C / Pilot navigation",
           "width": "fill_container",
+          "fill": "$bg",
+          "cornerRadius": 12,
           "layout": "vertical",
-          "gap": 20,
-          "padding": [
-            16,
-            20
-          ],
+          "gap": 16,
+          "padding": 24,
           "children": [
             {
-              "type": "frame",
-              "id": "fBDI0",
-              "name": "Current site / Registration prompt",
+              "type": "text",
+              "id": "MDJv5",
+              "name": "Approved icon title",
+              "fill": "$ink",
+              "textGrowth": "fixed-width",
               "width": "fill_container",
-              "fill": "#F0F9FF",
-              "cornerRadius": 12,
-              "stroke": "#BAE6FD",
-              "strokeWidth": 1,
-              "layout": "vertical",
-              "gap": 10,
-              "padding": 16,
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "I0suQ",
-                  "name": "Detection label row",
-                  "width": "fill_container",
-                  "justifyContent": "space_between",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "yimxq",
-                      "name": "Current site label",
-                      "fill": "$secondary",
-                      "content": "現在のサイト",
-                      "fontFamily": "$body",
-                      "fontSize": 11,
-                      "fontWeight": "normal"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "R5XP9",
-                      "name": "自動入力を検知 badge",
-                      "fill": "#E0F2FE",
-                      "cornerRadius": 999,
-                      "gap": 5,
-                      "padding": [
-                        4,
-                        8
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "fGaKy",
-                          "name": "自動入力を検知",
-                          "fill": "#0369A1",
-                          "content": "自動入力を検知",
-                          "fontFamily": "$body",
-                          "fontSize": 11,
-                          "fontWeight": "500"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "z3TAcS",
-                  "name": "Detected site origin",
-                  "fill": "$ink",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "https://github.com",
-                  "lineHeight": 1.6,
-                  "fontFamily": "$body",
-                  "fontSize": 19,
-                  "fontWeight": "600"
-                },
-                {
-                  "type": "text",
-                  "id": "YcV2M",
-                  "name": "Registration question",
-                  "fill": "$ink",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "このサイトで\n自動ログインしますか？",
-                  "lineHeight": 1.6,
-                  "fontFamily": "$body",
-                  "fontSize": 17,
-                  "fontWeight": "600"
-                },
-                {
-                  "type": "text",
-                  "id": "k1X0OT",
-                  "name": "Registration behavior",
-                  "fill": "$secondary",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "登録すると、次回から自動入力後にログインします。",
-                  "lineHeight": 1.6,
-                  "fontFamily": "$body",
-                  "fontSize": 12
-                },
-                {
-                  "id": "XhaZv",
-                  "type": "ref",
-                  "ref": "M9dNg",
-                  "name": "Register primary action",
-                  "width": "fill_container"
-                },
-                {
-                  "type": "text",
-                  "id": "DVDB3",
-                  "name": "Current page registration behavior",
-                  "fill": "$secondary",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "登録後、このページから自動ログインを試みます。",
-                  "lineHeight": 1.6,
-                  "fontFamily": "$body",
-                  "fontSize": 11
-                }
-              ]
+              "content": "C — Pilot / 採用",
+              "lineHeight": 1.6,
+              "fontFamily": "$body",
+              "fontSize": 21,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
-              "id": "BmJrn",
-              "name": "Registered sites",
+              "id": "M0PXAM",
+              "name": "C symbol presentation",
               "width": "fill_container",
-              "layout": "vertical",
-              "gap": 4,
+              "height": 180,
+              "fill": "$soft",
+              "cornerRadius": 8,
+              "justifyContent": "center",
+              "alignItems": "center",
               "children": [
                 {
-                  "type": "frame",
-                  "id": "HLoKz",
-                  "name": "Registered sites heading",
-                  "width": "fill_container",
-                  "justifyContent": "space_between",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "p8PPuR",
-                      "name": "List title",
-                      "fill": "$ink",
-                      "content": "登録済みサイト",
-                      "fontFamily": "$body",
-                      "fontSize": 13,
-                      "fontWeight": "600"
+                  "id": "wLImX",
+                  "type": "ref",
+                  "ref": "G4tNVN",
+                  "name": "Approved Pilot icon C / 128px",
+                  "width": 128,
+                  "height": 128,
+                  "descendants": {
+                    "rOZIe": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 128,
+                      "height": 128
                     },
-                    {
-                      "type": "frame",
-                      "id": "mgYHn",
-                      "name": "2件 badge",
-                      "fill": "$soft",
-                      "cornerRadius": 999,
-                      "gap": 5,
-                      "padding": [
-                        4,
-                        8
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "v9FTtg",
-                          "name": "2件",
-                          "fill": "$secondary",
-                          "content": "2件",
-                          "fontFamily": "$body",
-                          "fontSize": 11,
-                          "fontWeight": "500"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "id": "umCcB",
-                  "type": "ref",
-                  "ref": "cUCBX",
-                  "name": "https://accounts.google.com",
-                  "width": "fill_container",
-                  "fill": "$bg",
-                  "descendants": {
-                    "erLU5": {
-                      "content": "https://accounts.google.com"
-                    }
-                  }
-                },
-                {
-                  "id": "jeCVP",
-                  "type": "ref",
-                  "ref": "cUCBX",
-                  "name": "https://app.example.com",
-                  "width": "fill_container",
-                  "fill": "$bg",
-                  "descendants": {
-                    "erLU5": {
-                      "content": "https://app.example.com"
+                    "qx2W6": {
+                      "x": 33.3547,
+                      "y": 35.76,
+                      "width": 61.1336,
+                      "height": 62.4957
+                    },
+                    "y0NGHZ": {
+                      "x": 24.2,
+                      "y": 19.8,
+                      "width": 79.6,
+                      "height": 56.1472
                     }
                   }
                 }
               ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "DeBGW",
-          "name": "Privacy reassurance",
-          "width": "fill_container",
-          "fill": "$soft",
-          "stroke": "$line",
-          "strokeWidth": {
-            "top": 1
-          },
-          "gap": 8,
-          "padding": [
-            14,
-            20
-          ],
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "icon",
-              "id": "KZNtB",
-              "name": "Privacy icon",
-              "width": 16,
-              "height": 16,
-              "icon": "shield-check",
-              "library": "lucide",
-              "fill": "$muted"
             },
             {
               "type": "text",
-              "id": "TMluJ",
-              "name": "Privacy message",
+              "id": "YYax7",
+              "name": "C description",
               "fill": "$secondary",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "ID・パスワードは保存しません。",
+              "content": "ログインの目的地へ導く「進路」をシンボル化。\n入口や鍵ではなく、Pilotの案内役としての価値を表現。",
               "lineHeight": 1.6,
               "fontFamily": "$body",
-              "fontSize": 11
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "frame",
-      "id": "gxoAo",
-      "x": 840,
-      "y": 377,
-      "name": "Popup / No registered sites / 360px",
-      "clip": true,
-      "width": 360,
-      "fill": "$bg",
-      "cornerRadius": 12,
-      "stroke": "$line",
-      "strokeWidth": 1,
-      "layout": "vertical",
-      "children": [
-        {
-          "id": "ai9Wt",
-          "type": "ref",
-          "ref": "eDXDX",
-          "name": "Popup header",
-          "width": "fill_container"
-        },
-        {
-          "type": "frame",
-          "id": "qaFSb",
-          "name": "Content",
-          "width": "fill_container",
-          "layout": "vertical",
-          "gap": 20,
-          "padding": [
-            16,
-            20
-          ],
-          "children": [
-            {
-              "type": "frame",
-              "id": "teGVV",
-              "name": "Current site / Unregistered",
-              "width": "fill_container",
-              "fill": "$soft",
-              "cornerRadius": 12,
-              "stroke": "$line",
-              "strokeWidth": 1,
-              "layout": "vertical",
-              "gap": 12,
-              "padding": 16,
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "Niov2",
-                  "name": "Unregistered label row",
-                  "width": "fill_container",
-                  "justifyContent": "space_between",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "w3hWV",
-                      "name": "Current site label",
-                      "fill": "$secondary",
-                      "content": "現在のサイト",
-                      "fontFamily": "$body",
-                      "fontSize": 11,
-                      "fontWeight": "normal"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "u3bPZ",
-                      "name": "未登録 badge",
-                      "fill": "#E2E8F0",
-                      "cornerRadius": 999,
-                      "gap": 5,
-                      "padding": [
-                        4,
-                        8
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "Ip6PP",
-                          "name": "未登録",
-                          "fill": "$secondary",
-                          "content": "未登録",
-                          "fontFamily": "$body",
-                          "fontSize": 11,
-                          "fontWeight": "500"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "TjSLU",
-                  "name": "Unregistered site origin",
-                  "fill": "$ink",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "https://github.com",
-                  "lineHeight": 1.6,
-                  "fontFamily": "$body",
-                  "fontSize": 19,
-                  "fontWeight": "600"
-                },
-                {
-                  "type": "text",
-                  "id": "B0T7b3",
-                  "name": "Registration guidance",
-                  "fill": "$secondary",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "ログイン情報が自動入力されると、ここからサイトを登録できます。",
-                  "lineHeight": 1.6,
-                  "fontFamily": "$body",
-                  "fontSize": 12
-                }
-              ]
+              "fontSize": 14,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
-              "id": "t6aQ2",
-              "name": "Registered sites",
+              "id": "Jr6ag",
+              "name": "C small size previews",
               "width": "fill_container",
-              "layout": "vertical",
-              "gap": 4,
+              "height": 72,
+              "gap": 24,
+              "alignItems": "end",
               "children": [
                 {
                   "type": "frame",
-                  "id": "FpFZG",
-                  "name": "Registered sites heading",
-                  "width": "fill_container",
-                  "justifyContent": "space_between",
+                  "id": "AdTB9",
+                  "name": "C / 16px preview",
+                  "width": 64,
+                  "layout": "vertical",
+                  "gap": 8,
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "text",
-                      "id": "xQUcc",
-                      "name": "List title",
-                      "fill": "$ink",
-                      "content": "登録済みサイト",
-                      "fontFamily": "$body",
-                      "fontSize": 13,
-                      "fontWeight": "600"
+                      "id": "MYNJJ",
+                      "type": "ref",
+                      "ref": "G4tNVN",
+                      "name": "Approved Pilot icon C / 16px",
+                      "width": 16,
+                      "height": 16,
+                      "descendants": {
+                        "rOZIe": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 16,
+                          "height": 16
+                        },
+                        "qx2W6": {
+                          "x": 4.1693375,
+                          "y": 4.47,
+                          "width": 7.6417,
+                          "height": 7.8119625
+                        },
+                        "y0NGHZ": {
+                          "x": 3.025,
+                          "y": 2.475,
+                          "width": 9.95,
+                          "height": 7.0184
+                        }
+                      }
                     },
                     {
-                      "type": "frame",
-                      "id": "M87or",
-                      "name": "0件 badge",
-                      "fill": "$soft",
-                      "cornerRadius": 999,
-                      "gap": 5,
-                      "padding": [
-                        4,
-                        8
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "NmzYP",
-                          "name": "0件",
-                          "fill": "$secondary",
-                          "content": "0件",
-                          "fontFamily": "$body",
-                          "fontSize": 11,
-                          "fontWeight": "500"
-                        }
-                      ]
+                      "type": "text",
+                      "id": "WWwPc",
+                      "name": "C / 16px label",
+                      "fill": "$muted",
+                      "content": "16px",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "SY4gf",
-                  "name": "Empty list guidance",
-                  "width": "fill_container",
+                  "id": "f1orMN",
+                  "name": "C / 32px preview",
+                  "width": 64,
                   "layout": "vertical",
                   "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "r4DJn8",
+                      "type": "ref",
+                      "ref": "G4tNVN",
+                      "name": "Approved Pilot icon C / 32px",
+                      "width": 32,
+                      "height": 32,
+                      "descendants": {
+                        "rOZIe": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 32,
+                          "height": 32
+                        },
+                        "qx2W6": {
+                          "x": 8.338675,
+                          "y": 8.94,
+                          "width": 15.2834,
+                          "height": 15.623925
+                        },
+                        "y0NGHZ": {
+                          "x": 6.05,
+                          "y": 4.95,
+                          "width": 19.9,
+                          "height": 14.0368
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "kuiz6",
+                      "name": "C / 32px label",
+                      "fill": "$muted",
+                      "content": "32px",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "IkiS5",
+                  "name": "C / 48px preview",
+                  "width": 64,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "zXulw",
+                      "type": "ref",
+                      "ref": "G4tNVN",
+                      "name": "Approved Pilot icon C / 48px",
+                      "width": 48,
+                      "height": 48,
+                      "descendants": {
+                        "rOZIe": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 48,
+                          "height": 48
+                        },
+                        "qx2W6": {
+                          "x": 12.5080125,
+                          "y": 13.41,
+                          "width": 22.9251,
+                          "height": 23.4358875
+                        },
+                        "y0NGHZ": {
+                          "x": 9.075,
+                          "y": 7.425000000000001,
+                          "width": 29.849999999999998,
+                          "height": 21.0552
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "Bm7bX",
+                      "name": "C / 48px label",
+                      "fill": "$muted",
+                      "content": "48px",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Y1cxtO",
+                  "name": "C / Preview context",
+                  "width": "fill_container",
+                  "layout": "vertical",
                   "padding": [
-                    20,
+                    0,
+                    0,
+                    4,
                     0
                   ],
                   "children": [
                     {
-                      "type": "icon",
-                      "id": "CPf1v",
-                      "name": "Empty list icon",
-                      "width": 24,
-                      "height": 24,
-                      "icon": "globe",
-                      "library": "lucide",
-                      "fill": "$muted"
-                    },
-                    {
                       "type": "text",
-                      "id": "N9JswS",
-                      "name": "Empty list title",
-                      "fill": "$ink",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "まだ登録されたサイトはありません",
-                      "lineHeight": 1.6,
-                      "fontFamily": "$body",
-                      "fontSize": 13,
-                      "fontWeight": "500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "bnqkq",
-                      "name": "Empty list description",
+                      "id": "O0HkU8",
+                      "name": "C / Preview explanation",
                       "fill": "$secondary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "使いたいサイトでログイン情報を自動入力して、最初のサイトを登録しましょう。",
-                      "lineHeight": 1.6,
+                      "content": "実寸比較\n16px：ツールバー\n32・48px：管理画面",
+                      "lineHeight": 1.5,
                       "fontFamily": "$body",
-                      "fontSize": 12
+                      "fontSize": 11,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
               ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "eTSYY",
-          "name": "Privacy reassurance",
-          "width": "fill_container",
-          "fill": "$soft",
-          "stroke": "$line",
-          "strokeWidth": {
-            "top": 1
-          },
-          "gap": 8,
-          "padding": [
-            14,
-            20
-          ],
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "icon",
-              "id": "K2hzqV",
-              "name": "Privacy icon",
-              "width": 16,
-              "height": 16,
-              "icon": "shield-check",
-              "library": "lucide",
-              "fill": "$muted"
             },
             {
               "type": "text",
-              "id": "iV2dX",
-              "name": "Privacy message",
+              "id": "o1tAg",
+              "name": "C tradeoff",
               "fill": "$secondary",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "ID・パスワードは保存しません。",
+              "content": "強み：方向感と軽快さ。\n留意点：ログイン機能は名称・説明で補う。",
               "lineHeight": 1.6,
               "fontFamily": "$body",
-              "fontSize": 11
+              "fontSize": 12,
+              "fontWeight": "normal"
             }
           ]
         }
@@ -1106,345 +708,66 @@
     },
     {
       "type": "frame",
-      "id": "u2fKm",
-      "x": 0,
-      "y": 1010,
-      "name": "Review / Feedback and edge cases",
-      "width": 1200,
-      "fill": "#F1F5F9",
-      "cornerRadius": 12,
-      "layout": "vertical",
-      "gap": 20,
-      "padding": 24,
+      "id": "G4tNVN",
+      "x": 752,
+      "y": 0,
+      "name": "Component / Approved Pilot icon C",
+      "reusable": true,
+      "clip": true,
+      "width": 128,
+      "height": 128,
+      "layout": "none",
       "children": [
         {
-          "type": "text",
-          "id": "v2Aqkh",
-          "name": "Feedback heading",
+          "type": "path",
+          "id": "rOZIe",
+          "x": 0,
+          "y": 0,
+          "name": "C / Navy tile",
+          "geometry": "M114.24 0l-100.48 0c-7.56 0-13.76 6.28-13.76 14.2l0 99.6c0 7.48 6.52 14.36 13.76 14.36l100.48 0c7.24 0 13.92-6.72 13.92-13.96l0-100.04c0-7.56-6.44-14.16-13.92-14.16z",
+          "viewBox": [
+            0,
+            0,
+            128.16,
+            128.16
+          ],
           "fill": "$ink",
-          "content": "操作の結果も、迷わず分かる。",
-          "fontFamily": "$body",
-          "fontSize": 18,
-          "fontWeight": "600"
+          "width": 128,
+          "height": 128
         },
         {
-          "type": "frame",
-          "id": "f9YZZ",
-          "name": "Feedback examples",
-          "width": "fill_container",
-          "gap": 16,
-          "children": [
-            {
-              "type": "frame",
-              "id": "GKGiG",
-              "name": "読み込み中 example",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": 10,
-              "children": [
-                {
-                  "type": "text",
-                  "id": "RbvQF",
-                  "name": "読み込み中 heading",
-                  "fill": "$secondary",
-                  "content": "読み込み中",
-                  "fontFamily": "$body",
-                  "fontSize": 12,
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "frame",
-                  "id": "Cb97J",
-                  "name": "読み込み中 feedback",
-                  "width": "fill_container",
-                  "fill": "#FFFFFF",
-                  "cornerRadius": 8,
-                  "stroke": "$line",
-                  "strokeWidth": 1,
-                  "layout": "vertical",
-                  "gap": 10,
-                  "padding": 14,
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "w62lo",
-                      "name": "読み込み中 icon",
-                      "width": 18,
-                      "height": 18,
-                      "icon": "loader-circle",
-                      "library": "lucide",
-                      "fill": "#475569"
-                    },
-                    {
-                      "type": "text",
-                      "id": "b2LkZ",
-                      "name": "読み込み中 message",
-                      "fill": "#475569",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "サイトの状態を確認しています…",
-                      "lineHeight": 1.6,
-                      "fontFamily": "$body",
-                      "fontSize": 12,
-                      "fontWeight": "500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "T1yNFk",
-                      "name": "読み込み中 explanation",
-                      "fill": "$secondary",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "取得前に「未登録」と表示しない。",
-                      "lineHeight": 1.6,
-                      "fontFamily": "$body",
-                      "fontSize": 11,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "TfSkv",
-              "name": "登録完了 example",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": 10,
-              "children": [
-                {
-                  "type": "text",
-                  "id": "h0e0L",
-                  "name": "登録完了 heading",
-                  "fill": "$secondary",
-                  "content": "登録完了",
-                  "fontFamily": "$body",
-                  "fontSize": 12,
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "frame",
-                  "id": "jRZak",
-                  "name": "登録完了 feedback",
-                  "width": "fill_container",
-                  "fill": "#ECFDF5",
-                  "cornerRadius": 8,
-                  "stroke": "$line",
-                  "strokeWidth": 1,
-                  "layout": "vertical",
-                  "gap": 10,
-                  "padding": 14,
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "UyzFi",
-                      "name": "登録完了 icon",
-                      "width": 18,
-                      "height": 18,
-                      "icon": "circle-check",
-                      "library": "lucide",
-                      "fill": "#047857"
-                    },
-                    {
-                      "type": "text",
-                      "id": "i0XtRz",
-                      "name": "登録完了 message",
-                      "fill": "#047857",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "サイトを登録しました。",
-                      "lineHeight": 1.6,
-                      "fontFamily": "$body",
-                      "fontSize": 12,
-                      "fontWeight": "500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "fLqWR",
-                      "name": "登録完了 explanation",
-                      "fill": "$secondary",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "このページから自動ログインを試みます。",
-                      "lineHeight": 1.6,
-                      "fontFamily": "$body",
-                      "fontSize": 11,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "jt1dx",
-              "name": "登録エラー example",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": 10,
-              "children": [
-                {
-                  "type": "text",
-                  "id": "oraiM",
-                  "name": "登録エラー heading",
-                  "fill": "$secondary",
-                  "content": "登録エラー",
-                  "fontFamily": "$body",
-                  "fontSize": 12,
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "frame",
-                  "id": "O5DC2A",
-                  "name": "登録エラー feedback",
-                  "width": "fill_container",
-                  "fill": "#FEF2F2",
-                  "cornerRadius": 8,
-                  "stroke": "$line",
-                  "strokeWidth": 1,
-                  "layout": "vertical",
-                  "gap": 10,
-                  "padding": 14,
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "CfF0g",
-                      "name": "登録エラー icon",
-                      "width": 18,
-                      "height": 18,
-                      "icon": "circle-alert",
-                      "library": "lucide",
-                      "fill": "#B91C1C"
-                    },
-                    {
-                      "type": "text",
-                      "id": "S7Ygb",
-                      "name": "登録エラー message",
-                      "fill": "#B91C1C",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "サイトを登録できませんでした。",
-                      "lineHeight": 1.6,
-                      "fontFamily": "$body",
-                      "fontSize": 12,
-                      "fontWeight": "500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "wyR82",
-                      "name": "登録エラー explanation",
-                      "fill": "$secondary",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "登録ボタンを戻して再操作できる状態にする。",
-                      "lineHeight": 1.6,
-                      "fontFamily": "$body",
-                      "fontSize": 11,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "CGDLK",
-              "name": "対象外ページ example",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": 10,
-              "children": [
-                {
-                  "type": "text",
-                  "id": "E38beq",
-                  "name": "対象外ページ heading",
-                  "fill": "$secondary",
-                  "content": "対象外ページ",
-                  "fontFamily": "$body",
-                  "fontSize": 12,
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "frame",
-                  "id": "ySaeV",
-                  "name": "対象外ページ feedback",
-                  "width": "fill_container",
-                  "fill": "#FFFFFF",
-                  "cornerRadius": 8,
-                  "stroke": "$line",
-                  "strokeWidth": 1,
-                  "layout": "vertical",
-                  "gap": 10,
-                  "padding": 14,
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "D9SFV",
-                      "name": "対象外ページ icon",
-                      "width": 18,
-                      "height": 18,
-                      "icon": "info",
-                      "library": "lucide",
-                      "fill": "#475569"
-                    },
-                    {
-                      "type": "text",
-                      "id": "OyQGv",
-                      "name": "対象外ページ message",
-                      "fill": "#475569",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "このページでは利用できません",
-                      "lineHeight": 1.6,
-                      "fontFamily": "$body",
-                      "fontSize": 12,
-                      "fontWeight": "500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "iQ0JA",
-                      "name": "対象外ページ explanation",
-                      "fill": "$secondary",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "ログインするサイトを開いてください。",
-                      "lineHeight": 1.6,
-                      "fontFamily": "$body",
-                      "fontSize": 11,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "path",
+          "id": "qx2W6",
+          "x": 33.3547,
+          "y": 35.76,
+          "name": "C / White symbol",
+          "geometry": "M33.20534 1.6c-0.56-1.04-1.52-1.6-2.6-1.6-1.08 0-2.12 0.6-2.64 1.6l-27.72 57.84c-0.48 1.04-0.2 1.96001 0.36 2.56 0.72 0.72 1.84 0.68 3.28-0.28l25.84-17.56c0.56-0.36 1.24-0.36 1.8 0l25.84 17.64c1.32 0.88 2.36 0.88 3.16 0.2 0.64-0.52 0.8-1.44 0.36-2.48l-27.68-57.92z",
+          "viewBox": [
+            0,
+            0,
+            61.1336,
+            62.4957
+          ],
+          "fill": "$soft",
+          "width": 61.1336,
+          "height": 62.4957
         },
         {
-          "type": "text",
-          "id": "ahQKY",
-          "name": "Origin distinction note",
-          "fill": "$secondary",
-          "textGrowth": "fixed-width",
-          "width": "fill_container",
-          "content": "検知したサイトと現在のタブが異なる場合は「検知したサイト」と「現在のサイト」を分け、登録対象のoriginをボタンの直前に表示。",
-          "lineHeight": 1.7,
-          "fontFamily": "$body",
-          "fontSize": 12,
-          "fontWeight": "normal"
-        },
-        {
-          "type": "text",
-          "id": "xNiuY",
-          "name": "Overflow and action notes",
-          "fill": "$secondary",
-          "textGrowth": "fixed-width",
-          "width": "fill_container",
-          "content": "長いoriginは折り返す ／ 一覧が増えたら一覧のみスクロール ／ 登録中は「登録中…」に切替 ／ 解除後は一覧と件数を更新",
-          "lineHeight": 1.7,
-          "fontFamily": "$body",
-          "fontSize": 12,
-          "fontWeight": "normal"
+          "type": "path",
+          "id": "y0NGHZ",
+          "x": 24.2,
+          "y": 19.8,
+          "name": "C / Sky blue accent",
+          "geometry": "M40 0c-22.52 0.08-39.96 18.64-40 39.6 0 5.52 1.2 10.68 3.32 14.64 0.8 1.56 2.68 2.32 4.32 1.68 2.12-0.76 2.76-3.08 1.92-5-1.56-3.36-2.4-7.12-2.4-11.36 0.08-18.08 14.84-32.28 32.8-32.28 18.32 0 32.35999 14.36 32.35999 32.28 0 4.44-0.87999 8.44-2.47999 11.48-0.87999 1.76 0 4.12 2.08 4.92 1.64 0.56 3.52-0.28 4.32-1.92 2.23999-4.2 3.36-8.71999 3.36001-14-0.12001-22.56-17-40.04-39.60001-40.04z",
+          "viewBox": [
+            0,
+            0,
+            79.6,
+            56.1472
+          ],
+          "fill": "#38BDF8",
+          "width": 79.6,
+          "height": 56.1472
         }
       ]
     }

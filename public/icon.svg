@@ -1,17 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <defs>
-    <linearGradient id="background" x1="16" y1="8" x2="112" y2="124" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#1e3048"/>
-      <stop offset="1" stop-color="#0e1828"/>
-    </linearGradient>
-    <linearGradient id="portal" x1="54" y1="34" x2="92" y2="94" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#a5e7f5"/>
-      <stop offset="1" stop-color="#62bde8"/>
-    </linearGradient>
-  </defs>
-  <rect x="4" y="4" width="120" height="120" rx="30" fill="url(#background)"/>
-  <g transform="translate(64 64) scale(1.25) translate(-64 -64)">
-    <path d="M54 44V42C54 37.582 57.582 34 62 34H84C88.418 34 92 37.582 92 42V86C92 90.418 88.418 94 84 94H62C57.582 94 54 90.418 54 86V84" fill="none" stroke="url(#portal)" stroke-width="7" stroke-linecap="round"/>
-    <path d="M30 64H72M60 52L72 64L60 76" fill="none" stroke="#f4f9ff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>
+  <svg x="0" y="0" width="128" height="128" viewBox="0 0 128.16 128.16" preserveAspectRatio="none">
+    <path d="M114.24 0l-100.48 0c-7.56 0-13.76 6.28-13.76 14.2l0 99.6c0 7.48 6.52 14.36 13.76 14.36l100.48 0c7.24 0 13.92-6.72 13.92-13.96l0-100.04c0-7.56-6.44-14.16-13.92-14.16z" fill="#0F172A"/>
+  </svg>
+  <svg x="33.3547" y="35.76" width="61.1336" height="62.4957" viewBox="0 0 61.1336 62.4957" preserveAspectRatio="none">
+    <path d="M33.20534 1.6c-0.56-1.04-1.52-1.6-2.6-1.6-1.08 0-2.12 0.6-2.64 1.6l-27.72 57.84c-0.48 1.04-0.2 1.96001 0.36 2.56 0.72 0.72 1.84 0.68 3.28-0.28l25.84-17.56c0.56-0.36 1.24-0.36 1.8 0l25.84 17.64c1.32 0.88 2.36 0.88 3.16 0.2 0.64-0.52 0.8-1.44 0.36-2.48l-27.68-57.92z" fill="#F8FAFC"/>
+  </svg>
+  <svg x="24.2" y="19.8" width="79.6" height="56.1472" viewBox="0 0 79.6 56.1472" preserveAspectRatio="none">
+    <path d="M40 0c-22.52 0.08-39.96 18.64-40 39.6 0 5.52 1.2 10.68 3.32 14.64 0.8 1.56 2.68 2.32 4.32 1.68 2.12-0.76 2.76-3.08 1.92-5-1.56-3.36-2.4-7.12-2.4-11.36 0.08-18.08 14.84-32.28 32.8-32.28 18.32 0 32.35999 14.36 32.35999 32.28 0 4.44-0.87999 8.44-2.47999 11.48-0.87999 1.76 0 4.12 2.08 4.92 1.64 0.56 3.52-0.28 4.32-1.92 2.23999-4.2 3.36-8.71999 3.36001-14-0.12001-22.56-17-40.04-39.60001-40.04z" fill="#38BDF8"/>
+  </svg>
 </svg>

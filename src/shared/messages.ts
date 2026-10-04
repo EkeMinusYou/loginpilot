@@ -1,19 +1,25 @@
 export const MESSAGE_TYPES = {
   autofillDetected: 'autofill-detected',
-  prepareAutofill: 'prepare-autofill',
   getPopupState: 'get-popup-state',
   registerOrigin: 'register-origin',
   removeOrigin: 'remove-origin',
   siteRegistered: 'site-registered',
+  getLoginPolicy: 'get-login-policy',
+  enableCredentialLogin: 'enable-credential-login',
 } as const;
 
 export type RuntimeMessage =
   | {
-      type: typeof MESSAGE_TYPES.autofillDetected;
+      type: typeof MESSAGE_TYPES.getLoginPolicy;
       origin: string;
     }
   | {
-      type: typeof MESSAGE_TYPES.prepareAutofill;
+      type: typeof MESSAGE_TYPES.enableCredentialLogin;
+      origin: string;
+      tabId: number;
+    }
+  | {
+      type: typeof MESSAGE_TYPES.autofillDetected;
       origin: string;
     }
   | {
@@ -31,15 +37,15 @@ export type RuntimeMessage =
     };
 
 export type ContentMessage = {
-  type: typeof MESSAGE_TYPES.siteRegistered;
+  type: typeof MESSAGE_TYPES.siteRegistered | typeof MESSAGE_TYPES.enableCredentialLogin;
   origin: string;
 };
+
+export type CredentialSetupResponse = { ok: true; filled: boolean } | { ok: false; error: string };
 
 export type AutofillResponse =
   | { ok: true; action: 'submit' | 'ignore' | 'pending' }
   | { ok: false; error: string };
-
-export type PrepareAutofillResponse = { ok: true; registered: boolean } | { ok: false; error: string };
 
 export interface PendingSite {
   origin: string;

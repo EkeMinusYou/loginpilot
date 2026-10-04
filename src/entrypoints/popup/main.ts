@@ -1,6 +1,6 @@
 import { browser } from 'wxt/browser';
 import './style.css';
-import { MESSAGE_TYPES, type PopupResponse, type PopupState } from '../../shared/messages';
+import { MESSAGE_TYPES, type PopupResponse, type PopupState, type CredentialSetupResponse } from '../../shared/messages';
 import { normalizeOrigin } from '../../shared/origins';
 
 const appRoot = document.querySelector<HTMLElement>('#app');
@@ -10,10 +10,10 @@ const app = appRoot;
 let state: PopupState = { registeredOrigins: [], pendingSite: null, currentOrigin: null };
 let isLoading = true;
 let hasLoaded = false;
-let action: { type: 'register' | 'remove'; origin: string } | null = null;
+let action: { type: 'register' | 'remove' | 'setup'; origin: string } | null = null;
 let feedback: {
   kind: 'success' | 'error';
-  context: 'register' | 'remove' | 'load';
+  context: 'register' | 'remove' | 'load' | 'setup';
   message: string;
 } | null = null;
 let focusAfterAction: 'feedback' | 'registered-title' | null = null;
@@ -143,6 +143,33 @@ async function removeOrigin(origin: string): Promise<void> {
   }
 }
 
+async function enableCredentialLogin(): Promise<void> {
+  if (action || !state.currentOrigin) return;
+  const origin = state.currentOrigin;
+  action = { type: 'setup', origin };
+  feedback = null;
+  render();
+  try {
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id === undefined || !tab.url || normalizeOrigin(tab.url) !== origin) {
+      throw new PopupError('対象のログインページを開いてください。');
+    }
+    const response = await browser.runtime.sendMessage({
+      type: MESSAGE_TYPES.enableCredentialLogin, origin, tabId: tab.id,
+    }) as CredentialSetupResponse;
+    if (!response.ok) throw new PopupError(response.error);
+    feedback = response.filled
+      ? { kind: 'success', context: 'setup', message: 'ログイン情報を取得しました。Chromeに確認が表示された場合は、自動ログインを有効にしてください。' }
+      : { kind: 'error', context: 'setup', message: 'ログイン情報を取得できませんでした。Chromeの保存済みパスワードと「自動的にログイン」の設定を確認してください。' };
+  } catch (error) {
+    feedback = { kind: 'error', context: 'setup', message: error instanceof PopupError ? error.message : '設定できませんでした。ログインページでやり直してください。' };
+  } finally {
+    action = null;
+    focusAfterAction = 'feedback';
+    render();
+  }
+}
+
 function feedbackElement(): HTMLElement {
   const success = feedback?.kind === 'success';
   const node = element('div', `flex items-start gap-2 rounded-lg p-3 text-xs leading-relaxed ${success ? 'bg-success-soft text-success' : 'bg-error-soft text-error'}`);
@@ -175,6 +202,11 @@ function currentSite(compact = false): HTMLElement {
     const status = element('div', 'flex items-center gap-2 text-xs font-medium text-emerald-200');
     status.append(icon('check', 'size-4 shrink-0 text-emerald-300'), element('span', undefined, '自動ログイン有効'));
     node.append(status, element('p', 'text-xs leading-relaxed text-slate-300', '自動入力を検知すると、ログインフォームを送信します。'));
+    const setup = button(action?.type === 'setup' ? '確認中…' : 'クリックなしのログインを設定',
+      'min-h-10 w-full rounded-lg bg-white px-3 py-2 text-xs font-semibold text-ink transition hover:bg-slate-100 disabled:cursor-wait disabled:opacity-70',
+      () => void enableCredentialLogin());
+    setup.dataset.focusKey = 'setup';
+    node.append(setup, element('p', 'text-[11px] leading-relaxed text-slate-300', '初回だけ、Chromeのアカウント確認と自動ログインを承認してください。'));
   } else {
     node.append(element('p', 'text-xs leading-relaxed text-secondary', 'ログイン情報が自動入力されると、ここからサイトを登録できます。'));
   }

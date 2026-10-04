@@ -1,18 +1,22 @@
 import { browser } from 'wxt/browser';
 import { defineContentScript } from 'wxt/utils/define-content-script';
-import { findLoginForm, hasAutofillMarker, hasCredentials, type LoginFormCandidate } from '../shared/form-detector';
+import { findLoginForm, hasAutofillMarker, hasCredentials, hasPendingPasswordAutofill, type LoginFormCandidate } from '../shared/form-detector';
 import {
   MESSAGE_TYPES,
   type AutofillResponse,
   type ContentMessage,
-  type PrepareAutofillResponse,
+  type CredentialSetupResponse,
 } from '../shared/messages';
 import { normalizeOrigin } from '../shared/origins';
+import { fillStoredCredentials } from '../shared/credential-autofill';
 
 interface FormState {
   lastShape: string;
   userInteracted: boolean;
-  autofillRequested: boolean;
+  autofillPreviewReported: boolean;
+  credentialAttempted: boolean;
+  credentialInFlight: boolean;
+  interactionVersion: number;
 }
 
 function valueShape(candidate: LoginFormCandidate): string {
@@ -21,6 +25,7 @@ function valueShape(candidate: LoginFormCandidate): string {
 
 function markUserInteraction(state: FormState): void {
   state.userInteracted = true;
+  state.interactionVersion += 1;
 }
 
 function addAutocompleteHint(input: HTMLInputElement): void {
@@ -74,32 +79,16 @@ export default defineContentScript({
         return existing;
       }
 
-      const state: FormState = { lastShape: '', userInteracted: false, autofillRequested: false };
+      const state: FormState = {
+        lastShape: '',
+        userInteracted: false,
+        autofillPreviewReported: false,
+        credentialAttempted: false,
+        credentialInFlight: false,
+        interactionVersion: 0,
+      };
       formStates.set(form, state);
       return state;
-    }
-
-    async function requestAutofillFocus(candidate: LoginFormCandidate, state: FormState): Promise<void> {
-      state.autofillRequested = true;
-
-      let response: PrepareAutofillResponse;
-      try {
-        response = (await browser.runtime.sendMessage({
-          type: MESSAGE_TYPES.prepareAutofill,
-          origin,
-        })) as PrepareAutofillResponse;
-      } catch {
-        return;
-      }
-
-      if (!response.ok || !response.registered || state.userInteracted || hasCredentials(candidate)) {
-        return;
-      }
-
-      candidate.usernameInput.focus({ preventScroll: true });
-      for (const delay of [100, 500, 1500]) {
-        ctx.setTimeout(() => void evaluate(), delay);
-      }
     }
 
     async function evaluate(): Promise<void> {
@@ -109,17 +98,21 @@ export default defineContentScript({
       }
 
       const state = getFormState(candidate.form);
+      if (state.credentialInFlight) return;
       const shape = valueShape(candidate);
 
       if (!hasCredentials(candidate)) {
-        reportedForms.delete(candidate.form);
+        const pendingAutofill = hasPendingPasswordAutofill(candidate);
+        if (!pendingAutofill) reportedForms.delete(candidate.form);
         inFlightForms.delete(candidate.form);
         state.lastShape = shape;
-        if (candidate.usernameInput.value.length === 0 && candidate.passwordInput.value.length === 0) {
-          state.userInteracted = false;
+        if (!state.credentialAttempted && !state.userInteracted && document.visibilityState === 'visible') {
+          void requestCredentials(candidate, state, 'silent');
         }
-        if (!state.autofillRequested && !state.userInteracted) {
-          void requestAutofillFocus(candidate, state);
+        if (pendingAutofill) {
+          if (!state.autofillPreviewReported && !state.userInteracted && document.visibilityState === 'visible') {
+            void reportAutofillPreview(candidate, state);
+          }
         }
         return;
       }
@@ -139,6 +132,7 @@ export default defineContentScript({
       }
 
       inFlightForms.add(candidate.form);
+      const interactionVersion = state.interactionVersion;
       let response: AutofillResponse;
       try {
         response = (await browser.runtime.sendMessage({
@@ -153,6 +147,7 @@ export default defineContentScript({
       inFlightForms.delete(candidate.form);
 
       if (response.ok && response.action === 'submit') {
+        if (!candidate.form.isConnected || !hasCredentials(candidate) || state.interactionVersion !== interactionVersion) return;
         try {
           submitLoginForm(candidate);
         } catch {
@@ -209,14 +204,14 @@ export default defineContentScript({
       void evaluate();
     }
 
-    function handleContentMessage(message: ContentMessage): void {
-      if (message.type !== MESSAGE_TYPES.siteRegistered || message.origin !== origin) {
-        return;
+    async function handleContentMessage(message: ContentMessage): Promise<CredentialSetupResponse> {
+      if (message.origin !== origin || window.top !== window) {
+        return { ok: false, error: '対象のログインページを開いてください。' };
       }
 
       const candidate = findLoginForm();
       if (!candidate) {
-        return;
+        return { ok: false, error: 'メールアドレスとパスワードの入力欄があるページで設定してください。' };
       }
 
       reportedForms.delete(candidate.form);
@@ -224,15 +219,67 @@ export default defineContentScript({
       const state = getFormState(candidate.form);
       state.lastShape = '';
       state.userInteracted = false;
-      state.autofillRequested = false;
+      state.autofillPreviewReported = false;
+      state.credentialAttempted = false;
+      if (message.type === MESSAGE_TYPES.enableCredentialLogin) {
+        const filled = await requestCredentials(candidate, state, 'optional');
+        return { ok: true, filled };
+      }
       void evaluate();
+      return { ok: true, filled: false };
+    }
+
+    async function requestCredentials(
+      candidate: LoginFormCandidate,
+      state: FormState,
+      mediation: 'silent' | 'optional',
+    ): Promise<boolean> {
+      if (state.credentialInFlight || window.top !== window) return false;
+      state.credentialAttempted = true;
+      state.credentialInFlight = true;
+      let filled = false;
+      try {
+        // Check registration before asking Chrome for credentials, including when no preview is visible.
+        const response = await browser.runtime.sendMessage({ type: MESSAGE_TYPES.getLoginPolicy, origin }) as AutofillResponse;
+        if (response.ok && response.action === 'submit') {
+          filled = await fillStoredCredentials(candidate, mediation, () =>
+            !ctx.isInvalid && !state.userInteracted && document.visibilityState === 'visible',
+          );
+        }
+      } catch {
+        // Continue observing ordinary autofill if the extension or browser is unavailable.
+      } finally {
+        state.credentialInFlight = false;
+      }
+      if (filled) {
+        state.lastShape = '';
+        reportedForms.delete(candidate.form);
+        // Recheck registration through the normal submission path after the credential request.
+        ctx.setTimeout(() => void evaluate(), 0);
+      }
+      return filled;
+    }
+
+    async function reportAutofillPreview(candidate: LoginFormCandidate, state: FormState): Promise<void> {
+      state.autofillPreviewReported = true;
+      try {
+        // A native preview can be reported even when Chrome has not committed its DOM values.
+        const response = (await browser.runtime.sendMessage({
+          type: MESSAGE_TYPES.autofillDetected,
+          origin,
+        })) as AutofillResponse;
+        if (response.ok && response.action === 'pending') reportedForms.add(candidate.form);
+      } catch {
+        state.autofillPreviewReported = false;
+      }
     }
 
     observeForms();
 
-    const onRuntimeMessage = (message: unknown): void => {
-      if (typeof message === 'object' && message !== null && 'type' in message && 'origin' in message) {
-        handleContentMessage(message as ContentMessage);
+    const onRuntimeMessage = (message: unknown): Promise<CredentialSetupResponse> | undefined => {
+      if (typeof message === 'object' && message !== null && 'type' in message && 'origin' in message &&
+          (message.type === MESSAGE_TYPES.siteRegistered || message.type === MESSAGE_TYPES.enableCredentialLogin)) {
+        return handleContentMessage(message as ContentMessage);
       }
     };
     browser.runtime.onMessage.addListener(onRuntimeMessage);

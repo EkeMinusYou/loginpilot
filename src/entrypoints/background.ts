@@ -12,8 +12,8 @@ import {
   MESSAGE_TYPES,
   type PopupResponse,
   type PopupState,
-  type PrepareAutofillResponse,
   type RuntimeMessage,
+  type CredentialSetupResponse,
 } from '../shared/messages';
 import { normalizeOrigin } from '../shared/origins';
 
@@ -58,8 +58,8 @@ async function getPopupState(currentOrigin: string | null): Promise<PopupRespons
 async function handleMessage(
   message: RuntimeMessage,
   sender: Browser.runtime.MessageSender,
-): Promise<PopupResponse | PrepareAutofillResponse | { ok: true; action: 'submit' | 'ignore' | 'pending' } | { ok: false; error: string }> {
-  if (message.type === MESSAGE_TYPES.autofillDetected) {
+): Promise<PopupResponse | CredentialSetupResponse | { ok: true; action: 'submit' | 'ignore' | 'pending' } | { ok: false; error: string }> {
+  if (message.type === MESSAGE_TYPES.autofillDetected || message.type === MESSAGE_TYPES.getLoginPolicy) {
     const senderUrl = sender.url ?? sender.tab?.url;
     const senderOrigin = senderUrl ? normalizeOrigin(senderUrl) : null;
     if (!senderOrigin || senderOrigin !== message.origin) {
@@ -70,15 +70,10 @@ async function handleMessage(
       return { ok: true, action: 'submit' };
     }
 
+    if (message.type === MESSAGE_TYPES.getLoginPolicy) return { ok: true, action: 'ignore' };
+
     await notifySiteDetected(message.origin);
     return { ok: true, action: 'pending' };
-  }
-
-  if (message.type === MESSAGE_TYPES.prepareAutofill) {
-    const senderUrl = sender.url ?? sender.tab?.url;
-    const senderOrigin = senderUrl ? normalizeOrigin(senderUrl) : null;
-    const registered = senderOrigin === message.origin && (await isRegistered(message.origin));
-    return { ok: true, registered };
   }
 
   if (message.type === MESSAGE_TYPES.getPopupState) {
@@ -91,6 +86,20 @@ async function handleMessage(
   }
 
   const origins = await getRegisteredOrigins();
+
+  if (message.type === MESSAGE_TYPES.enableCredentialLogin) {
+    if (sender.url !== browser.runtime.getURL('/popup.html') || !origins.includes(origin)) {
+      return { ok: false, error: '登録済みサイトのポップアップから設定してください。' };
+    }
+    try {
+      return await browser.tabs.sendMessage(message.tabId, {
+        type: MESSAGE_TYPES.enableCredentialLogin,
+        origin,
+      }, { frameId: 0 }) as CredentialSetupResponse;
+    } catch {
+      return { ok: false, error: 'ログインページを再読み込みして、設定をやり直してください。' };
+    }
+  }
 
   if (message.type === MESSAGE_TYPES.registerOrigin) {
     await setRegisteredOrigins([...origins, origin]);
@@ -106,7 +115,7 @@ async function handleMessage(
         await browser.tabs.sendMessage(message.tabId, {
           type: MESSAGE_TYPES.siteRegistered,
           origin,
-        });
+        }, { frameId: 0 });
       } catch {
         return { ok: true, action: 'ignore' };
       }

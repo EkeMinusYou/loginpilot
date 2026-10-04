@@ -111,3 +111,10 @@ export function hasAutofillMarker(candidate: LoginFormCandidate): boolean {
     (input) => matchesAutofillSelector(input, ':autofill') || matchesAutofillSelector(input, ':-webkit-autofill'),
   );
 }
+
+export function hasPendingPasswordAutofill(candidate: LoginFormCandidate): boolean {
+  return !hasCredentials(candidate) && (
+    matchesAutofillSelector(candidate.passwordInput, ':autofill') ||
+    matchesAutofillSelector(candidate.passwordInput, ':-webkit-autofill')
+  );
+}

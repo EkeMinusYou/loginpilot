@@ -8,6 +8,7 @@
   },
   "type": "module",
   "scripts": {
+    "postinstall": "wxt prepare",
     "lp:dev": "vite --config sites/lp/vite.config.ts",
     "lp:build": "vite build --config sites/lp/vite.config.ts",
     "lp:preview": "vite preview --config sites/lp/vite.config.ts",

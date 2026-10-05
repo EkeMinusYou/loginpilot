@@ -1,5 +1,6 @@
 node_modules/
 .wxt/
 .output/
+.wrangler/
 *.log
 .DS_Store

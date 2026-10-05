@@ -29,7 +29,7 @@ npm run build
 
 ## アイコン
 
-Pencilで採用したC案（Pilot）のアイコンです。ネイビーの背景に、白い進路マークと水色の弧を組み合わせています。デザインは`design/popup-redesign.pen`に保存しています。`public/icon.svg`を元データとし、Chromeのツールバー・拡張機能一覧・通知には`public/icon/`内のPNG（16・32・48・128px）を使用します。
+Pencilで採用したC案（Pilot）のアイコンです。ネイビーの背景に、白い進路マークと水色の弧を組み合わせています。デザインは`popup-redesign.pen`に保存しています。`public/icon.svg`を元データとし、Chromeのツールバー・拡張機能一覧・通知には`public/icon/`内のPNG（16・32・48・128px）を使用します。
 
 SVGを変更したら、以下のコマンドでPNGを再生成してください。生成したPNGもリポジトリに含めます。
 

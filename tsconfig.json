@@ -4,5 +4,5 @@
     "strict": true,
     "noEmit": true
   },
-  "include": [".wxt/**/*.d.ts", "src/**/*.ts", "src/**/*.d.ts", "wxt.config.ts", "vitest.config.ts"]
+  "include": [".wxt/**/*.d.ts", "src/**/*.ts", "src/**/*.d.ts", "sites/**/*.ts", "wxt.config.ts", "vitest.config.ts"]
 }

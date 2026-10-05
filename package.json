@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "lp:dev": "vite --config sites/lp/vite.config.ts",
+    "lp:build": "vite build --config sites/lp/vite.config.ts",
+    "lp:preview": "vite preview --config sites/lp/vite.config.ts",
+    "lp:deploy": "npm run lp:build && wrangler deploy --config sites/lp/wrangler.jsonc",
     "icons:generate": "node scripts/generate-icons.mjs",
     "build": "wxt build",
     "dev": "wxt",
@@ -19,6 +23,8 @@
   "devDependencies": {
     "@resvg/resvg-js": "2.6.2",
     "typescript": "7.0.2",
-    "vitest": "4.1.10"
+    "vite": "8.1.4",
+    "vitest": "4.1.10",
+    "wrangler": "4.142.0"
   }
 }

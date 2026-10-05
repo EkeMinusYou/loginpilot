@@ -1,0 +1,15 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "loginpilot-lp",
+  "account_id": "f4f4c2e1fc3bb9351af036981250f060",
+  "compatibility_date": "2026-10-04",
+  "assets": {
+    "directory": "../../.output/lp",
+    "not_found_handling": "404-page"
+  },
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "loginpilot.ekeminusyou.com", "custom_domain": true }
+  ]
+}

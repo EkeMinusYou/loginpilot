@@ -296,8 +296,16 @@ function render(): void {
   } else if (feedback) {
     content.append(feedbackElement());
   }
-  const footer = element('footer', 'flex shrink-0 items-center gap-2 border-t border-line bg-soft px-5 py-3.5 text-[11px] text-secondary');
-  footer.append(icon('shield', 'size-4 shrink-0 text-muted'), element('p', undefined, 'ID・パスワードは保存しません。'));
+  const footer = element('footer', 'flex shrink-0 flex-col gap-1 border-t border-line bg-soft px-5 py-3 text-[11px] text-secondary');
+  const privacy = element('div', 'flex items-center gap-2');
+  privacy.append(icon('shield', 'size-4 shrink-0 text-muted'), element('p', undefined, 'ID・パスワードは保存しません。'));
+  const support = element('a', 'flex min-h-8 w-fit items-center gap-1.5 rounded-sm py-1 text-xs font-medium text-accent underline-offset-4 hover:underline', '開発を支援する');
+  support.href = 'https://buymeacoffee.com/euonymuslke';
+  support.target = '_blank';
+  support.rel = 'noopener noreferrer';
+  support.setAttribute('aria-label', 'Buy Me a CoffeeでLogin Pilotの開発を支援する（新しいタブで開きます）');
+  support.append(icon('arrow', 'size-3.5 shrink-0'));
+  footer.append(privacy, support);
   wrapper.append(header, content, footer);
   app.replaceChildren(wrapper);
   if (focusAfterAction) {

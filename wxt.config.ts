@@ -10,6 +10,16 @@ const icons = {
 
 export default defineConfig({
   srcDir: 'src',
+  hooks: {
+    'build:publicAssets'(wxt, files) {
+      for (const filename of ['LICENSE', 'THIRD_PARTY_LICENSES.txt']) {
+        files.push({
+          absoluteSrc: resolve(wxt.config.root, filename),
+          relativeDest: filename === 'LICENSE' ? 'LICENSE.txt' : filename,
+        });
+      }
+    },
+  },
   manifest: {
     name: 'Login Pilot',
     description: 'Automatically submits registered login forms after autofill.',
@@ -24,3 +34,4 @@ export default defineConfig({
     plugins: [tailwindcss()],
   }),
 });
+import { resolve } from 'node:path';

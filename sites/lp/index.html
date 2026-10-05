@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#14233b" />
+    <title>Login Pilot — ログインの最後のクリックを、なくそう。</title>
+    <meta name="description" content="Google パスワード マネージャーと連携して、登録したサイトのログインフォームを自動送信するChrome拡張機能。ID・パスワードは拡張機能に保存しません。Chromeウェブストア公開準備中。" />
+    <link rel="canonical" href="https://loginpilot.ekeminusyou.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:site_name" content="Login Pilot" />
+    <meta property="og:title" content="Login Pilot — ログインの最後のクリックを、なくそう。" />
+    <meta property="og:description" content="入力だけで終わらない、自動ログイン。Google パスワード マネージャーと連携するChrome拡張機能。" />
+    <meta property="og:url" content="https://loginpilot.ekeminusyou.com/" />
+    <meta property="og:image" content="https://loginpilot.ekeminusyou.com/social.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Login Pilot — ログインの最後のクリックを、なくそう。" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="../../public/icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400&amp;family=Noto+Sans+JP:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="antialiased">
+    <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-6 focus:z-50 focus:rounded-lg focus:bg-white focus:p-4">本文へ移動</a>
+    <header class="border-b border-[var(--color-line)]">
+      <nav aria-label="メインナビゲーション" class="mx-auto flex min-h-20 max-w-[1440px] items-center justify-between gap-5 px-6 md:min-h-24 md:px-12 xl:px-20">
+        <a href="/" aria-label="Login Pilot トップページ" class="flex shrink-0 items-center gap-3">
+          <img src="../../public/icon.svg" width="36" height="36" alt="" class="size-9" />
+          <span class="font-brand text-[23px] font-semibold tracking-[-0.7px]">Login Pilot</span>
+        </a>
+        <div class="flex items-center gap-8">
+          <a href="#how-it-works" class="hidden text-sm transition-colors hover:text-[var(--color-accent)] lg:block">仕組み</a>
+          <a href="#privacy" class="hidden text-sm transition-colors hover:text-[var(--color-accent)] lg:block">安心への設計</a>
+          <a href="#start" class="hidden text-sm transition-colors hover:text-[var(--color-accent)] lg:block">使い方</a>
+          <a href="#start" class="flex min-h-11 items-center gap-3 rounded-lg bg-[var(--color-ink)] px-4 py-3 text-xs font-semibold text-white transition-colors hover:bg-[var(--color-dark)] md:gap-4 md:px-6 md:py-4 md:text-base">
+            使い始める
+            <svg aria-hidden="true" class="hidden size-[18px] sm:block"><use href="/icons.svg#arrow-right" /></svg>
+          </a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section aria-labelledby="hero-title" class="bg-[var(--color-hero)]">
+        <div class="mx-auto flex max-w-[1440px] flex-col items-center gap-7 px-6 pt-14 text-center md:px-12 md:pt-[70px] xl:px-20">
+          <p class="font-mono text-[11px] tracking-[2px] text-[var(--color-secondary)] md:text-[13px]">ONE LESS CLICK. MORE FLOW.</p>
+          <h1 id="hero-title" class="text-[clamp(30px,4.05vw,58px)] leading-[1.35] font-bold tracking-[-0.02em]"><span class="inline-block">ログインの</span><span class="inline-block">最後のクリックを、</span><br />なくそう。</h1>
+          <p class="max-w-[850px] text-[15px] leading-[1.8] text-[var(--color-secondary)] md:text-lg">Google パスワード マネージャーの保存済み情報を、Chromeの標準APIで。<br class="hidden md:block" />
+            Login Pilot が、登録したサイトのログインフォームを自動送信します。</p>
+          <div class="flex flex-col items-center gap-5 sm:flex-row sm:gap-6">
+            <a href="#start" class="flex min-h-12 items-center gap-4 rounded-lg bg-[var(--color-accent)] px-6 py-4 text-base font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)]">Chromeで使い始める <svg aria-hidden="true" class="size-[18px]"><use href="/icons.svg#arrow-right" /></svg></a>
+            <a href="#how-it-works" class="py-2 text-[15px] text-[var(--color-secondary)] underline-offset-4 hover:underline">仕組みを見る ↓</a>
+          </div>
+          <p class="text-xs leading-6 text-[var(--color-muted)] md:text-[13px]">Chrome 拡張機能 · 使うサイトは自分で選べます<br /><span>Chromeウェブストア公開準備中</span></p>
+
+          <div role="img" aria-label="動作イメージ：保存済みのメールアドレスとパスワードが入力され、Login Pilotが登録済みサイトのログインフォームを自動送信します。" class="w-full max-w-[1050px] overflow-hidden rounded-t-2xl border border-b-0 border-[var(--color-demo-line)] bg-white text-left">
+            <div class="flex items-center gap-3 bg-[var(--color-chrome)] px-4 py-[18px] md:gap-5 md:px-6">
+              <span aria-hidden="true" class="shrink-0 text-[10px] tracking-[4px] text-[var(--color-muted)] md:text-xs">● ● ●</span>
+              <div class="flex min-w-0 flex-1 items-center gap-2.5 rounded-md bg-white px-3 py-2 text-[var(--color-secondary)] md:px-4">
+                <svg aria-hidden="true" class="size-3.5 shrink-0"><use href="/icons.svg#lock" /></svg>
+                <span class="font-mono truncate text-[10px] sm:text-xs">workspace.example / login</span>
+              </div>
+              <svg aria-hidden="true" class="size-[18px] shrink-0 text-[var(--color-secondary)]"><use href="/icons.svg#puzzle" /></svg>
+            </div>
+            <div class="grid items-center gap-8 px-6 py-8 md:px-10 lg:grid-cols-[minmax(0,1fr)_390px] lg:gap-16 lg:px-14 lg:py-[38px]">
+              <div class="flex min-w-0 flex-col gap-3.5">
+                <p class="text-xs text-[var(--color-muted)]">動作イメージ</p>
+                <p class="text-2xl font-bold">おかえりなさい</p>
+                <p class="text-xs text-[var(--color-muted)]">メールアドレス</p>
+                <div class="font-brand rounded-md border border-[var(--color-demo-line)] bg-[var(--color-demo-field)] px-4 py-3 text-[15px] text-[var(--color-demo-value)]">you@example.com</div>
+                <p class="text-xs text-[var(--color-muted)]">パスワード</p>
+                <div class="font-brand rounded-md border border-[var(--color-demo-line)] bg-[var(--color-demo-field)] px-4 py-3 text-[15px] text-[var(--color-demo-value)]">••••••••••••</div>
+                <div class="rounded-md bg-[var(--color-accent)] p-3 text-center text-sm font-semibold text-white">ログイン</div>
+              </div>
+              <div class="flex min-w-0 flex-col gap-5 rounded-xl border border-[var(--color-demo-line)] bg-[var(--color-demo-panel)] p-6 md:p-7">
+                <div class="flex items-center gap-3">
+                  <img src="../../public/icon.svg" width="36" height="36" alt="" class="size-9" />
+                  <span class="font-brand text-[23px] font-semibold tracking-[-0.7px]">Login Pilot</span>
+                </div>
+                <p class="flex items-center gap-2 text-sm text-[var(--color-success)]"><svg aria-hidden="true" class="size-[18px] shrink-0"><use href="/icons.svg#circle-check" /></svg>このサイトは登録済み</p>
+                <hr class="border-[var(--color-line)]" />
+                <p class="flex items-center gap-3 text-[15px]"><svg aria-hidden="true" class="size-[18px] shrink-0 text-[var(--color-accent)]"><use href="/icons.svg#check" /></svg>自動入力を検知</p>
+                <p class="flex items-center gap-3 text-[15px]"><svg aria-hidden="true" class="size-[18px] shrink-0 text-[var(--color-accent)]"><use href="/icons.svg#check" /></svg>ログインフォームを自動送信</p>
+                <p class="text-xs leading-relaxed text-[var(--color-muted)]">ID・パスワードは保存しません。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="benefits-title" class="mx-auto flex max-w-[1440px] flex-col gap-8 px-6 py-14 md:gap-[42px] md:px-12 md:py-20 xl:px-20">
+        <p class="font-mono text-[13px] tracking-[1.5px] text-[var(--color-body)]">AUTOFILL → AUTO LOGIN</p>
+        <h2 id="benefits-title" class="text-[clamp(26px,2.4vw,34px)] leading-[1.5] font-bold"><span class="inline-block">入力だけで終わらない、</span><span class="inline-block">自動ログイン。</span></h2>
+        <div class="grid gap-10 md:grid-cols-3 md:gap-12">
+          <article class="flex flex-col gap-4">
+            <svg aria-hidden="true" class="size-7 text-[var(--color-accent)]"><use href="/icons.svg#mouse-pointer-2" /></svg>
+            <h3 class="text-[22px] font-bold">クリックを、ひとつ減らす。</h3>
+            <p class="text-base leading-[1.8] text-[var(--color-body)]">Chromeの標準APIと自動入力を利用。<br />登録サイトのフォームを自動送信。</p>
+          </article>
+          <article class="flex flex-col gap-4">
+            <svg aria-hidden="true" class="size-7 text-[var(--color-accent)]"><use href="/icons.svg#globe" /></svg>
+            <h3 class="text-[22px] font-bold">登録したサイトだけ。</h3>
+            <p class="text-base leading-[1.8] text-[var(--color-body)]">自動ログインするサイトを選択。<br />未登録のサイトでは送信しません。</p>
+          </article>
+          <article class="flex flex-col gap-4">
+            <svg aria-hidden="true" class="size-7 text-[var(--color-accent)]"><use href="/icons.svg#shield-check" /></svg>
+            <h3 class="text-[22px] font-bold">秘密は、預かりません。</h3>
+            <p class="text-base leading-[1.8] text-[var(--color-body)]">ID・パスワードを保存せず、<br />外部サービスへ送らない設計です。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="privacy" aria-labelledby="privacy-title" class="bg-[var(--color-dark)] text-white">
+        <div class="mx-auto grid max-w-[1440px] items-center gap-10 px-6 py-14 md:px-12 md:py-16 xl:grid-cols-[minmax(0,1fr)_490px] xl:gap-20 xl:px-20">
+          <div class="flex flex-col gap-5">
+            <p class="font-mono text-xs tracking-[0.08em] text-sky-300">YOUR PASSWORDS STAY YOURS.</p>
+            <h2 id="privacy-title" class="text-[clamp(26px,2.3vw,32px)] leading-[1.6] font-bold">パスワード管理は、<br />これまでどおりChromeに。</h2>
+            <p class="text-base leading-[1.9] text-[var(--color-dark-body)]">Chromeの標準APIで保存済み情報を取得。<br />入力・送信時に一時的に扱い、<br />拡張機能には保存しません。</p>
+          </div>
+          <ul class="flex flex-col gap-[22px] text-[15px] leading-relaxed md:text-base">
+            <li class="flex items-center gap-3"><svg aria-hidden="true" class="size-5 shrink-0 text-sky-300"><use href="/icons.svg#check" /></svg>拡張機能に認証情報を保存しない</li>
+            <li class="flex items-center gap-3"><svg aria-hidden="true" class="size-5 shrink-0 text-sky-300"><use href="/icons.svg#check" /></svg>バックグラウンドへ認証情報を送らない</li>
+            <li class="flex items-center gap-3"><svg aria-hidden="true" class="size-5 shrink-0 text-sky-300"><use href="/icons.svg#check" /></svg>手入力中のフォームを上書きしない</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="how-it-works" aria-labelledby="how-title" class="mx-auto flex max-w-[1440px] flex-col gap-10 px-6 py-14 md:px-12 md:py-[72px] xl:px-20">
+        <div class="flex flex-col gap-4">
+          <p class="font-mono text-[11px] tracking-[1.5px] text-[var(--color-body)] sm:text-[13px]">STANDARD API. TRANSPARENT DESIGN.</p>
+          <h2 id="how-title" class="text-[clamp(26px,2.4vw,34px)] leading-[1.5] font-bold">仕組みがわかる。だから、納得して使える。</h2>
+        </div>
+        <div class="grid gap-10 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] xl:gap-16">
+          <div class="flex min-w-0 flex-col gap-5">
+            <h3 class="flex items-start gap-3 text-[22px] leading-relaxed font-bold"><svg aria-hidden="true" class="mt-1.5 size-[22px] shrink-0 text-[var(--color-accent)]"><use href="/icons.svg#panels-top-left" /></svg>Chromeが対応する、Web標準のAPIを利用。</h3>
+            <p class="font-brand text-lg font-semibold text-[var(--color-accent)]">Credential Management API</p>
+            <p class="text-base leading-[1.9] text-[var(--color-body)]"><code class="font-mono break-all text-[15px]">navigator.credentials.get()</code> を通じて、対象サイトの保存済みID・パスワードを取得します。初回はChromeの確認を経て設定し、次回以降は確認画面なしで取得を試みます。</p>
+            <ol aria-label="自動ログインの流れ" class="grid grid-cols-1 items-center gap-4 border-y border-[var(--color-line)] py-[18px] sm:grid-cols-[1fr_18px_1fr_18px_1fr]">
+              <li class="flex flex-col gap-2"><span class="font-mono text-xs text-[var(--color-accent)]">01</span><span class="text-sm text-[var(--color-secondary)]">Chromeに取得を要求</span></li>
+              <li aria-hidden="true" class="text-[var(--color-muted)]"><svg class="size-[18px] rotate-90 sm:rotate-0"><use href="/icons.svg#arrow-right" /></svg></li>
+              <li class="flex flex-col gap-2"><span class="font-mono text-xs text-[var(--color-accent)]">02</span><span class="text-sm text-[var(--color-secondary)]">ページ内で入力</span></li>
+              <li aria-hidden="true" class="text-[var(--color-muted)]"><svg class="size-[18px] rotate-90 sm:rotate-0"><use href="/icons.svg#arrow-right" /></svg></li>
+              <li class="flex flex-col gap-2"><span class="font-mono text-xs text-[var(--color-accent)]">03</span><span class="text-sm text-[var(--color-secondary)]">フォームを送信</span></li>
+            </ol>
+            <p class="text-sm leading-[1.8] text-[var(--color-body)]">APIで取得できない場合は、通常の自動入力が確定するのを待ちます。</p>
+          </div>
+          <aside aria-labelledby="source-title" class="flex min-w-0 flex-col gap-5 rounded-lg bg-[var(--color-soft)] p-6 md:p-7">
+            <h3 id="source-title" class="flex items-start gap-3 text-[19px] leading-relaxed font-bold"><svg aria-hidden="true" class="mt-1 size-[22px] shrink-0 text-[var(--color-accent)]"><use href="/icons.svg#code-xml" /></svg>コードで確かめられる透明性へ。</h3>
+            <span class="w-fit rounded bg-[var(--color-badge)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-secondary)]">ソースコード公開中</span>
+            <p class="text-[15px] leading-[1.9] text-[var(--color-body)]">APIの利用方法、認証情報の扱い、自動送信の条件を、GitHubで公開しているソースコードから確認できます。</p>
+            <a href="https://github.com/EkeMinusYou/loginpilot" target="_blank" rel="noopener noreferrer" class="flex w-fit items-center gap-2 text-sm font-semibold text-[var(--color-accent)] underline-offset-4 hover:underline">GitHubでソースコードを見る <svg aria-hidden="true" class="size-4"><use href="/icons.svg#arrow-right" /></svg><span class="sr-only">（新しいタブで開きます）</span></a>
+            <p class="text-[13px] leading-[1.8] text-[var(--color-body)]">コードの公開だけで安全性が保証されるものではありません。認証情報を保存・送信しない設計と、実装の透明性を大切にします。</p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="start" aria-labelledby="start-title" class="mx-auto flex max-w-[1440px] flex-col gap-10 px-6 py-14 md:px-12 md:py-[76px] xl:px-20">
+        <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <h2 id="start-title" class="text-[clamp(25px,2.15vw,30px)] leading-[1.5] font-bold">はじめの設定だけ。あとは、いつものように。</h2>
+          <span class="font-mono shrink-0 text-[13px] text-[var(--color-muted)]">3 STEPS</span>
+        </div>
+        <div class="flex flex-col gap-2 border-l-[3px] border-[var(--color-accent)] pl-5">
+          <p class="text-base font-semibold">Chromeウェブストアでの公開準備中です。</p>
+          <p class="text-sm leading-relaxed text-[var(--color-body)]">公開後、このページからChromeに追加できるようになります。以下は公開後の導入手順です。</p>
+        </div>
+        <ol class="grid gap-10 md:grid-cols-3">
+          <li class="flex flex-col gap-3.5">
+            <span class="font-brand text-[42px] font-medium text-[var(--color-accent)]">01</span>
+            <hr class="border-[var(--color-line)]" />
+            <h3 class="text-[21px] font-bold">Chromeに追加</h3>
+            <p class="text-[15px] leading-[1.8] text-[var(--color-body)]">公開後、Chromeウェブストアから追加し、<br class="hidden xl:block" />ログインページを開きます。</p>
+          </li>
+          <li class="flex flex-col gap-3.5">
+            <span class="font-brand text-[42px] font-medium text-[var(--color-accent)]">02</span>
+            <hr class="border-[var(--color-line)]" />
+            <h3 class="text-[21px] font-bold">サイトを登録</h3>
+            <p class="text-[15px] leading-[1.8] text-[var(--color-body)]">ポップアップから、<br />自動ログインするサイトを登録。</p>
+          </li>
+          <li class="flex flex-col gap-3.5">
+            <span class="font-brand text-[42px] font-medium text-[var(--color-accent)]">03</span>
+            <hr class="border-[var(--color-line)]" />
+            <h3 class="text-[21px] font-bold">自動ログインを設定</h3>
+            <p class="text-[15px] leading-[1.8] text-[var(--color-body)]">「クリックなしのログインを設定」<br class="hidden xl:block" />を押し、Chromeの確認を承認。</p>
+          </li>
+        </ol>
+        <aside aria-labelledby="requirements-title" class="flex flex-col gap-2.5 rounded-lg bg-[var(--color-soft)] p-6">
+          <h3 id="requirements-title" class="text-sm font-semibold text-[var(--color-secondary)]">標準APIによる、クリックなしのログインについて</h3>
+          <p class="text-sm leading-[1.8] text-[var(--color-body)]">HTTPSのページ・保存済みアカウントが1件・Chromeの「自動的にログイン」が有効な場合に利用できます。<br class="hidden lg:block" />複数アカウントやデバイス認証などで取得できない場合は、通常の自動入力が確定するのを待ちます。</p>
+        </aside>
+      </section>
+
+      <section aria-labelledby="closing-title" class="bg-[var(--color-cta)]">
+        <div class="mx-auto flex max-w-[1440px] flex-col items-center gap-6 px-6 py-14 text-center md:px-12 md:py-16 xl:px-20">
+          <h2 id="closing-title" class="text-[clamp(26px,2.5vw,36px)] leading-[1.5] font-bold"><span class="inline-block">いつものログインを、</span><span class="inline-block">少し軽く。</span></h2>
+          <a href="#start" class="flex min-h-12 items-center gap-4 rounded-lg bg-[var(--color-accent)] px-6 py-4 text-base font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)]">Chromeで使い始める <svg aria-hidden="true" class="size-[18px]"><use href="/icons.svg#arrow-right" /></svg></a>
+          <p class="text-sm leading-relaxed text-[var(--color-secondary)]">Chromeウェブストア公開準備中 · ソースコード公開中</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 py-8 md:px-12 xl:px-20">
+      <hr class="border-[var(--color-line)]" />
+      <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+        <a href="/" class="flex w-fit items-center gap-3"><img src="../../public/icon.svg" width="32" height="32" alt="" class="size-8" /><span class="font-brand text-[22px] font-semibold tracking-[-0.7px]">Login Pilot</span></a>
+        <a href="https://github.com/EkeMinusYou/loginpilot" target="_blank" rel="noopener noreferrer" class="w-fit text-sm text-[var(--color-secondary)] underline-offset-4 hover:underline">GitHub · ソースコード公開中<span class="sr-only">（新しいタブで開きます）</span></a>
+      </div>
+      <p class="text-xs leading-relaxed text-[var(--color-body)]">Login Pilot · Chrome extension / Google パスワード マネージャーと連携 · <a href="https://github.com/EkeMinusYou/loginpilot/blob/main/docs/privacy.md" class="underline underline-offset-4">プライバシーとデータの扱い</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,5 +1,48 @@
 import { describe, expect, it } from 'vitest';
-import { hasPendingPasswordAutofill, type LoginFormCandidate } from './form-detector';
+import { parseHTML } from 'linkedom';
+import { findLoginForm, hasPendingPasswordAutofill, type LoginFormCandidate } from './form-detector';
+
+function root(html: string): ParentNode {
+  const { document } = parseHTML(`<html><body>${html}</body></html>`);
+  for (const input of document.querySelectorAll('input')) {
+    Object.defineProperties(input, {
+      autocomplete: { value: input.getAttribute('autocomplete') ?? '' },
+      getClientRects: { value: () => [{}] },
+    });
+  }
+  return document as unknown as ParentNode;
+}
+
+describe('findLoginForm', () => {
+  it('finds a normal login form with section-prefixed autocomplete tokens', () => {
+    const candidate = findLoginForm(root('<form><input type="email" autocomplete="section-login username"><input type="password" autocomplete="section-login current-password"></form>'));
+    expect(candidate).not.toBeNull();
+    expect(candidate?.passwordInput.autocomplete).toBe('section-login current-password');
+  });
+
+  it.each(['new-password', 'section-signup new-password', 'NEW-PASSWORD'])(
+    'rejects registration forms marked %s', (autocomplete) => {
+      expect(findLoginForm(root(`<form><input type="email"><input type="password" autocomplete="${autocomplete}"></form>`))).toBeNull();
+    },
+  );
+
+  it('rejects password-change forms containing both old and new passwords', () => {
+    expect(findLoginForm(root('<form><input type="email"><input type="password" autocomplete="current-password"><input type="password" autocomplete="new-password"></form>'))).toBeNull();
+  });
+
+  it('rejects unmarked registration forms with a confirmation password', () => {
+    expect(findLoginForm(root('<form><input type="email"><input type="password"><input type="password"></form>'))).toBeNull();
+  });
+
+  it('skips registration forms and finds a subsequent login form', () => {
+    const candidate = findLoginForm(root('<form id="signup"><input type="email"><input type="password" autocomplete="new-password"></form><form id="login"><input type="email"><input type="password" autocomplete="current-password"></form>'));
+    expect(candidate?.form.id).toBe('login');
+  });
+
+  it('continues to support login forms without autocomplete hints', () => {
+    expect(findLoginForm(root('<form><input type="text" name="username"><input type="password" name="password"></form>'))).not.toBeNull();
+  });
+});
 
 function candidate(username: string, password: string, passwordAutofilled: boolean): LoginFormCandidate {
   return {

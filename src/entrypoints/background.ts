@@ -16,12 +16,9 @@ import {
   type CredentialSetupResponse,
 } from '../shared/messages';
 import { normalizeOrigin } from '../shared/origins';
+import { isAuthorizedRuntimeMessage, isRuntimeMessage } from '../shared/message-validation';
 
 const NOTIFICATION_ID = 'auto-signin-site-detected';
-
-function isMessage(value: unknown): value is RuntimeMessage {
-  return typeof value === 'object' && value !== null && 'type' in value;
-}
 
 async function isRegistered(origin: string): Promise<boolean> {
   const origins = await getRegisteredOrigins();
@@ -59,6 +56,9 @@ async function handleMessage(
   message: RuntimeMessage,
   sender: Browser.runtime.MessageSender,
 ): Promise<PopupResponse | CredentialSetupResponse | { ok: true; action: 'submit' | 'ignore' | 'pending' } | { ok: false; error: string }> {
+  if (!isAuthorizedRuntimeMessage(message, sender, browser.runtime.id, browser.runtime.getURL('/popup.html'))) {
+    return { ok: false, error: 'この操作は許可されていません。' };
+  }
   if (message.type === MESSAGE_TYPES.autofillDetected || message.type === MESSAGE_TYPES.getLoginPolicy) {
     const senderUrl = sender.url ?? sender.tab?.url;
     const senderOrigin = senderUrl ? normalizeOrigin(senderUrl) : null;
@@ -92,6 +92,10 @@ async function handleMessage(
       return { ok: false, error: '登録済みサイトのポップアップから設定してください。' };
     }
     try {
+      const tab = await browser.tabs.get(message.tabId);
+      if (!tab.url || normalizeOrigin(tab.url) !== origin) {
+        return { ok: false, error: '対象のログインページを開いてください。' };
+      }
       return await browser.tabs.sendMessage(message.tabId, {
         type: MESSAGE_TYPES.enableCredentialLogin,
         origin,
@@ -112,6 +116,10 @@ async function handleMessage(
 
     if (message.tabId !== undefined) {
       try {
+        const tab = await browser.tabs.get(message.tabId);
+        if (!tab.url || normalizeOrigin(tab.url) !== origin) {
+          return { ok: true, action: 'ignore' };
+        }
         await browser.tabs.sendMessage(message.tabId, {
           type: MESSAGE_TYPES.siteRegistered,
           origin,
@@ -134,7 +142,7 @@ async function handleMessage(
 
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (!isMessage(message)) {
+    if (!isRuntimeMessage(message)) {
       return false;
     }
 

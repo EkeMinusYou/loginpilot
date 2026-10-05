@@ -2,23 +2,37 @@
   "name": "loginpilot",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.15.0 <25"
+  },
   "type": "module",
   "scripts": {
+    "postinstall": "wxt prepare",
+    "lp:dev": "vite --config sites/lp/vite.config.ts",
+    "lp:build": "vite build --config sites/lp/vite.config.ts",
+    "lp:preview": "vite preview --config sites/lp/vite.config.ts",
+    "lp:deploy": "npm run lp:build && wrangler deploy --config sites/lp/wrangler.jsonc",
+    "lp:deploy:production": "npm run lp:build && wrangler deploy --config sites/lp/wrangler.production.jsonc",
     "icons:generate": "node scripts/generate-icons.mjs",
+    "browser:fixture": "node scripts/browser-fixture.mjs",
     "build": "wxt build",
     "dev": "wxt",
     "typecheck": "wxt prepare && tsc --noEmit",
     "test": "vitest run",
+    "audit": "npm audit --audit-level=low",
     "zip": "wxt zip"
-  },
-  "dependencies": {
-    "@tailwindcss/vite": "4.3.2",
-    "tailwindcss": "4.3.2",
-    "wxt": "0.20.27"
   },
   "devDependencies": {
     "@resvg/resvg-js": "2.6.2",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "24.19.1",
+    "linkedom": "0.18.13",
+    "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
-    "vitest": "4.1.10"
+    "vite": "8.3.1",
+    "vitest": "4.1.11",
+    "wrangler": "4.147.0",
+    "wxt": "0.21.4"
   }
 }

@@ -1,0 +1,43 @@
+@import 'tailwindcss' source('./');
+
+:root {
+  --color-ink: #14233b;
+  --color-body: #607086;
+  --color-secondary: #53657b;
+  --color-muted: #687c93;
+  --color-accent: #1468d4;
+  --color-accent-hover: #0f56b3;
+  --color-line: #dfe6ef;
+  --color-hero: #f4f8fc;
+  --color-soft: #f4f7fa;
+  --color-dark: #112239;
+  --color-dark-body: #b5c6d9;
+  --color-success: #237350;
+  --color-demo-field: #f5f8fc;
+  --color-demo-panel: #f5f9fd;
+  --color-demo-line: #d6e5f3;
+  --color-demo-value: #3b536f;
+  --color-chrome: #ebf0f6;
+  --color-badge: #e3ebf5;
+  --color-cta: #eaf3ff;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+    color: var(--color-ink);
+    background: white;
+  }
+  a:focus-visible, summary:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 5px;
+  }
+  section[id] { scroll-margin-top: 24px; }
+  .font-brand { font-family: 'Geist', system-ui, sans-serif; }
+  .font-mono { font-family: 'Geist Mono', monospace; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}

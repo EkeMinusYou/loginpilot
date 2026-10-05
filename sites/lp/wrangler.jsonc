@@ -1,0 +1,11 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "loginpilot-lp",
+  "compatibility_date": "2026-10-04",
+  "assets": {
+    "directory": "../../.output/lp",
+    "not_found_handling": "404-page"
+  },
+  "workers_dev": true,
+  "preview_urls": false
+}

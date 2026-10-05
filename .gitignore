@@ -1,5 +1,12 @@
 node_modules/
 .wxt/
 .output/
+.wrangler/
 *.log
 .DS_Store
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+sites/lp/wrangler.production.jsonc

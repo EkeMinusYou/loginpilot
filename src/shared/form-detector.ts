@@ -17,6 +17,10 @@ function inputTokens(input: HTMLInputElement): string {
     .toLowerCase();
 }
 
+function autocompleteTokens(input: HTMLInputElement): string[] {
+  return input.autocomplete.toLowerCase().split(/\s+/);
+}
+
 function scoreUsernameInput(input: HTMLInputElement): number {
   if (!isVisibleInput(input)) {
     return -1;
@@ -27,11 +31,11 @@ function scoreUsernameInput(input: HTMLInputElement): number {
     return -1;
   }
 
-  const autocomplete = input.autocomplete.toLowerCase();
+  const autocomplete = autocompleteTokens(input);
   const tokens = inputTokens(input);
 
   let score = type === 'email' ? 30 : 10;
-  if (autocomplete === 'username') {
+  if (autocomplete.includes('username')) {
     score += 100;
   }
   if (USERNAME_TOKENS.some((token) => tokens.includes(token))) {
@@ -46,11 +50,11 @@ function scorePasswordInput(input: HTMLInputElement): number {
     return -1;
   }
 
-  const autocomplete = input.autocomplete.toLowerCase();
+  const autocomplete = autocompleteTokens(input);
   const tokens = inputTokens(input);
   let score = 10;
 
-  if (autocomplete === 'current-password' || autocomplete === 'password') {
+  if (autocomplete.includes('current-password') || autocomplete.includes('password')) {
     score += 100;
   }
   if (PASSWORD_TOKENS.some((token) => tokens.includes(token))) {
@@ -83,6 +87,14 @@ export function findLoginForm(root: ParentNode = document): LoginFormCandidate |
 
   for (const form of forms) {
     const inputs = Array.from(form.querySelectorAll('input'));
+    const passwordInputs = inputs.filter((input) => input.type.toLowerCase() === 'password');
+
+    // Registration and password-change forms must never receive saved login credentials.
+    if (passwordInputs.length !== 1 || passwordInputs.some((input) =>
+      autocompleteTokens(input).includes('new-password'),
+    )) {
+      continue;
+    }
     const usernameInput = getBestInput(inputs, scoreUsernameInput);
     const passwordInput = getBestInput(inputs, scorePasswordInput);
 

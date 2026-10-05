@@ -1,0 +1,6 @@
+{
+  "extensionDescription": {
+    "message": "Automatically submits registered login forms after autofill.",
+    "description": "Description displayed in Chrome’s extension manager and store."
+  }
+}

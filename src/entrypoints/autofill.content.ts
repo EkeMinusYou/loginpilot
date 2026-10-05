@@ -1,6 +1,7 @@
 import { browser } from 'wxt/browser';
+import type { Browser } from 'wxt/browser';
 import { defineContentScript } from 'wxt/utils/define-content-script';
-import { findLoginForm, hasAutofillMarker, hasCredentials, hasPendingPasswordAutofill, type LoginFormCandidate } from '../shared/form-detector';
+import { findLoginForm, hasCredentials, hasPendingPasswordAutofill, type LoginFormCandidate } from '../shared/form-detector';
 import {
   MESSAGE_TYPES,
   type AutofillResponse,
@@ -9,6 +10,7 @@ import {
 } from '../shared/messages';
 import { normalizeOrigin } from '../shared/origins';
 import { fillStoredCredentials } from '../shared/credential-autofill';
+import { isContentMessage } from '../shared/message-validation';
 
 interface FormState {
   lastShape: string;
@@ -60,7 +62,7 @@ function submitLoginForm(candidate: LoginFormCandidate): void {
 }
 
 export default defineContentScript({
-  matches: ['<all_urls>'],
+  matches: ['http://*/*', 'https://*/*'],
   runAt: 'document_start',
   main(ctx) {
     const origin = normalizeOrigin(location.href);
@@ -126,7 +128,7 @@ export default defineContentScript({
       }
       state.lastShape = shape;
 
-      const likelyAutofill = hasAutofillMarker(candidate) || !state.userInteracted;
+      const likelyAutofill = !state.userInteracted;
       if (!likelyAutofill) {
         return;
       }
@@ -276,10 +278,9 @@ export default defineContentScript({
 
     observeForms();
 
-    const onRuntimeMessage = (message: unknown): Promise<CredentialSetupResponse> | undefined => {
-      if (typeof message === 'object' && message !== null && 'type' in message && 'origin' in message &&
-          (message.type === MESSAGE_TYPES.siteRegistered || message.type === MESSAGE_TYPES.enableCredentialLogin)) {
-        return handleContentMessage(message as ContentMessage);
+    const onRuntimeMessage = (message: unknown, sender: Browser.runtime.MessageSender): Promise<CredentialSetupResponse> | undefined => {
+      if (sender.id === browser.runtime.id && sender.tab === undefined && isContentMessage(message)) {
+        return handleContentMessage(message);
       }
     };
     browser.runtime.onMessage.addListener(onRuntimeMessage);

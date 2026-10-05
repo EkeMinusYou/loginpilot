@@ -1,3 +1,0 @@
-interface:
-  display_name: "YouTubeの隔離ブラウザー確認"
-  short_description: "Docker内の専用ブラウザーをMCPで操作し、表示とキー操作を確認する"

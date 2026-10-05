@@ -1,5 +1,6 @@
 import { browser } from 'wxt/browser';
 import type { PendingSite } from './messages';
+import { normalizeOrigin } from './origins';
 
 const REGISTERED_ORIGINS_KEY = 'registeredOrigins';
 const PENDING_SITE_KEY = 'pendingSite';
@@ -16,7 +17,9 @@ export async function getRegisteredOrigins(): Promise<string[]> {
     return [];
   }
 
-  return state.registeredOrigins.filter((origin): origin is string => typeof origin === 'string');
+  return [...new Set(state.registeredOrigins.filter((origin): origin is string =>
+    typeof origin === 'string' && normalizeOrigin(origin) === origin,
+  ))].sort();
 }
 
 export async function setRegisteredOrigins(origins: string[]): Promise<void> {
@@ -34,7 +37,8 @@ export async function getPendingSite(): Promise<PendingSite | null> {
 
   const pendingSite = state.pendingSite as Partial<PendingSite>;
 
-  if (typeof pendingSite.origin !== 'string' || typeof pendingSite.detectedAt !== 'number') {
+  if (typeof pendingSite.origin !== 'string' || normalizeOrigin(pendingSite.origin) !== pendingSite.origin ||
+      typeof pendingSite.detectedAt !== 'number' || !Number.isFinite(pendingSite.detectedAt) || pendingSite.detectedAt < 0) {
     return null;
   }
 

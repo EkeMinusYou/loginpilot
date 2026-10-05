@@ -2,7 +2,8 @@
   "extends": "./.wxt/tsconfig.json",
   "compilerOptions": {
     "strict": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node"]
   },
   "include": [".wxt/**/*.d.ts", "src/**/*.ts", "src/**/*.d.ts", "sites/**/*.ts", "wxt.config.ts", "vitest.config.ts"]
 }

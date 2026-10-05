@@ -22,7 +22,8 @@ export default defineConfig({
   },
   manifest: {
     name: 'Login Pilot',
-    description: 'Automatically submits registered login forms after autofill.',
+    description: '__MSG_extensionDescription__',
+    default_locale: 'en',
     permissions: ['activeTab', 'notifications', 'storage'],
     icons,
     action: {

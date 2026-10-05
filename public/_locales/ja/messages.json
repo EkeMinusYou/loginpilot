@@ -1,0 +1,6 @@
+{
+  "extensionDescription": {
+    "message": "保存済みログイン情報の自動入力を検知し、登録したサイトのログインフォームを自動送信します。",
+    "description": "Description displayed in Chrome’s extension manager and store."
+  }
+}

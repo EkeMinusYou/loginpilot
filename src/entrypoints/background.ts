@@ -17,6 +17,8 @@ import {
 } from '../shared/messages';
 import { normalizeOrigin } from '../shared/origins';
 import { isAuthorizedRuntimeMessage, isRuntimeMessage } from '../shared/message-validation';
+import { createTranslator } from '../shared/i18n';
+import { getExtensionLocale } from '../shared/extension-language';
 
 const NOTIFICATION_ID = 'auto-signin-site-detected';
 
@@ -31,11 +33,12 @@ async function notifySiteDetected(origin: string): Promise<void> {
   await browser.action.setBadgeBackgroundColor({ color: '#0284c7' });
 
   try {
+    const t = createTranslator(await getExtensionLocale());
     await browser.notifications.create(NOTIFICATION_ID, {
       type: 'basic',
       iconUrl: browser.runtime.getURL('/icon/128.png'),
       title: 'Login Pilot',
-      message: `${origin} でログイン情報の自動入力を検知しました。拡張機能を開いて登録できます。`,
+      message: t('notification', { origin }),
     });
   } catch {
     return;

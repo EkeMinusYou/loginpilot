@@ -29,6 +29,7 @@
     color: var(--color-ink);
     background: white;
   }
+  html[lang='en'] body { font-family: 'Geist', 'Noto Sans JP', sans-serif; }
   a:focus-visible, summary:focus-visible {
     outline: 3px solid var(--color-accent);
     outline-offset: 5px;

@@ -4,6 +4,8 @@
 
 Dependabotはnpm依存関係を毎日、GitHub Actionsを毎週確認します。Dependabot alertsとsecurity updatesも有効にし、既知の脆弱性に修正版がある場合は更新PRを作成します。通常更新とセキュリティ更新のpatch/minorはそれぞれグループ化し、major更新は手動で確認します。
 
+`@types/node`は実行環境のNode 24に合わせて24系を維持します。Nodeの対応バージョンを変更するときに、`.nvmrc`、`package.json`の`engines`、Dependabotの除外設定もまとめて更新してください。
+
 PRでは、以下の必須チェックを実行します。
 
 - `Checks`: `npm ci`、全severityの`npm audit`、単体テスト、型チェック、拡張機能とLPのビルド。

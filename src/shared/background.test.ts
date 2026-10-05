@@ -3,6 +3,7 @@ import type { Browser } from 'wxt/browser';
 
 const mocks = vi.hoisted(() => ({
   browser: {
+    i18n: { getUILanguage: vi.fn(() => 'ja') },
     runtime: { id: 'test-extension', getURL: (path: string) => `chrome-extension://test-extension${path}`, onMessage: { addListener: vi.fn() } },
     storage: { local: { get: vi.fn(), set: vi.fn(), remove: vi.fn() } },
     tabs: { get: vi.fn(), sendMessage: vi.fn() },
@@ -30,6 +31,7 @@ function dispatch(message: unknown, sender: object = popup): Promise<unknown> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.browser.i18n.getUILanguage.mockReturnValue('ja');
   stored = { registeredOrigins: [origin] };
   mocks.browser.storage.local.get.mockImplementation(async (key: string) => ({ [key]: stored[key] }));
   mocks.browser.storage.local.set.mockImplementation(async (values: Record<string, unknown>) => { Object.assign(stored, values); });
@@ -40,6 +42,19 @@ beforeEach(() => {
 });
 
 describe('background message handling', () => {
+  it('uses the saved display language for site notifications', async () => {
+    stored.registeredOrigins = [];
+    stored.language = 'en';
+    await dispatch({ type: MESSAGE_TYPES.autofillDetected, origin }, content);
+    expect(mocks.browser.notifications.create).toHaveBeenCalledWith('auto-signin-site-detected', expect.objectContaining({
+      message: `Login autofill detected on ${origin}. Open Login Pilot to register this site.`,
+    }));
+    stored.language = 'auto';
+    await dispatch({ type: MESSAGE_TYPES.autofillDetected, origin }, content);
+    expect(mocks.browser.notifications.create).toHaveBeenLastCalledWith('auto-signin-site-detected', expect.objectContaining({
+      message: `${origin} でログイン情報の自動入力を検知しました。拡張機能を開いて登録できます。`,
+    }));
+  });
   it.each([MESSAGE_TYPES.registerOrigin, MESSAGE_TYPES.removeOrigin, MESSAGE_TYPES.getPopupState])(
     'rejects %s from content scripts without reading or changing storage', async (type) => {
       expect(await dispatch({ type, origin, currentOrigin: origin }, content)).toEqual({ ok: false, error: 'この操作は許可されていません。' });

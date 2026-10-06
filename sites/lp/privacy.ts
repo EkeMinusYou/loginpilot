@@ -5,7 +5,7 @@ function requireSupported(condition: boolean, detail: string): void {
   if (!condition) throw new Error(`Unsupported privacy Markdown: ${detail}`);
 }
 
-// This deliberately limited format is documented in CONTRIBUTING.md.
+// This deliberately limited format is documented in docs/development.md.
 export function privacyHtml(page: string, markdown: string, locale: Locale): string {
   requireSupported(!/ {2,}\n/.test(markdown), 'hard line breaks');
   const { document } = parseHTML(page);

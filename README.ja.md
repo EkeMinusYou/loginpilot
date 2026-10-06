@@ -49,22 +49,24 @@ npm ci
 npm run dev
 ```
 
-生成された拡張機能を、上記と同じ手順でChromeに読み込みます。検証コマンド、構成、多言語対応、デザイン素材については[CONTRIBUTING.md](CONTRIBUTING.md)を参照してください。開発者向けドキュメントは英語で管理しています。
+生成された拡張機能を、上記と同じ手順でChromeに読み込みます。検証コマンド、構成、多言語対応、デザイン素材については[開発ガイド（英語）](docs/development.md)を参照してください。開発者向けドキュメントは英語で管理しています。
 
 ## ドキュメントと問い合わせ
 
 | 内容 | ドキュメント |
 | --- | --- |
 | 操作・トラブルの確認 | [ユーザーガイド](docs/usage.md) |
-| 開発・運用方針 | [Contributing](CONTRIBUTING.md) |
+| 開発・検証・デザイン素材 | [Development](docs/development.md) |
 | 依存更新・CI・リリース | [Maintenance](docs/maintenance.md) |
 | ブラウザでの動作確認 | [Browser review](docs/browser-review.md) |
 | LPのデプロイ | [Deployment](docs/deployment.md) |
 | 脆弱性の報告 | [Security policy](SECURITY.md) |
 
-不具合・機能提案は[GitHub Issues](https://github.com/EkeMinusYou/loginpilot/issues/new/choose)から受け付けます。外部からのPRは受け付けません。保守者自身の変更と依存関係の自動更新にはPRを使用します。詳しくは[運用方針](CONTRIBUTING.md#contribution-policy)を参照してください。脆弱性はSecurity policyの非公開窓口へ報告してください。
-
 開発を支援いただける場合は、[Buy Me a Coffee](https://buymeacoffee.com/euonymuslke)をご利用ください。
+
+## プロジェクトの方針
+
+不具合・機能提案は[GitHub Issues](https://github.com/EkeMinusYou/loginpilot/issues/new/choose)から受け付けます。外部からのPRは受け付けません。保守者自身の変更と依存関係の自動更新にはPRを使用します。脆弱性は[Security policy](SECURITY.md)の非公開窓口へ報告してください。
 
 ## ライセンス
 

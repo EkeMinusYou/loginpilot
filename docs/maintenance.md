@@ -1,12 +1,18 @@
 # Maintenance and releases
 
-Development setup and local validation commands are in [CONTRIBUTING.md](../CONTRIBUTING.md).
+Development setup and local validation commands are in [development.md](development.md).
 
-## Pull request policy
+## Maintainer pull requests
 
-Issues are open for bug reports and feature requests. Pull requests are used for maintainer changes and automated dependency updates; external pull requests are not accepted. See the [contribution policy](../CONTRIBUTING.md#contribution-policy).
+The [project policy](../README.md#project-policy) accepts Issues and limits pull requests to maintainer changes and automated dependency updates.
 
 Keep pull requests enabled and set **Settings → General → Features → Pull requests** to **Collaborators only**. This restricts external creation while retaining maintainer PRs. See [GitHub's repository settings documentation](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/disabling-pull-requests). Dependabot can still create PRs with this restriction, as confirmed in [GitHub's feature announcement discussion](https://github.com/orgs/community/discussions/187038).
+
+Describe the problem, resulting behavior, and validation actually performed. Use English for code comments, commit messages, and PR descriptions.
+
+Remove real credentials, tokens, private URLs, and screenshots containing personal information from reports and examples. Use dummy accounts when reproducing login behavior.
+
+Original code and designs added to the project must be compatible with its MIT license. When adding third-party material, record its source and license in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) and retain any required attribution in distributed files.
 
 ## CI and dependency updates
 
@@ -49,7 +55,7 @@ npm outdated
 npm install --save-dev --save-exact PACKAGE@VERSION
 ```
 
-Run the [validation commands](../CONTRIBUTING.md#validate-changes) afterward. Read migration instructions for major updates and check affected behavior in a real browser. Do not ignore audit failures or apply overrides without checking compatibility.
+Run the [validation commands](development.md#validate-changes) afterward. Read migration instructions for major updates and check affected behavior in a real browser. Do not ignore audit failures or apply overrides without checking compatibility.
 
 Keep `@types/node` on the supported Node major. When changing Node support, update `.nvmrc`, `package.json`'s `engines`, and the Dependabot exclusion together.
 

@@ -1,16 +1,10 @@
-# Contributing
+# Development
 
-Report bugs and propose features through [GitHub Issues](https://github.com/EkeMinusYou/loginpilot/issues/new/choose). Use the private reporting channel in [SECURITY.md](SECURITY.md) for vulnerabilities.
-
-## Contribution policy
-
-Bug reports and feature requests are welcome. External pull requests are not accepted; please use Issues to describe problems or proposals instead.
-
-Maintainers use pull requests for their own changes and accept automated dependency update PRs from Dependabot. The development and PR instructions below document that maintenance workflow and support local builds.
+Local build, validation, localization, and design instructions. For the Issue and pull request policy, see [README.md](../README.md#project-policy). Maintainer pull request and release procedures are in [maintenance.md](maintenance.md).
 
 ## Development setup
 
-Use the Node.js version in [.nvmrc](.nvmrc). With nvm:
+Use the Node.js version in [.nvmrc](../.nvmrc). With nvm:
 
 ```sh
 nvm install
@@ -27,7 +21,7 @@ For the landing page:
 npm run lp:dev
 ```
 
-The development server runs at `http://127.0.0.1:4173`. Build with `npm run lp:build` and preview with `npm run lp:preview`. Deployment is covered in [docs/deployment.md](docs/deployment.md).
+The development server runs at `http://127.0.0.1:4173`. Build with `npm run lp:build` and preview with `npm run lp:preview`. Deployment is covered in [docs/deployment.md](deployment.md).
 
 ## Project structure
 
@@ -43,7 +37,7 @@ The development server runs at `http://127.0.0.1:4173`. Build with `npm run lp:b
 | `docs/` | Usage, maintenance, deployment, browser checks, and privacy policies |
 | `lp.pen` and `popup-redesign.pen` | Pencil design sources |
 
-Do not commit generated `.wxt`, `.output`, or `.wrangler` directories, credentials, or the local Cloudflare production configuration. See [.gitignore](.gitignore).
+Do not commit generated `.wxt`, `.output`, or `.wrangler` directories, credentials, or the local Cloudflare production configuration. See [.gitignore](../.gitignore).
 
 ## Validate changes
 
@@ -58,13 +52,13 @@ npm run check
 
 Python 3 is required for package checks. On Linux, use `npx playwright install --with-deps chromium` to install browser system dependencies. Integration tests load the production extension in a temporary profile, use localhost fixtures and virtual WebAuthn, and delete the profile afterward. Failure traces are saved under ignored `test-results/`. They never use your normal browser profile or saved accounts.
 
-Changes to credential handling, form detection, automatic submission, or message validation need regression tests and the relevant checks in [docs/browser-review.md](docs/browser-review.md). State browser behavior that you have not verified in the PR. For documentation-only changes, check links and the accuracy of referenced commands; changes to privacy documents also need the landing page localization tests and build because those documents are published on the website.
+Changes to credential handling, form detection, automatic submission, or message validation need regression tests and the relevant checks in [docs/browser-review.md](browser-review.md). State browser behavior that you have not verified in the PR. For documentation-only changes, check links and the accuracy of referenced commands; changes to privacy documents also need the landing page localization tests and build because those documents are published on the website.
 
-Keep `package-lock.json` in sync when changing dependencies. Dependency updates and release packaging are covered in [docs/maintenance.md](docs/maintenance.md).
+Keep `package-lock.json` in sync when changing dependencies. Dependency updates and release packaging are covered in [docs/maintenance.md](maintenance.md).
 
 ## Localization and documentation
 
-Developer documentation is maintained in English. Keep [README.md](README.md) and [README.ja.md](README.ja.md) aligned for installation, core behavior, and release availability. Put detailed usage in [docs/usage.md](docs/usage.md) instead of expanding both READMEs.
+Developer documentation is maintained in English. Keep [README.md](../README.md) and [README.ja.md](../README.ja.md) aligned for installation, core behavior, and release availability. Put detailed usage in [docs/usage.md](usage.md) instead of expanding both READMEs.
 
 The Japanese and English privacy policies in `docs/privacy.md` and `docs/privacy.en.md` are also the source for the website's privacy pages. Keep their disclosures equivalent and their filenames stable.
 
@@ -80,7 +74,7 @@ Emphasis, unordered or nested lists, code blocks, HTML, images, hard line breaks
 
 ## Design assets
 
-Open `lp.pen` or `popup-redesign.pen` in Pencil to review the design sources. [Popup design notes](design/popup-redesign-notes.md) describe the interaction principles; the current implementation determines exact copy and dimensions.
+Open `lp.pen` or `popup-redesign.pen` in Pencil to review the design sources. [Popup design notes](../design/popup-redesign-notes.md) describe the interaction principles; the current implementation determines exact copy and dimensions.
 
 The Pilot brand icon source is `public/icon.svg`. After editing it, regenerate and commit the PNG sizes used by Chrome:
 
@@ -89,11 +83,3 @@ npm run icons:generate
 ```
 
 Landing page social images are generated by `node scripts/generate-lp-social.mjs`. The script loads system fonts, so review both language variants after generating them and commit the resulting images.
-
-## Maintainer pull requests
-
-Describe the problem, resulting behavior, and validation actually performed. Use English for code comments, commit messages, and PR descriptions.
-
-Remove real credentials, tokens, private URLs, and screenshots containing personal information from reports and examples. Use dummy accounts when reproducing login behavior.
-
-Original code and designs added to the project must be compatible with its MIT license. When adding third-party material, record its source and license in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and retain any required attribution in distributed files.

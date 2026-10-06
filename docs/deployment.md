@@ -7,7 +7,7 @@ npm ci
 npm run lp:build
 ```
 
-Static files are written to `.output/lp`. For local development and preview, see [CONTRIBUTING.md](../CONTRIBUTING.md#development-setup).
+Static files are written to `.output/lp`. For local development and preview, see [development.md](development.md#development-setup).
 
 ## Deploy to your Cloudflare account
 

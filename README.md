@@ -49,22 +49,24 @@ npm ci
 npm run dev
 ```
 
-Load the generated extension in Chrome as described above. See [CONTRIBUTING.md](CONTRIBUTING.md) for validation commands, project structure, localization, and design assets.
+Load the generated extension in Chrome as described above. See the [development guide](docs/development.md) for validation commands, project structure, localization, and design assets.
 
 ## Documentation and support
 
 | Topic | Document |
 | --- | --- |
 | Usage and troubleshooting | [User guide](docs/usage.md) |
-| Development and project policy | [Contributing](CONTRIBUTING.md) |
+| Local development, validation, and design assets | [Development](docs/development.md) |
 | Dependency updates, CI, and releases | [Maintenance](docs/maintenance.md) |
 | Manual browser checks | [Browser review](docs/browser-review.md) |
 | Landing page deployment | [Deployment](docs/deployment.md) |
 | Vulnerability reporting | [Security policy](SECURITY.md) |
 
-Bug reports and feature requests are welcome through [GitHub Issues](https://github.com/EkeMinusYou/loginpilot/issues/new/choose). External pull requests are not accepted. Maintainers use pull requests for their own changes, and automated dependency update PRs are allowed. See the [project policy](CONTRIBUTING.md#contribution-policy). Report vulnerabilities privately through the security policy.
-
 If you find Login Pilot useful, you can [support development on Buy Me a Coffee](https://buymeacoffee.com/euonymuslke).
+
+## Project policy
+
+Bug reports and feature requests are welcome through [GitHub Issues](https://github.com/EkeMinusYou/loginpilot/issues/new/choose). External pull requests are not accepted. Maintainers use pull requests for their own changes, and automated dependency update PRs are allowed. Report vulnerabilities privately through the [security policy](SECURITY.md).
 
 ## License
 

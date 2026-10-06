@@ -42,6 +42,8 @@ npm run lp:build
 
 major更新は移行手順を読み、実ブラウザでも影響を確認します。監査の失敗を無視したり、ライブラリの互換性を調べずにoverrideすることは避けてください。Actionsの参照はコミットSHAに固定し、Dependabotで更新します。
 
+`source-map-js`は、依存元のバージョン範囲内で修正版`1.2.2`へ更新しています（[GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q)）。Miniflareが`sharp@0.35.4`を固定しているため、`package.json`の`overrides.miniflare.sharp`で修正版`0.35.5`を指定しています（[GHSA-wq5f-xc86-pv6w](https://github.com/advisories/GHSA-wq5f-xc86-pv6w)）。Miniflare側が修正版を採用したらoverrideを削除し、lockfileを更新して監査・ビルド・Wranglerの確認を行ってください。
+
 ## リリース
 
 1. リリース対象の変更を`main`へマージし、CIの成功を確認する。

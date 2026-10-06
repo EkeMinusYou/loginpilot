@@ -4,10 +4,11 @@
 
 | 素材 | 使用箇所 | ライセンス・出典 |
 | --- | --- | --- |
+| WXTの実行時コード | 拡張機能のcontent scriptなど | [MIT](https://github.com/wxt-dev/wxt/blob/main/LICENSE)。著作権・許諾表示を`THIRD_PARTY_LICENSES.txt`に含め、拡張機能へ同梱します。 |
 | Lucide / Feather由来のアイコン形状 | `sites/lp/public/icons.svg`とポップアップのアイコン | [ISC / MIT](https://github.com/lucide-icons/lucide/blob/main/LICENSE)。LPのSVG内にも著作権・許諾表示を保持し、拡張機能には`THIRD_PARTY_LICENSES.txt`を同梱します。 |
 | Geist / Geist Mono | LPでGoogle Fontsから読み込み | [SIL Open Font License 1.1](https://github.com/vercel/geist-font/blob/main/OFL.txt) |
 | Noto Sans JP | LPでGoogle Fontsから読み込み | [SIL Open Font License 1.1](https://github.com/notofonts/noto-cjk/blob/main/Sans/LICENSE) |
 
 フォントファイルはこのリポジトリと拡張機能に同梱していません。自己ホストする場合は、取得したフォントに付属する著作権表示とライセンスを保持してください。
 
-npm依存関係のライセンスは各パッケージのLICENSEに従います。依存関係の多くはビルド・開発用で、npmパッケージ全体を拡張機能へ配布するものではありません。生成物に第三者コード・素材を追加するときは、同梱する表示も更新してください。
+npm依存関係のライセンスは各パッケージのLICENSEに従います。依存関係の多くはビルド・開発用で、npmパッケージ全体を拡張機能へ配布するものではありません。WXTの実行時コードは生成物に含まれるため、上記の表示を同梱しています。生成物に第三者コード・素材を追加するときは、同梱する表示も更新してください。

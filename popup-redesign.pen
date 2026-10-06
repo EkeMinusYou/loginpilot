@@ -166,7 +166,7 @@
       "id": "MuvWt",
       "x": 2396,
       "y": 180,
-      "name": "リデザイン / 登録後 / 360px",
+      "name": "現行実装 / 登録後（方式表示のみ） / 360px",
       "clip": true,
       "width": 360,
       "fill": "$bg",
@@ -209,6 +209,7 @@
                   "id": "UMzgo",
                   "name": "Current site heading / Enabled",
                   "width": "fill_container",
+                  "height": 24,
                   "gap": 8,
                   "justifyContent": "space_between",
                   "alignItems": "center",
@@ -228,6 +229,7 @@
                       "type": "frame",
                       "id": "h1mex7",
                       "name": "Enabled status",
+                      "height": 24,
                       "fill": "#ECFDF5",
                       "cornerRadius": 999,
                       "gap": 6,
@@ -253,6 +255,7 @@
                           "name": "Enabled status label",
                           "fill": "$success",
                           "content": "自動ログイン有効",
+                          "lineHeight": 1.4545454545454546,
                           "fontFamily": "$body",
                           "fontSize": 11,
                           "fontWeight": "500"
@@ -275,116 +278,17 @@
                   "fontWeight": "600"
                 },
                 {
-                  "type": "frame",
-                  "id": "bm5GD",
-                  "name": "Login method selector",
+                  "type": "text",
+                  "id": "sVGGa",
+                  "name": "Registered login method / Read only",
+                  "fill": "$secondary",
+                  "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 8,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "dBRCj",
-                      "name": "Login method / Segmented control",
-                      "width": "fill_container",
-                      "height": 48,
-                      "fill": "$bg",
-                      "cornerRadius": 8,
-                      "stroke": "$line",
-                      "strokeWidth": 1,
-                      "gap": 4,
-                      "padding": 4,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "xOZcz",
-                          "name": "パスワード / Selected",
-                          "width": "fill_container",
-                          "height": "fill_container",
-                          "fill": "#E0F2FE",
-                          "cornerRadius": 5,
-                          "stroke": "#7DD3FC",
-                          "strokeWidth": 1,
-                          "gap": 6,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "dEHn5",
-                              "name": "Selected method check",
-                              "width": 14,
-                              "height": 14,
-                              "icon": "check",
-                              "library": "lucide",
-                              "fill": "$accent"
-                            },
-                            {
-                              "type": "text",
-                              "id": "jP0rj",
-                              "name": "パスワード label",
-                              "fill": "$accent",
-                              "content": "パスワード",
-                              "fontFamily": "Noto Sans JP",
-                              "fontSize": 12,
-                              "fontWeight": "600"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "vLb8d",
-                          "name": "パスキー / Unselected",
-                          "width": "fill_container",
-                          "height": "fill_container",
-                          "cornerRadius": 5,
-                          "gap": 6,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "lY8WT",
-                              "name": "パスキー label",
-                              "fill": "$secondary",
-                              "content": "パスキー",
-                              "fontFamily": "Noto Sans JP",
-                              "fontSize": 12,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "a2Aux",
-                  "name": "Start auto login",
-                  "width": "fill_container",
-                  "height": 44,
-                  "fill": "$accent",
-                  "cornerRadius": 8,
-                  "padding": [
-                    8,
-                    12
-                  ],
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "hhLvF",
-                      "name": "Start auto login label",
-                      "fill": "#FFFFFF",
-                      "content": "自動ログインを開始",
-                      "fontFamily": "Noto Sans JP",
-                      "fontSize": 13,
-                      "fontWeight": "600"
-                    }
-                  ]
+                  "content": "ログイン方式: パスワード",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -401,6 +305,7 @@
                   "id": "E84UQ",
                   "name": "Registered sites heading",
                   "width": "fill_container",
+                  "height": 24,
                   "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
@@ -432,6 +337,7 @@
                           "name": "3件",
                           "fill": "$secondary",
                           "content": "1件",
+                          "lineHeight": 1.4545454545454546,
                           "fontFamily": "$body",
                           "fontSize": 11,
                           "fontWeight": "500"
@@ -945,7 +851,7 @@
       "id": "UEDJr",
       "x": 1124,
       "y": 180,
-      "name": "リデザイン / 登録前 / 360px",
+      "name": "現行実装 / 登録前 / 360px",
       "clip": true,
       "width": 360,
       "fill": "$bg",
@@ -988,6 +894,7 @@
                   "id": "f4kZLY",
                   "name": "Current site label and status",
                   "width": "fill_container",
+                  "height": 24,
                   "gap": 8,
                   "justifyContent": "space_between",
                   "alignItems": "center",
@@ -998,6 +905,7 @@
                       "name": "Current site label",
                       "fill": "$secondary",
                       "content": "現在のサイト",
+                      "lineHeight": 1.5,
                       "fontFamily": "Noto Sans JP",
                       "fontSize": 11,
                       "fontWeight": "normal"
@@ -1006,6 +914,7 @@
                       "type": "frame",
                       "id": "aaxLn",
                       "name": "Unregistered badge",
+                      "height": 24,
                       "fill": "$line",
                       "cornerRadius": 999,
                       "padding": [
@@ -1019,6 +928,7 @@
                           "name": "Unregistered label",
                           "fill": "$secondary",
                           "content": "未登録",
+                          "lineHeight": 1.4545454545454546,
                           "fontFamily": "Noto Sans JP",
                           "fontSize": 11,
                           "fontWeight": "normal"
@@ -1061,6 +971,7 @@
                       "name": "Register button label",
                       "fill": "#FFFFFF",
                       "content": "このサイトを登録",
+                      "lineHeight": 1.5,
                       "fontFamily": "Noto Sans JP",
                       "fontSize": 13,
                       "fontWeight": "600"
@@ -1082,6 +993,7 @@
                   "id": "x5p8re",
                   "name": "Registered sites heading",
                   "width": "fill_container",
+                  "height": 24,
                   "gap": 8,
                   "justifyContent": "space_between",
                   "alignItems": "center",
@@ -1112,6 +1024,7 @@
                           "name": "Count label",
                           "fill": "$secondary",
                           "content": "0件",
+                          "lineHeight": 1.4545454545454546,
                           "fontFamily": "Noto Sans JP",
                           "fontSize": 11,
                           "fontWeight": "normal"
@@ -1125,6 +1038,7 @@
                   "id": "DApjo",
                   "name": "Empty state",
                   "width": "fill_container",
+                  "height": 52,
                   "gap": 8,
                   "padding": [
                     16,
@@ -1150,7 +1064,7 @@
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
                       "content": "登録サイトはありません",
-                      "lineHeight": 1.625,
+                      "lineHeight": 1.6666666666666667,
                       "fontFamily": "Noto Sans JP",
                       "fontSize": 12,
                       "fontWeight": "normal"
@@ -1272,456 +1186,10 @@
     },
     {
       "type": "frame",
-      "id": "alT8E",
-      "x": 1548,
-      "y": 180,
-      "name": "リデザイン / ログイン方式を選択 / 360px",
-      "clip": true,
-      "width": 360,
-      "fill": "$bg",
-      "cornerRadius": 12,
-      "stroke": "$line",
-      "strokeWidth": 1,
-      "layout": "vertical",
-      "children": [
-        {
-          "id": "M5OXUn",
-          "type": "ref",
-          "ref": "eDXDX",
-          "name": "Popup header",
-          "width": "fill_container"
-        },
-        {
-          "type": "frame",
-          "id": "rzaSZ",
-          "name": "Content",
-          "width": "fill_container",
-          "layout": "vertical",
-          "gap": 24,
-          "padding": 20,
-          "children": [
-            {
-              "type": "frame",
-              "id": "tt6SB",
-              "name": "Current site / Unregistered",
-              "width": "fill_container",
-              "fill": "$bg",
-              "cornerRadius": 12,
-              "stroke": "$line",
-              "strokeWidth": 1,
-              "layout": "vertical",
-              "gap": 14,
-              "padding": 16,
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "oxPnS",
-                  "name": "Current site label and status",
-                  "width": "fill_container",
-                  "gap": 8,
-                  "justifyContent": "space_between",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "auSi1",
-                      "name": "Current site label",
-                      "fill": "$secondary",
-                      "content": "現在のサイト",
-                      "fontFamily": "Noto Sans JP",
-                      "fontSize": 11,
-                      "fontWeight": "normal"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "wVsGF",
-                      "name": "Unregistered badge",
-                      "fill": "$line",
-                      "cornerRadius": 999,
-                      "padding": [
-                        4,
-                        8
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "l73lFp",
-                          "name": "Unregistered label",
-                          "fill": "$secondary",
-                          "content": "未登録",
-                          "fontFamily": "Noto Sans JP",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "emm5n",
-                  "name": "Current site origin",
-                  "fill": "$ink",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "https://github.com",
-                  "lineHeight": 1.4,
-                  "fontFamily": "Inter",
-                  "fontSize": 18,
-                  "fontWeight": "600"
-                },
-                {
-                  "type": "frame",
-                  "id": "tHOL2",
-                  "name": "Manual registration form",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 10,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "s3iZSb",
-                      "name": "Login method selection",
-                      "width": "fill_container",
-                      "layout": "vertical",
-                      "gap": 8,
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "COsfL",
-                          "name": "Login method / Segmented control",
-                          "width": "fill_container",
-                          "height": 48,
-                          "fill": "$bg",
-                          "cornerRadius": 8,
-                          "stroke": "$line",
-                          "strokeWidth": 1,
-                          "gap": 4,
-                          "padding": 4,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "ztDMU",
-                              "name": "パスワード / Selected",
-                              "width": "fill_container",
-                              "height": "fill_container",
-                              "fill": "#E0F2FE",
-                              "cornerRadius": 5,
-                              "stroke": "#7DD3FC",
-                              "strokeWidth": 1,
-                              "gap": 6,
-                              "justifyContent": "center",
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "icon",
-                                  "id": "iLApa",
-                                  "name": "Selected method check",
-                                  "width": 14,
-                                  "height": 14,
-                                  "icon": "check",
-                                  "library": "lucide",
-                                  "fill": "$accent"
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "HwTTU",
-                                  "name": "パスワード label",
-                                  "fill": "$accent",
-                                  "content": "パスワード",
-                                  "fontFamily": "Noto Sans JP",
-                                  "fontSize": 12,
-                                  "fontWeight": "600"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "OYYNt",
-                              "name": "パスキー / Unselected",
-                              "width": "fill_container",
-                              "height": "fill_container",
-                              "cornerRadius": 5,
-                              "gap": 6,
-                              "justifyContent": "center",
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "XnFUA",
-                                  "name": "パスキー label",
-                                  "fill": "$secondary",
-                                  "content": "パスキー",
-                                  "fontFamily": "Noto Sans JP",
-                                  "fontSize": 12,
-                                  "fontWeight": "500"
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "yOWAa",
-                      "name": "Confirm registration",
-                      "width": "fill_container",
-                      "height": 44,
-                      "fill": "$accent",
-                      "cornerRadius": 8,
-                      "padding": [
-                        8,
-                        12
-                      ],
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "ZgGCT",
-                          "name": "Confirm registration label",
-                          "fill": "#FFFFFF",
-                          "content": "登録して自動ログイン",
-                          "fontFamily": "Noto Sans JP",
-                          "fontSize": 13,
-                          "fontWeight": "600"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "Amiy7",
-                      "name": "Cancel registration",
-                      "width": "fill_container",
-                      "height": 32,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "ylN9I",
-                          "name": "Cancel label",
-                          "fill": "$secondary",
-                          "content": "キャンセル",
-                          "fontFamily": "Noto Sans JP",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "i0F5J5",
-              "name": "Registered sites / Empty",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": 4,
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "i9pG7P",
-                  "name": "Registered sites heading",
-                  "width": "fill_container",
-                  "gap": 8,
-                  "justifyContent": "space_between",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "hE5Qo",
-                      "name": "List title",
-                      "fill": "$ink",
-                      "content": "登録済みサイト",
-                      "fontFamily": "Noto Sans JP",
-                      "fontSize": 13,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "RJeOy",
-                      "name": "0件 badge",
-                      "cornerRadius": 999,
-                      "padding": [
-                        4,
-                        0
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "kkDmc",
-                          "name": "Count label",
-                          "fill": "$secondary",
-                          "content": "0件",
-                          "fontFamily": "Noto Sans JP",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "dUtCg",
-                  "name": "Empty state",
-                  "width": "fill_container",
-                  "gap": 8,
-                  "padding": [
-                    16,
-                    0
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "PNS8c",
-                      "name": "Empty sites globe",
-                      "width": 16,
-                      "height": 16,
-                      "icon": "globe",
-                      "library": "lucide",
-                      "fill": "$muted"
-                    },
-                    {
-                      "type": "text",
-                      "id": "P2Fee1",
-                      "name": "Empty title",
-                      "fill": "$secondary",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "登録サイトはありません",
-                      "lineHeight": 1.625,
-                      "fontFamily": "Noto Sans JP",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "G8vTz",
-          "name": "Footer",
-          "width": "fill_container",
-          "fill": "$soft",
-          "stroke": "$line",
-          "strokeWidth": {
-            "top": 1
-          },
-          "layout": "vertical",
-          "padding": [
-            8,
-            20
-          ],
-          "children": [
-            {
-              "type": "frame",
-              "id": "qLzv7",
-              "name": "Footer controls",
-              "width": "fill_container",
-              "gap": 8,
-              "justifyContent": "space_between",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "k2MBe",
-                  "name": "Support development link",
-                  "height": 32,
-                  "gap": 6,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "RvqcI",
-                      "name": "Support link label",
-                      "fill": "$secondary",
-                      "content": "開発を支援する",
-                      "fontFamily": "Noto Sans JP",
-                      "fontSize": 11,
-                      "fontWeight": "500"
-                    },
-                    {
-                      "type": "icon",
-                      "id": "LoJio",
-                      "name": "Support arrow",
-                      "width": 12,
-                      "height": 12,
-                      "icon": "arrow-right",
-                      "library": "lucide",
-                      "fill": "$muted"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "cM4WA",
-                  "name": "Language selector / Auto",
-                  "height": 32,
-                  "fill": "$bg",
-                  "cornerRadius": 6,
-                  "stroke": "$line",
-                  "strokeWidth": 1,
-                  "gap": 6,
-                  "padding": [
-                    0,
-                    8
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "UymxG",
-                      "name": "Language selector icon",
-                      "width": 14,
-                      "height": 14,
-                      "icon": "languages",
-                      "library": "lucide",
-                      "fill": "$secondary"
-                    },
-                    {
-                      "type": "text",
-                      "id": "aNOpO",
-                      "name": "Auto language label",
-                      "fill": "$secondary",
-                      "content": "自動",
-                      "fontFamily": "Noto Sans JP",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
-                    },
-                    {
-                      "type": "icon",
-                      "id": "w04rQp",
-                      "name": "Language dropdown arrow",
-                      "width": 12,
-                      "height": 12,
-                      "icon": "chevron-down",
-                      "library": "lucide",
-                      "fill": "$secondary"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "frame",
       "id": "o32wR",
       "x": 1972,
       "y": 180,
-      "name": "リデザイン / 自動入力を検知 / 360px",
+      "name": "現行実装 / 自動入力を検知 / 360px",
       "clip": true,
       "width": 360,
       "fill": "$bg",
@@ -1764,6 +1232,7 @@
                   "id": "zhEZ5",
                   "name": "Detected site heading",
                   "width": "fill_container",
+                  "height": 24,
                   "gap": 8,
                   "justifyContent": "space_between",
                   "alignItems": "center",
@@ -1774,6 +1243,7 @@
                       "name": "Current site label",
                       "fill": "$secondary",
                       "content": "現在のサイト",
+                      "lineHeight": 1.5,
                       "fontFamily": "Noto Sans JP",
                       "fontSize": 11,
                       "fontWeight": "normal"
@@ -1782,6 +1252,7 @@
                       "type": "frame",
                       "id": "P7XLVq",
                       "name": "Autofill detected badge",
+                      "height": 24,
                       "fill": "#E0F2FE",
                       "cornerRadius": 999,
                       "padding": [
@@ -1795,6 +1266,7 @@
                           "name": "Autofill detected label",
                           "fill": "$accent",
                           "content": "自動入力を検知",
+                          "lineHeight": 1.4545454545454546,
                           "fontFamily": "Noto Sans JP",
                           "fontSize": 11,
                           "fontWeight": "500"
@@ -1838,6 +1310,7 @@
                       "name": "Register button label",
                       "fill": "#FFFFFF",
                       "content": "登録して自動ログイン",
+                      "lineHeight": 1.5,
                       "fontFamily": "Noto Sans JP",
                       "fontSize": 13,
                       "fontWeight": "600"
@@ -1869,6 +1342,7 @@
                   "id": "qLXl4",
                   "name": "Registered sites heading",
                   "width": "fill_container",
+                  "height": 24,
                   "gap": 8,
                   "justifyContent": "space_between",
                   "alignItems": "center",
@@ -1899,6 +1373,7 @@
                           "name": "Count label",
                           "fill": "$secondary",
                           "content": "0件",
+                          "lineHeight": 1.4545454545454546,
                           "fontFamily": "Noto Sans JP",
                           "fontSize": 11,
                           "fontWeight": "normal"
@@ -1912,6 +1387,7 @@
                   "id": "EJP87",
                   "name": "Empty state",
                   "width": "fill_container",
+                  "height": 52,
                   "gap": 8,
                   "padding": [
                     16,
@@ -1937,7 +1413,7 @@
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
                       "content": "登録サイトはありません",
-                      "lineHeight": 1.625,
+                      "lineHeight": 1.6666666666666667,
                       "fontFamily": "Noto Sans JP",
                       "fontSize": 12,
                       "fontWeight": "normal"

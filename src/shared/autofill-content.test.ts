@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseHTML } from 'linkedom';
 
 const mocks = vi.hoisted(() => ({
-  browser: { runtime: { id: 'test-extension', sendMessage: vi.fn(),
+  browser: { storage: { onChanged: { addListener: vi.fn(), removeListener: vi.fn() } }, runtime: { id: 'test-extension', sendMessage: vi.fn(),
     onMessage: { addListener: vi.fn(), removeListener: vi.fn() } } },
   find: vi.fn(), has: vi.fn(), fill: vi.fn(),
 }));
 vi.mock('wxt/browser', () => ({ browser: mocks.browser }));
 vi.mock('./form-detector', () => ({ findLoginForm: mocks.find, hasCredentials: mocks.has,
-  hasPendingPasswordAutofill: () => false }));
+  isCurrentLoginForm: () => true, hasPendingPasswordAutofill: () => false }));
 vi.mock('./credential-autofill', () => ({ fillStoredCredentials: mocks.fill }));
 
 let button: HTMLButtonElement;
@@ -38,8 +38,7 @@ afterEach(() => vi.unstubAllGlobals());
 async function start() {
   const entrypoint = (await import('../entrypoints/autofill.content')).default;
   await entrypoint.main({ isInvalid: false, setTimeout: vi.fn(), setInterval: vi.fn(), onInvalidated: vi.fn() } as never);
-  await Promise.resolve();
-  await Promise.resolve();
+  for (let i = 0; i < 12; i++) await Promise.resolve();
   return mocks.browser.runtime.onMessage.addListener.mock.calls[0]![0];
 }
 
@@ -59,8 +58,7 @@ describe('password registration starts automatic login', () => {
     mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, action: 'submit' });
     const click = vi.spyOn(button, 'click');
     await onMessage({ type: 'site-registered', origin: 'https://example.com' }, sender);
-    await Promise.resolve();
-    await Promise.resolve();
+    for (let i = 0; i < 12; i++) await Promise.resolve();
     expect(mocks.fill).not.toHaveBeenCalled();
     expect(click).toHaveBeenCalledOnce();
   });

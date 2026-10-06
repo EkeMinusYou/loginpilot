@@ -11,7 +11,3 @@ export function normalizeOrigin(value: string): string | null {
     return null;
   }
 }
-
-export function isHttpOrigin(value: string): boolean {
-  return normalizeOrigin(value) !== null;
-}

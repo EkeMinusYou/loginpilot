@@ -116,8 +116,8 @@ describe('passkey login authorization and lifecycle', () => {
     document.querySelector('button')!.replaceWith(replacement);
     expect(await login.evaluate()).toBe(false);
     expect(click).toHaveBeenCalledTimes(1);
-    expect(await login.evaluate(true)).toBe(true);
-    expect(click).toHaveBeenCalledTimes(2);
+    expect(await login.evaluate(true)).toBe(false);
+    expect(click).toHaveBeenCalledTimes(1);
   });
   it('reports an unregistered site once without clicking it', async () => {
     const document = page('<button>Sign in with passkey</button>');

@@ -24,8 +24,6 @@ describe('runtime message validation', () => {
     { type: MESSAGE_TYPES.registerOrigin, origin },
     { type: MESSAGE_TYPES.registerOrigin, origin, tabId: 1 },
     { type: MESSAGE_TYPES.removeOrigin, origin },
-    { type: MESSAGE_TYPES.enableCredentialLogin, origin, tabId: 1 },
-    { type: MESSAGE_TYPES.startPasskeyLogin, origin, tabId: 1 },
     { type: MESSAGE_TYPES.registerOrigin, origin, method: 'password' },
   ])('accepts a supported message (%j)', (message) => {
     expect(isRuntimeMessage(message)).toBe(true);
@@ -40,8 +38,8 @@ describe('runtime message validation', () => {
     { type: MESSAGE_TYPES.registerOrigin, origin, tabId: '1' },
     { type: MESSAGE_TYPES.registerOrigin, origin, tabId: -1 },
     { type: MESSAGE_TYPES.registerOrigin, origin, tabId: 0.5 },
-    { type: MESSAGE_TYPES.enableCredentialLogin, origin },
-    { type: MESSAGE_TYPES.enableCredentialLogin, origin, tabId: Infinity },
+    { type: 'enable-credential-login', origin },
+    { type: 'enable-credential-login', origin, tabId: Infinity },
     { type: MESSAGE_TYPES.startPasskeyLogin, origin },
     { type: 'set-login-method', origin, method: 'passkey' },
     { type: MESSAGE_TYPES.registerOrigin, origin, method: 'unknown' },
@@ -55,20 +53,11 @@ describe('runtime message validation', () => {
     { type: MESSAGE_TYPES.getPopupState, currentOrigin: origin },
     { type: MESSAGE_TYPES.registerOrigin, origin },
     { type: MESSAGE_TYPES.removeOrigin, origin },
-    { type: MESSAGE_TYPES.enableCredentialLogin, origin, tabId: 1 },
   ] as RuntimeMessage[])('restricts popup operations to the extension popup (%j)', (message) => {
     expect(authorized(message, popup)).toBe(true);
     expect(authorized(message, content)).toBe(false);
     expect(authorized(message, { ...popup, id: 'another-extension' })).toBe(false);
     expect(authorized(message, { ...popup, url: `${popupUrl}?forged` })).toBe(false);
-  });
-
-  it.each([
-    { type: MESSAGE_TYPES.startPasskeyLogin, origin, tabId: 1 },
-  ] as RuntimeMessage[])('restricts passkey configuration to the popup (%j)', (message) => {
-    expect(authorized(message, popup)).toBe(true);
-    expect(authorized(message, content)).toBe(false);
-    expect(authorized(message, { ...popup, id: 'another-extension' })).toBe(false);
   });
 
   it.each([MESSAGE_TYPES.autofillDetected, MESSAGE_TYPES.getLoginPolicy])(
@@ -97,7 +86,7 @@ describe('runtime message validation', () => {
 describe('content message validation', () => {
   it('accepts background commands with a canonical origin', () => {
     expect(isContentMessage({ type: MESSAGE_TYPES.siteRegistered, origin })).toBe(true);
-    expect(isContentMessage({ type: MESSAGE_TYPES.enableCredentialLogin, origin })).toBe(true);
+    expect(isContentMessage({ type: 'enable-credential-login', origin })).toBe(false);
     expect(isContentMessage({ type: MESSAGE_TYPES.startPasskeyLogin, origin })).toBe(true);
   });
   it('rejects arbitrary operations and malformed origins', () => {

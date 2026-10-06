@@ -1,4 +1,9 @@
 export const translations: Record<string, string> = {
+  'パスキーのログインも、自動で開始。': 'Start passkey sign-in automatically, too.',
+  'パスキーを使ったサイトを検知したら、ポップアップから登録できます。次回からは、対応する「パスキーでログイン」ボタンを自動で押します。': 'When Login Pilot detects passkey use on a site, you can register it from the popup. On future visits, it automatically activates a supported “Sign in with passkey” button.',
+  '指紋・顔認証やPINによる本人確認は、ChromeやOSの画面で行います。秘密鍵は拡張機能で取得・保存しません。キャンセル後に自動で再試行することもありません。': 'Verify your identity with your fingerprint, face, or PIN through Chrome or your operating system. The extension never retrieves or stores private keys, and never retries automatically after cancellation.',
+  'HTTPSの対応サイトで利用できます。認証が別のサイトのフレーム内で行われる場合は、両方のサイトを確認して登録します。すべてのサイトでの動作を保証するものではありません。': 'Available on supported HTTPS sites. If authentication takes place in a frame from another site, review and approve both sites when registering. Compatibility with every site is not guaranteed.',
+
   '本文へ移動': 'Skip to content',
   '仕組み': 'How it works',
   '安心への設計': 'Privacy',

@@ -10,3 +10,8 @@ node_modules/
 .dev.vars
 .dev.vars.*
 sites/lp/wrangler.production.jsonc
+
+# Browser integration artifacts
+/playwright-report/
+/test-results/
+__pycache__/

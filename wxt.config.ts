@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'wxt';
 
@@ -35,4 +36,3 @@ export default defineConfig({
     plugins: [tailwindcss()],
   }),
 });
-import { resolve } from 'node:path';

@@ -103,7 +103,7 @@ describe('popup language controls', () => {
       : { ok: true });
     await openPopup();
     expect(document.querySelector('[data-focus-key="setup"]')).toBeNull();
-    expect(document.body.textContent).not.toContain(en.startAutoLogin);
+    expect(document.body.textContent).not.toContain('Start auto login');
     expect(document.body.textContent).toContain('Login method: Passkey');
     expect(document.querySelector('[role="radiogroup"]')).toBeNull();
     selectLanguage('ja');

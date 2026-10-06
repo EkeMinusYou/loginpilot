@@ -1,3 +1,5 @@
+import { isControlAvailable } from './control-availability';
+
 const USERNAME_TOKENS = ['user', 'email', 'login', 'account', 'identifier', 'username'];
 const PASSWORD_TOKENS = ['pass', 'password', 'credential'];
 
@@ -8,7 +10,7 @@ export interface LoginFormCandidate {
 }
 
 function isVisibleInput(input: HTMLInputElement): boolean {
-  return !input.disabled && !input.readOnly && input.getClientRects().length > 0;
+  return !input.readOnly && isControlAvailable(input);
 }
 
 function inputTokens(input: HTMLInputElement): string {
@@ -110,18 +112,23 @@ export function hasCredentials(candidate: LoginFormCandidate): boolean {
   return candidate.usernameInput.value.trim().length > 0 && candidate.passwordInput.value.length > 0;
 }
 
+/** Revalidate retained references after asynchronous work and page event handlers. */
+export function isCurrentLoginForm(candidate: LoginFormCandidate): boolean {
+  const { form, usernameInput, passwordInput } = candidate;
+  if (!form.isConnected || !usernameInput.isConnected || !passwordInput.isConnected ||
+    usernameInput.form !== form || passwordInput.form !== form) return false;
+  const inputs = Array.from(form.querySelectorAll('input'));
+  const passwords = inputs.filter((input) => input.type.toLowerCase() === 'password');
+  return passwords.length === 1 && !autocompleteTokens(passwords[0]!).includes('new-password') &&
+    getBestInput(inputs, scoreUsernameInput) === usernameInput && getBestInput(inputs, scorePasswordInput) === passwordInput;
+}
+
 function matchesAutofillSelector(input: HTMLInputElement, selector: string): boolean {
   try {
     return input.matches(selector);
   } catch {
     return false;
   }
-}
-
-export function hasAutofillMarker(candidate: LoginFormCandidate): boolean {
-  return [candidate.usernameInput, candidate.passwordInput].some(
-    (input) => matchesAutofillSelector(input, ':autofill') || matchesAutofillSelector(input, ':-webkit-autofill'),
-  );
 }
 
 export function hasPendingPasswordAutofill(candidate: LoginFormCandidate): boolean {

@@ -14,47 +14,40 @@ interface StoredState {
   passkeyFrameOrigins?: unknown;
 }
 
-export async function getRegisteredOrigins(): Promise<string[]> {
-  const state = (await browser.storage.local.get(REGISTERED_ORIGINS_KEY)) as StoredState;
+export interface RegistrationState {
+  registeredOrigins: string[];
+  passkeyOrigins: string[];
+  passkeyFrameOrigins: Record<string, string>;
+}
 
-  if (!Array.isArray(state.registeredOrigins)) {
-    return [];
-  }
-
-  return [...new Set(state.registeredOrigins.filter((origin): origin is string =>
+function origins(value: unknown): string[] {
+  return Array.isArray(value) ? [...new Set(value.filter((origin): origin is string =>
     typeof origin === 'string' && normalizeOrigin(origin) === origin,
-  ))].sort();
+  ))].sort() : [];
 }
 
-export async function setRegisteredOrigins(origins: string[]): Promise<void> {
-  await browser.storage.local.set({
-    [REGISTERED_ORIGINS_KEY]: [...new Set(origins)].sort(),
-  });
-}
-
-export async function getPasskeyOrigins(): Promise<string[]> {
-  const state = (await browser.storage.local.get(PASSKEY_ORIGINS_KEY)) as StoredState;
-  if (!Array.isArray(state.passkeyOrigins)) return [];
-  return [...new Set(state.passkeyOrigins.filter((origin): origin is string =>
-    typeof origin === 'string' && normalizeOrigin(origin) === origin,
-  ))].sort();
-}
-
-export async function setPasskeyOrigins(origins: string[]): Promise<void> {
-  await browser.storage.local.set({ [PASSKEY_ORIGINS_KEY]: [...new Set(origins)].sort() });
-}
-
-export async function getPasskeyFrameOrigins(): Promise<Record<string, string>> {
-  const state = (await browser.storage.local.get(PASSKEY_FRAME_ORIGINS_KEY)) as StoredState;
-  const value = state.passkeyFrameOrigins;
+function frameOrigins(value: unknown): Record<string, string> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return Object.fromEntries(Object.entries(value).filter(([site, frame]) =>
     normalizeOrigin(site) === site && typeof frame === 'string' && normalizeOrigin(frame) === frame,
   ));
 }
 
-export async function setPasskeyFrameOrigins(origins: Record<string, string>): Promise<void> {
-  await browser.storage.local.set({ [PASSKEY_FRAME_ORIGINS_KEY]: origins });
+export async function getRegistrationState(): Promise<RegistrationState> {
+  const state = await browser.storage.local.get([REGISTERED_ORIGINS_KEY, PASSKEY_ORIGINS_KEY, PASSKEY_FRAME_ORIGINS_KEY]) as StoredState;
+  const registeredOrigins = origins(state.registeredOrigins);
+  const passkeyOrigins = origins(state.passkeyOrigins).filter((origin) => registeredOrigins.includes(origin));
+  return { registeredOrigins, passkeyOrigins,
+    passkeyFrameOrigins: Object.fromEntries(Object.entries(frameOrigins(state.passkeyFrameOrigins))
+      .filter(([site]) => passkeyOrigins.includes(site))) };
+}
+
+/** Publish origin, method, and frame approval in one storage operation. */
+export async function setRegistrationState(state: RegistrationState): Promise<void> {
+  await browser.storage.local.set({ ...state,
+    registeredOrigins: [...new Set(state.registeredOrigins)].sort(),
+    passkeyOrigins: [...new Set(state.passkeyOrigins)].sort(),
+  });
 }
 
 export async function getPendingSite(): Promise<PendingSite | null> {

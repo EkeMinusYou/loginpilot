@@ -21,9 +21,13 @@
     "typecheck": "wxt prepare && tsc --noEmit",
     "test": "vitest run",
     "audit": "npm audit --audit-level=low",
-    "zip": "wxt zip"
+    "zip": "wxt zip",
+    "test:browser": "playwright test",
+    "package:verify": "python3 scripts/verify-package.py",
+    "test:package": "python3 -m unittest discover -s scripts/tests"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@resvg/resvg-js": "2.6.2",
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "24.19.1",

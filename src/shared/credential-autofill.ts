@@ -1,4 +1,4 @@
-import type { LoginFormCandidate } from './form-detector';
+import { isCurrentLoginForm, type LoginFormCandidate } from './form-detector';
 
 /** Keep password credentials inside the page; never return them to extension messaging. */
 export async function fillStoredCredentials(
@@ -9,7 +9,7 @@ export async function fillStoredCredentials(
   const { usernameInput, passwordInput } = candidate;
   const initialUsername = usernameInput.value;
   const initialPassword = passwordInput.value;
-  if (!canFill() || (initialPassword && mediation === 'silent') || !globalThis.isSecureContext || !navigator.credentials?.get) return false;
+  if (!canFill() || !isCurrentLoginForm(candidate) || (initialPassword && mediation === 'silent') || !globalThis.isSecureContext || !navigator.credentials?.get) return false;
 
   try {
     // PasswordCredential is supported by Chrome but is absent from TypeScript's DOM definitions.
@@ -18,7 +18,7 @@ export async function fillStoredCredentials(
     if (!credential || credential.type !== 'password' || !('password' in credential)) return false;
     const password = credential.password;
     if (typeof password !== 'string' || !password || !credential.id) return false;
-    if (!canFill() || !candidate.form.isConnected || !usernameInput.isConnected || !passwordInput.isConnected) return false;
+    if (!canFill() || !isCurrentLoginForm(candidate)) return false;
     if (usernameInput.value !== initialUsername || passwordInput.value !== initialPassword) return false;
     if (initialUsername && initialUsername.trim() !== credential.id) return false;
     if (initialPassword) return initialPassword === password;

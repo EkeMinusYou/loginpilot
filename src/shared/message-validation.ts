@@ -29,9 +29,6 @@ export function isRuntimeMessage(value: unknown): value is RuntimeMessage {
         (!('method' in value) || value.method === undefined || value.method === 'password' || value.method === 'passkey') &&
         (!('authenticationOrigin' in value) || value.authenticationOrigin === undefined ||
           ('method' in value && value.method === 'passkey' && isOrigin(value.authenticationOrigin)));
-    case MESSAGE_TYPES.enableCredentialLogin:
-    case MESSAGE_TYPES.startPasskeyLogin:
-      return 'tabId' in value && isTabId(value.tabId);
     default:
       return false;
   }
@@ -51,6 +48,7 @@ export function isAuthorizedRuntimeMessage(
   }
   if (message.type === MESSAGE_TYPES.autofillDetected || message.type === MESSAGE_TYPES.getLoginPolicy) {
     return isTabId(sender.tab?.id) && sender.frameId === 0 &&
+      (sender.documentLifecycle === undefined || sender.documentLifecycle === 'active') &&
       typeof sender.url === 'string' && normalizeOrigin(sender.url) === message.origin;
   }
   return sender.tab === undefined && sender.url === popupUrl;
@@ -58,9 +56,10 @@ export function isAuthorizedRuntimeMessage(
 
 export function isContentMessage(value: unknown): value is ContentMessage {
   if (value && typeof value === 'object' && 'type' in value && value.type === MESSAGE_TYPES.checkPasskeyFrame) {
-    return 'origin' in value && isOrigin(value.origin) && 'authenticationOrigin' in value && isOrigin(value.authenticationOrigin);
+    return (!('origin' in value) || value.origin === undefined || isOrigin(value.origin)) &&
+      'authenticationOrigin' in value && isOrigin(value.authenticationOrigin);
   }
   return !!value && typeof value === 'object' && 'type' in value && 'origin' in value &&
-    (value.type === MESSAGE_TYPES.siteRegistered || value.type === MESSAGE_TYPES.enableCredentialLogin || value.type === MESSAGE_TYPES.startPasskeyLogin) &&
+    (value.type === MESSAGE_TYPES.siteRegistered || value.type === MESSAGE_TYPES.startPasskeyLogin) &&
     isOrigin(value.origin);
 }

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Login Pilot integration fixture</title>
+<body>
+<output id="clicks">0</output><output id="submits">0</output><output id="auth">idle</output>
+<script>
+  const query = new URLSearchParams(location.search);
+  let clicks = 0, submits = 0;
+  if (query.has('frame')) {
+    document.body.insertAdjacentHTML('beforeend', '<iframe hidden src="http://localhost:4176/?passkey" allow="publickey-credentials-get"></iframe>');
+  } else if (query.has('passkey')) {
+    document.body.insertAdjacentHTML('beforeend', '<button id="passkey" disabled>Sign in with passkey</button>');
+    let abort;
+    document.querySelector('#passkey').addEventListener('click', async () => {
+      document.querySelector('#clicks').value = String(++clicks);
+      document.querySelector('#auth').value = 'pending';
+      abort = new AbortController();
+      try {
+        await navigator.credentials.get({ signal: abort.signal, publicKey: {
+          challenge: new Uint8Array([1, 2, 3, 4]), rpId: 'localhost',
+          userVerification: 'required', timeout: 60000,
+        } });
+        document.querySelector('#auth').value = 'success';
+      } catch (error) {
+        document.querySelector('#auth').value = error.name;
+      }
+    });
+    window.cancelAuthentication = () => abort?.abort();
+  } else {
+    document.body.insertAdjacentHTML('beforeend', '<form><input type="email" autocomplete="username" value="fixture@example.com"><input type="password" autocomplete="current-password" value="fixture-password"><button type="submit" disabled>Sign in</button></form>');
+    const form = document.querySelector('form');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      document.querySelector('#submits').value = String(++submits);
+    });
+    document.querySelector('button').addEventListener('click', () => {
+      document.querySelector('#clicks').value = String(++clicks);
+    });
+    if (query.has('mutate')) {
+      form.addEventListener('input', () => {
+        document.querySelector('input[type="password"]').autocomplete = 'new-password';
+      }, { once: true });
+    }
+  }
+</script>
+</body>
+</html>

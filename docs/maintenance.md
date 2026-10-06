@@ -12,10 +12,10 @@ Keep pull requests enabled and set **Settings → General → Features → Pull 
 
 | Workflow | Trigger | Purpose |
 | --- | --- | --- |
-| `CI` | Pull requests, pushes to `main`, or manual dispatch | Install the lockfile, audit all vulnerability severities, run tests and type checking, and build the extension and landing page |
+| `CI` | Pull requests, pushes to `main`, or manual dispatch | Install the lockfile, audit all vulnerability severities, run unit/package/browser tests and type checking, verify the release ZIP, and build the landing page |
 | `Scheduled dependency audit` | Daily at 03:00 Japan time, or manual dispatch | Audit the existing dependency tree for newly disclosed vulnerabilities |
 | `Dependabot auto-merge` | Dependabot pull request events | Enable auto-merge for eligible patch/minor updates after verifying metadata and branch protection |
-| `Prepare release` | Manual dispatch on `main` | Validate and create an extension ZIP artifact |
+| `Prepare release` | Manual dispatch on `main` | Validate unit/package/browser tests, verify and upload the exact extension ZIP |
 
 Pull requests require **Checks** and **Dependency review**. The latter checks added or updated dependencies against GitHub's vulnerability database.
 
@@ -34,8 +34,9 @@ Adding workflow files does not configure GitHub repository settings. An administ
 1. Enable Dependabot alerts, security updates, and private vulnerability reporting.
 2. Enable **Allow auto-merge**.
 3. Protect `main`, require pull requests, add **Checks** and **Dependency review** as required checks, and enable **Require branches to be up to date**. This project's unattended dependency updates use zero required approvals; choose a different review policy if your team requires one.
-4. Allow Actions with read-only default workflow permissions. Automatic approval of PR reviews is not needed.
-5. To retain this project's contribution policy, leave Issues open and restrict pull request creation to **Collaborators only**.
+4. Enable **Do not allow bypassing the above settings** if administrator changes must also pass through PR checks; otherwise administrators can bypass protection.
+5. Allow Actions with read-only default workflow permissions. Automatic approval of PR reviews is not needed.
+6. To retain this project's contribution policy, leave Issues open and restrict pull request creation to **Collaborators only**.
 
 Run CI once to make its check names available in the settings UI. Removing branch protection causes the auto-merge workflow's precondition to fail.
 
@@ -60,8 +61,8 @@ Miniflare pins `sharp@0.35.4`, so `overrides.miniflare.sharp` in `package.json` 
 
 1. Merge the release changes into `main` and confirm CI succeeds.
 2. Update `package.json`'s version and run `npm install --package-lock-only --ignore-scripts`. Submit the version and lockfile change through a PR and CI.
-3. Run `npm run zip` to create `.output/loginpilot-VERSION-chrome.zip`, or manually run **Prepare release** on `main` and download the **loginpilot-chrome** artifact. The artifact download is a wrapper ZIP; the extension ZIP is inside it.
-4. Extract the extension ZIP, load it in a test Chrome profile, and complete the relevant [browser checks](browser-review.md). Confirm `LICENSE.txt` and `THIRD_PARTY_LICENSES.txt` are included.
+3. Run `npm run zip` followed by `npm run package:verify` to create and check `.output/loginpilot-VERSION-chrome.zip`, or manually run **Prepare release** on `main` and download the **loginpilot-chrome** artifact. The artifact download is a wrapper ZIP; the extension ZIP is inside it.
+4. Extract the extension ZIP, load it in a test Chrome profile, and complete the relevant [browser checks](browser-review.md). The automated ZIP validator checks permissions, content-script scopes, both locales, popup assets, legal notices, and an allowlist that excludes development and credential artifacts. Browser tests run against the build used for that ZIP.
 5. Create a GitHub Release draft with a version tag pointing to the tested commit. Attach the extension ZIP and describe changes and known limitations, then review and publish it.
 6. Upload to the Chrome Web Store manually. After review and publication, update installation links in both READMEs and the landing page. Update the landing page's release-status translations and social images as needed.
 

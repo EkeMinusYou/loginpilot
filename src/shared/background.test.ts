@@ -33,7 +33,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.browser.i18n.getUILanguage.mockReturnValue('ja');
   stored = { registeredOrigins: [origin] };
-  mocks.browser.storage.local.get.mockImplementation(async (key: string) => ({ [key]: stored[key] }));
+  mocks.browser.storage.local.get.mockImplementation(async (key: string | string[]) => Object.fromEntries((Array.isArray(key) ? key : [key]).map((item) => [item, stored[item]])));
   mocks.browser.storage.local.set.mockImplementation(async (values: Record<string, unknown>) => { Object.assign(stored, values); });
   mocks.browser.storage.local.remove.mockImplementation(async (key: string) => { delete stored[key]; });
   mocks.browser.tabs.get.mockResolvedValue({ id: 1, url: `${origin}/login` });
@@ -64,7 +64,7 @@ describe('background message handling', () => {
   );
 
   it('ignores malformed messages before accessing state', async () => {
-    expect(await dispatch({ type: MESSAGE_TYPES.enableCredentialLogin, origin, tabId: '1' })).toBeUndefined();
+    expect(await dispatch({ type: 'enable-credential-login', origin, tabId: '1' })).toBeUndefined();
     expect(mocks.browser.storage.local.get).not.toHaveBeenCalled();
     expect(mocks.browser.tabs.sendMessage).not.toHaveBeenCalled();
   });
@@ -84,15 +84,9 @@ describe('background message handling', () => {
     expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin }, content)).toEqual({ ok: true, action: 'ignore' });
   });
 
-  it('does not send credential setup to a tab that navigated away', async () => {
-    mocks.browser.tabs.get.mockResolvedValue({ id: 1, url: 'https://another.example/login' });
-    expect(await dispatch({ type: MESSAGE_TYPES.enableCredentialLogin, origin, tabId: 1 })).toEqual({ ok: false, error: '対象のログインページを開いてください。' });
-    expect(mocks.browser.tabs.sendMessage).not.toHaveBeenCalled();
-  });
-
-  it('sends credential setup to a registered matching tab', async () => {
-    expect(await dispatch({ type: MESSAGE_TYPES.enableCredentialLogin, origin, tabId: 1 })).toEqual({ ok: true, filled: true });
-    expect(mocks.browser.tabs.sendMessage).toHaveBeenCalledWith(1, { type: MESSAGE_TYPES.enableCredentialLogin, origin }, { frameId: 0 });
+  it.each(['enable-credential-login', 'start-passkey-login'])('rejects obsolete popup command %s', async (type) => {
+    expect(await dispatch({ type, origin, tabId: 1 })).toBeUndefined();
+    expect(mocks.browser.storage.local.get).not.toHaveBeenCalled();
   });
 
   it('does not forward registration notifications to a different origin', async () => {
@@ -116,8 +110,6 @@ describe('background message handling', () => {
     expect(stored.passkeyOrigins).toEqual([origin]);
     expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin }, content)).toEqual({ ok: true, action: 'submit', method: 'passkey' });
     expect(await dispatch({ type: MESSAGE_TYPES.autofillDetected, origin }, content)).toEqual({ ok: true, action: 'ignore', method: 'passkey' });
-    expect(await dispatch({ type: MESSAGE_TYPES.enableCredentialLogin, origin, tabId: 1 })).toMatchObject({ ok: false });
-    expect(await dispatch({ type: MESSAGE_TYPES.startPasskeyLogin, origin, tabId: 1 })).toEqual({ ok: true, filled: true });
     expect(mocks.browser.tabs.sendMessage).toHaveBeenLastCalledWith(1, { type: MESSAGE_TYPES.startPasskeyLogin, origin }, { frameId: 0 });
   });
 
@@ -227,7 +219,7 @@ describe('background message handling', () => {
     expect(stored.pendingSite).toBeUndefined();
     expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin: auth }, frame)).toEqual({ ok: true, action: 'pending' });
     expect(stored.pendingSite).toMatchObject({ origin, authenticationOrigin: auth, passkeyUsed: true });
-    expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: auth }, frame)).toEqual({ ok: true, action: 'ignore' });
+    expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: auth }, frame)).toEqual({ ok: true, action: 'ignore', retry: true });
     expect(stored.registeredOrigins).toEqual([]);
   });
 
@@ -236,13 +228,6 @@ describe('background message handling', () => {
     await dispatch({ type: MESSAGE_TYPES.removeOrigin, origin });
     expect(stored.passkeyOrigins).toEqual([]);
     expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin }, content)).toEqual({ ok: true, action: 'ignore' });
-  });
-
-  it('does not send passkey login to a tab that navigated away', async () => {
-    stored.passkeyOrigins = [origin];
-    mocks.browser.tabs.get.mockResolvedValue({ id: 1, url: 'https://another.example/login' });
-    expect(await dispatch({ type: MESSAGE_TYPES.startPasskeyLogin, origin, tabId: 1 })).toMatchObject({ ok: false });
-    expect(mocks.browser.tabs.sendMessage).not.toHaveBeenCalled();
   });
 
   it('registers an Apple authentication frame under its parent site and targets its document', async () => {
@@ -316,4 +301,46 @@ describe('background message handling', () => {
     await dispatch({ type: MESSAGE_TYPES.removeOrigin, origin });
     expect(stored.passkeyFrameOrigins).toEqual({});
   });
+});
+
+it('authorizes a registered top-level passkey document without temporary tab URL access', async () => {
+  stored.passkeyOrigins = [origin];
+  mocks.browser.tabs.get.mockResolvedValue({ id: 1 });
+  expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin }, content)).toEqual({ ok: true, action: 'submit', method: 'passkey' });
+  expect(mocks.browser.tabs.get).not.toHaveBeenCalled();
+});
+
+it('gets the parent origin and frame visibility from the top-level script without tab URL access', async () => {
+  const auth = 'https://auth.example';
+  const frame = { ...content, url: `${auth}/login`, frameId: 3, documentId: 'auth-document' };
+  stored.passkeyOrigins = [origin];
+  stored.passkeyFrameOrigins = { [origin]: auth };
+  mocks.browser.tabs.get.mockResolvedValue({ id: 1 });
+  mocks.browser.tabs.sendMessage.mockResolvedValue({ ok: true, visible: true, origin });
+  expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: auth }, frame)).toEqual({ ok: true, action: 'submit', method: 'passkey' });
+  expect(mocks.browser.tabs.sendMessage).toHaveBeenCalledWith(1, { type: MESSAGE_TYPES.checkPasskeyFrame, authenticationOrigin: auth }, { frameId: 0 });
+  mocks.browser.tabs.sendMessage.mockResolvedValue({ ok: true, visible: false, origin });
+  expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: auth }, frame)).toEqual({ ok: true, action: 'ignore', retry: true });
+  expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin: auth }, { ...frame, documentId: 'different-document' })).toEqual({ ok: true, action: 'ignore' });
+});
+
+it('does not let notification failures turn a completed registration into a failure', async () => {
+  stored.pendingSite = { origin, detectedAt: 1 };
+  mocks.browser.notifications.clear.mockRejectedValueOnce(new Error('Notification unavailable'));
+  expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: 'password' })).toEqual({ ok: true, action: 'ignore' });
+  expect(stored.registeredOrigins).toContain(origin);
+  expect(stored.pendingSite).toBeUndefined();
+});
+
+it('allows removal to finish while Chrome credential setup is still pending', async () => {
+  const setup = Promise.withResolvers<unknown>();
+  mocks.browser.tabs.sendMessage.mockReturnValue(setup.promise);
+  const registration = dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: 'password', tabId: 1 });
+  await vi.waitFor(() => expect(mocks.browser.tabs.sendMessage).toHaveBeenCalled());
+  const removal = await dispatch({ type: MESSAGE_TYPES.removeOrigin, origin });
+  expect(removal).toEqual({ ok: true, action: 'ignore' });
+  expect(stored.registeredOrigins).toEqual([]);
+  setup.resolve({ ok: true, filled: false });
+  expect(await registration).toEqual({ ok: true, action: 'ignore' });
+  expect(stored.registeredOrigins).toEqual([]);
 });

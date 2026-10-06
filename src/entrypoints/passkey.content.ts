@@ -56,11 +56,13 @@ export default defineContentScript({
       document.addEventListener(type, onUserInteraction, { capture: true, passive: true });
     }
     const onMessage = (message: unknown, sender: Browser.runtime.MessageSender): Promise<CredentialSetupResponse | PasskeyFrameResponse> | undefined => {
-      if (sender.id !== browser.runtime.id || sender.tab !== undefined || !isContentMessage(message) || message.origin !== origin) return;
+      if (ctx.isInvalid || sender.id !== browser.runtime.id || sender.tab !== undefined || !isContentMessage(message)) return;
       if (message.type === MESSAGE_TYPES.checkPasskeyFrame && window.top === window) {
+        if (message.origin !== undefined && message.origin !== origin) return;
         return Promise.resolve({ ok: true, visible: !ctx.isInvalid && document.visibilityState === 'visible' &&
-          hasVisibleAuthenticationFrame(message.authenticationOrigin) });
+          hasVisibleAuthenticationFrame(message.authenticationOrigin), origin });
       }
+      if (message.origin !== origin) return;
       if (message.type === MESSAGE_TYPES.startPasskeyLogin) {
         return login.evaluate(true).then((started) => started
           ? { ok: true, filled: true }
@@ -68,10 +70,24 @@ export default defineContentScript({
       }
     };
     browser.runtime.onMessage.addListener(onMessage);
-    const observer = new MutationObserver(() => void login.evaluate());
+    let evaluationScheduled = false;
+    const evaluate = (): void => {
+      if (evaluationScheduled || ctx.isInvalid) return;
+      evaluationScheduled = true;
+      queueMicrotask(() => {
+        evaluationScheduled = false;
+        if (!ctx.isInvalid) void login.evaluate();
+      });
+    };
+    const onStorageChanged = (changes: Record<string, unknown>, area: string): void => {
+      if (area !== 'local' || !['registeredOrigins', 'passkeyOrigins', 'passkeyFrameOrigins'].some((key) => key in changes)) return;
+      login.invalidatePolicy();
+      evaluate();
+    };
+    browser.storage.onChanged.addListener(onStorageChanged);
+    const observer = new MutationObserver(() => { login.invalidateCandidates(); evaluate(); });
     observer.observe(document, { childList: true, subtree: true, characterData: true, attributes: true,
-      attributeFilter: ['disabled', 'aria-disabled', 'aria-label', 'aria-labelledby', 'aria-hidden', 'hidden', 'inert', 'value', 'style', 'class'] });
-    const evaluate = (): void => { void login.evaluate(); };
+      attributeFilter: ['disabled', 'aria-disabled', 'aria-label', 'aria-labelledby', 'aria-hidden', 'hidden', 'inert', 'value', 'style', 'class', 'autocomplete', 'type', 'role', 'id'] });
     document.addEventListener('visibilitychange', evaluate);
     void login.evaluate();
     // CSS transitions and layout changes can make a button available without a DOM mutation.
@@ -81,6 +97,7 @@ export default defineContentScript({
       document.removeEventListener('visibilitychange', evaluate);
       document.removeEventListener(PASSKEY_USAGE_EVENT, onPasskeyUsed);
       observer.disconnect();
+      browser.storage.onChanged.removeListener(onStorageChanged);
       browser.runtime.onMessage.removeListener(onMessage);
       for (const type of ['keydown', 'beforeinput', 'paste', 'click']) {
         document.removeEventListener(type, onUserInteraction, true);

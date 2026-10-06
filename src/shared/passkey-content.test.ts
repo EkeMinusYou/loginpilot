@@ -3,7 +3,7 @@ import { parseHTML } from 'linkedom';
 import { PASSKEY_USAGE_EVENT } from './passkey-usage';
 
 const mocks = vi.hoisted(() => ({
-  browser: { runtime: { id: 'test-extension', sendMessage: vi.fn(),
+  browser: { storage: { onChanged: { addListener: vi.fn(), removeListener: vi.fn() } }, runtime: { id: 'test-extension', sendMessage: vi.fn(),
     onMessage: { addListener: vi.fn(), removeListener: vi.fn() } } },
   disconnect: vi.fn(),
 }));
@@ -127,7 +127,7 @@ describe('passkey usage content bridge', () => {
     mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, action: 'submit', method: 'passkey' });
     await start();
     visible = true;
-    await vi.advanceTimersByTimeAsync(250);
+    await vi.advanceTimersByTimeAsync(251);
     expect(click).toHaveBeenCalledOnce();
     await vi.advanceTimersByTimeAsync(1000);
     expect(click).toHaveBeenCalledOnce();

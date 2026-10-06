@@ -20,6 +20,8 @@ This retrieval requires HTTPS or a secure localhost context. Click-free retrieva
 
 Registration may trigger Chrome's account and automatic sign-in confirmation. Approve it in Chrome. Future visits use `mediation: 'silent'`; registration uses `mediation: 'optional'` only when autofill is not already confirmed. There is no separate start button, debugger connection, or helper application.
 
+Disabled, hidden, or ambiguous submit controls defer submission until a single available control can be used. A disabled control never falls back to direct form submission. The form and retained fields are rechecked after asynchronous work and page input/change handlers; registration changes cancel pending work.
+
 Login Pilot leaves the page's focus in place. It does not overwrite or submit a form after manual input has started. Autofill detection combines field values, input events, and autofill pseudo-classes because Chrome does not expose a complete input-source detection API.
 
 ## Passkey login
@@ -34,7 +36,9 @@ For an authentication iframe, registration approves the parent origin and the di
 
 On registered sites, activation waits until email or `autocomplete="username"` input has settled for 300 milliseconds. Page changes trigger another check; a 250-millisecond fallback detects changes in layout or CSS. Other page interactions or Escape stop automatic activation. Usage-detected signals update candidates without stopping activation.
 
-Automatic activation is limited to one attempt per page load. Cancelling does not trigger a retry or a switch to password login. Reload the page to try again.
+Registration changes invalidate cached policy. The fast fallback checks cached candidate availability; unchanged unregistered sites do not repeatedly query the background worker. Permission and authentication-frame visibility are checked before activation without requiring temporary access to the tab URL.
+
+Automatic activation is limited to one attempt per page load, including the immediate registration action. Cancelling does not trigger a retry or a switch to password login. Reload the page to try again.
 
 ## Supported conditions and limitations
 

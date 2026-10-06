@@ -4,6 +4,16 @@ Use a temporary Chrome profile dedicated to testing. Do not sign it into Chrome 
 
 Run `npm run build` and load `.output/chrome-mv3` through `chrome://extensions`. Reload both the extension and target page after extension changes. Automated tests and browser checks provide different evidence; record which checks you actually completed.
 
+## Automated integration coverage
+
+Run `npm run zip`, `npm run package:verify`, `npx playwright install chromium`, and `npm run test:browser`. On Linux, install browser dependencies with `npx playwright install --with-deps chromium` first. CI and Prepare release run these checks automatically.
+
+Tests use a fresh Chromium profile, localhost fixtures on ports 4175 and 4176, and generated dummy WebAuthn credentials. They cover disabled/hidden controls and enabled-state transitions, synchronous form mutation, duplicate submission, removal and navigation, content-script invalidation during extension reload, automatic passkey activation/completion/cancellation, visible approved authentication frames without tab URL access, and rejection of registration commands from an ordinary extension tab. Unit regressions cover concurrent authorized popup registration/removal and method/frame consistency. The actual popup UI is covered by unit tests and the manual keyboard checks below.
+
+The test harness installs only the production build through Chromium's [Extensions protocol](https://chromedevtools.github.io/devtools-protocol/tot/Extensions/). It closes the browser and removes its temporary profile after each test. Test-installed unpacked extensions can be unloaded by `runtime.reload`; the lifecycle test verifies that the old script stops. A separate page-reload check confirms that a fresh document can submit once. The extension itself does not use the debugger API. Failure traces in `test-results/` contain only fixtures and are not packaged.
+
+Virtual WebAuthn verifies the authentication request and cancellation path; it does not reproduce the actual Chrome/OS account chooser or biometric screen. The tests use dummy prefilled password fields, not Google Password Manager's real native autofill. Complete the manual checks below for those behaviors before a release.
+
 ## Password fixture
 
 Run `npm run browser:fixture` and open `http://127.0.0.1:4174`. The fixture does not send entered values externally; it displays a submission count. Add a dummy account for that origin to Chrome's password manager to test browser autofill.
@@ -16,6 +26,9 @@ Run `npm run browser:fixture` and open `http://127.0.0.1:4174`. The fixture does
 | Register before autofill is confirmed | If Chrome supports retrieval, initial confirmation is followed by retrieval and submission; no separate start button |
 | Start manual input or paste | No overwrite or automatic submission |
 | Open a sign-up or password-change form | No saved credential retrieval, input, or automatic submission |
+| The form changes to new-password while a policy/credential request is pending | No filling or submission |
+| Submit control is disabled or hidden | Wait until it is available; never fall back to direct submission |
+| Reload the extension while a request is pending | The old content script does not fill or submit |
 | Remove an origin and reload | No automatic submission |
 | Open a password login form in an iframe | No automatic submission |
 | Save multiple matching accounts | If Chrome refuses silent retrieval, normal autofill is awaited |

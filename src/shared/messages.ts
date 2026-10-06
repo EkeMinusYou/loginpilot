@@ -5,7 +5,6 @@ export const MESSAGE_TYPES = {
   removeOrigin: 'remove-origin',
   siteRegistered: 'site-registered',
   getLoginPolicy: 'get-login-policy',
-  enableCredentialLogin: 'enable-credential-login',
   passkeyDetected: 'passkey-detected',
   passkeyUsed: 'passkey-used',
   startPasskeyLogin: 'start-passkey-login',
@@ -19,15 +18,9 @@ export type RuntimeMessage =
   | { type: typeof MESSAGE_TYPES.passkeyDetected; origin: string }
   | { type: typeof MESSAGE_TYPES.passkeyUsed; origin: string }
   | { type: typeof MESSAGE_TYPES.getPasskeyPolicy; origin: string }
-  | { type: typeof MESSAGE_TYPES.startPasskeyLogin; origin: string; tabId: number }
   | {
       type: typeof MESSAGE_TYPES.getLoginPolicy;
       origin: string;
-    }
-  | {
-      type: typeof MESSAGE_TYPES.enableCredentialLogin;
-      origin: string;
-      tabId: number;
     }
   | {
       type: typeof MESSAGE_TYPES.autofillDetected;
@@ -50,16 +43,16 @@ export type RuntimeMessage =
     };
 
 export type ContentMessage = {
-  type: typeof MESSAGE_TYPES.siteRegistered | typeof MESSAGE_TYPES.enableCredentialLogin | typeof MESSAGE_TYPES.startPasskeyLogin;
+  type: typeof MESSAGE_TYPES.siteRegistered | typeof MESSAGE_TYPES.startPasskeyLogin;
   origin: string;
-} | { type: typeof MESSAGE_TYPES.checkPasskeyFrame; origin: string; authenticationOrigin: string };
+} | { type: typeof MESSAGE_TYPES.checkPasskeyFrame; origin?: string; authenticationOrigin: string };
 
-export type PasskeyFrameResponse = { ok: true; visible: boolean } | { ok: false; error: string };
+export type PasskeyFrameResponse = { ok: true; visible: boolean; origin?: string } | { ok: false; error: string };
 
 export type CredentialSetupResponse = { ok: true; filled: boolean } | { ok: false; error: string };
 
 export type AutofillResponse =
-  | { ok: true; action: 'submit' | 'ignore' | 'pending'; method?: LoginMethod }
+  | { ok: true; action: 'submit' | 'ignore' | 'pending'; method?: LoginMethod; retry?: true }
   | { ok: false; error: string };
 
 export interface PendingSite {

@@ -37,7 +37,9 @@ The development server runs at `http://127.0.0.1:4173`. Build with `npm run lp:b
 | `src/shared/` | Form detection, authentication flows, storage, message validation, and extension translations |
 | `sites/lp/` | Landing page, localization, privacy page rendering, and Cloudflare configuration |
 | `public/` | Extension icons and Chrome locale messages |
-| `tests/fixtures/` and `scripts/browser-fixture.mjs` | Local browser test fixtures |
+| `tests/browser/` and `playwright.config.ts` | Isolated Chromium extension integration tests |
+| `tests/fixtures/` and `scripts/browser-fixture.mjs` | Manual browser test fixtures |
+| `scripts/verify-package.py` and `scripts/tests/` | Release ZIP validation and validator tests |
 | `docs/` | Usage, maintenance, deployment, browser checks, and privacy policies |
 | `lp.pen` and `popup-redesign.pen` | Pencil design sources |
 
@@ -50,10 +52,16 @@ Run the same checks used by CI:
 ```sh
 npm test
 npm run typecheck
-npm run build
+npm run test:package
+npm run zip
+npm run package:verify
+npx playwright install chromium
+npm run test:browser
 npm run lp:build
 npm run audit
 ```
+
+Python 3 is required for package checks. On Linux, use `npx playwright install --with-deps chromium` to install browser system dependencies. Integration tests load the production extension in a temporary profile, use localhost fixtures and virtual WebAuthn, and delete the profile afterward. Failure traces are saved under ignored `test-results/`. They never use your normal browser profile or saved accounts.
 
 Changes to credential handling, form detection, automatic submission, or message validation need regression tests and the relevant checks in [docs/browser-review.md](docs/browser-review.md). State browser behavior that you have not verified in the PR. For documentation-only changes, check links and the accuracy of referenced commands; changes to privacy documents also need the landing page localization tests and build because those documents are published on the website.
 

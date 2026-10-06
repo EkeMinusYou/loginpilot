@@ -1,3 +1,4 @@
+import { isControlAvailable as isAvailable } from './control-availability';
 import type { AutofillResponse } from './messages';
 import { normalizeOrigin } from './origins';
 
@@ -13,16 +14,6 @@ function controlLabel(control: HTMLElement): string {
     (control.tagName === 'INPUT' ? control.getAttribute('value') : control.textContent)?.trim() || '';
 }
 
-function isAvailable(control: HTMLElement): boolean {
-  if (!control.isConnected || control.matches(':disabled, [disabled], [aria-disabled="true"]') ||
-    control.closest('[hidden], [inert], [aria-hidden="true"]') || control.getClientRects().length === 0) return false;
-  for (let node: HTMLElement | null = control; node; node = node.parentElement) {
-    const style = node.ownerDocument.defaultView?.getComputedStyle?.(node);
-    if (style?.visibility === 'hidden' || style?.visibility === 'collapse' || style?.opacity === '0') return false;
-  }
-  return true;
-}
-
 export function isSecureLoginOrigin(origin: string): boolean {
   const url = new URL(origin);
   return url.protocol === 'https:' || (url.protocol === 'http:' &&
@@ -36,17 +27,22 @@ export function hasVisibleAuthenticationFrame(authenticationOrigin: string, root
   return frames.length === 1 && isAvailable(frames[0]!);
 }
 
-export function findPasskeyLoginButton(root: ParentNode = document): HTMLElement | null {
+function findPasskeyControls(root: ParentNode): HTMLElement[] {
   // Never interpret account creation, credential management, or generic sign-in as passkey login.
-  if (root.querySelector('input[autocomplete~="new-password" i]')) return null;
+  if (root.querySelector('input[autocomplete~="new-password" i]')) return [];
   const candidates = Array.from(root.querySelectorAll<HTMLElement>(
     'button, input[type="button"], input[type="submit"], [role="button"]',
   )).filter((control) => {
     const label = controlLabel(control).normalize('NFKC').replace(/\s+/g, ' ').toLowerCase();
     if (!/(?:\bpasskeys?\b|パスキー)/u.test(label)) return false;
     if (/(?:\b(?:create|register|add|set up|setup|manage|delete|remove|enroll)\b|作成|登録|追加|設定|管理|削除)/u.test(label)) return false;
-    return /(?:\b(?:sign[ -]?in|log[ -]?in|continue)\b|ログイン|サインイン)/u.test(label) && isAvailable(control);
+    return /(?:\b(?:sign[ -]?in|log[ -]?in|continue)\b|ログイン|サインイン)/u.test(label);
   });
+  return candidates;
+}
+
+export function findPasskeyLoginButton(root: ParentNode = document): HTMLElement | null {
+  const candidates = findPasskeyControls(root).filter(isAvailable);
   // Multiple choices can refer to different accounts; leave that decision to the user.
   return candidates.length === 1 ? candidates[0]! : null;
 }
@@ -65,8 +61,19 @@ export class PasskeyLoginController {
   private reported = false;
   private generation = 0;
   private accountInputUntil = 0;
+  private policy: AutofillResponse | undefined;
+  private controls: HTMLElement[] | undefined;
 
   constructor(private readonly options: PasskeyLoginOptions) {}
+
+  invalidateCandidates(): void {
+    this.controls = undefined;
+  }
+
+  invalidatePolicy(): void {
+    this.policy = undefined;
+    this.generation++;
+  }
 
   markUserInteraction(): void {
     this.interacted = true;
@@ -81,21 +88,26 @@ export class PasskeyLoginController {
 
   async evaluate(explicit = false): Promise<boolean> {
     if (this.inFlight || !this.options.canStart()) return false;
-    if (!explicit && this.attempted) return false;
+    if (this.attempted) return false;
     if (!explicit && Date.now() < this.accountInputUntil) return false;
     if (explicit) {
+      this.controls = undefined;
+      this.policy = undefined;
       this.interacted = false;
-      this.attempted = false;
       this.generation += 1;
       this.accountInputUntil = 0;
     }
-    const candidate = findPasskeyLoginButton(this.options.root);
-    if (!candidate) return false;
+    this.controls ??= findPasskeyControls(this.options.root);
+    const available = this.controls.filter(isAvailable);
+    if (available.length !== 1) return false;
+    const candidate = available[0]!;
     this.inFlight = true;
     const generation = this.generation;
     try {
-      const policy = await this.options.getPolicy();
-      if (!this.options.canStart()) return false;
+      const policy = this.policy ?? await this.options.getPolicy();
+      if (!this.options.canStart() || generation !== this.generation) return false;
+      // Cache only a denial. A permission to act always needs fresh frame proof.
+      if (policy.ok && policy.action === 'ignore' && !policy.retry) this.policy = policy;
       if (policy.ok && policy.action === 'submit' && policy.method === 'passkey') {
         if (this.attempted || this.interacted || generation !== this.generation) return false;
         if (findPasskeyLoginButton(this.options.root) !== candidate) return false;
@@ -104,7 +116,7 @@ export class PasskeyLoginController {
         candidate.click();
         return true;
       }
-      if (policy.ok && policy.action === 'ignore' && !this.reported) {
+      if (policy.ok && policy.action === 'ignore' && !policy.retry && !this.reported) {
         const response = await this.options.reportCandidate();
         if (response.ok) this.reported = true;
       }

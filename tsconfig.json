@@ -3,7 +3,18 @@
   "compilerOptions": {
     "strict": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": [".wxt/**/*.d.ts", "src/**/*.ts", "src/**/*.d.ts", "sites/**/*.ts", "wxt.config.ts", "vitest.config.ts"]
+  "include": [
+    ".wxt/**/*.d.ts",
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "sites/**/*.ts",
+    "wxt.config.ts",
+    "vitest.config.ts",
+    "tests/browser/**/*.ts",
+    "playwright.config.ts"
+  ]
 }

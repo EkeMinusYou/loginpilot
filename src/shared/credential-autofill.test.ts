@@ -1,20 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fillStoredCredentials } from './credential-autofill';
+import { loginPage } from './test-dom';
 import type { LoginFormCandidate } from './form-detector';
 
-class Input {
-  isConnected = true;
-  private currentValue = '';
-  get value(): string { return this.currentValue; }
-  set value(value: string) { this.currentValue = value; }
-}
-
 function candidate(): LoginFormCandidate {
-  return {
-    form: { isConnected: true } as HTMLFormElement,
-    usernameInput: new Input() as unknown as HTMLInputElement,
-    passwordInput: new Input() as unknown as HTMLInputElement,
-  };
+  const window = loginPage('<form><input type="email"><input type="password" autocomplete="current-password"></form>');
+  vi.stubGlobal('HTMLInputElement', window.HTMLInputElement);
+  return { form: window.document.querySelector('form')!, usernameInput: window.document.querySelector('input[type="email"]')!,
+    passwordInput: window.document.querySelector('input[type="password"]')! };
 }
 
 const stored = { type: 'password', id: 'review@example.com', password: 'fixture-password' };
@@ -24,7 +17,6 @@ beforeEach(() => {
   get.mockReset().mockResolvedValue(stored);
   vi.stubGlobal('navigator', { credentials: { get } });
   vi.stubGlobal('isSecureContext', true);
-  vi.stubGlobal('HTMLInputElement', Input);
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -94,7 +86,7 @@ describe('fillStoredCredentials', () => {
   it('does not fill a form removed during the request', async () => {
     const form = candidate();
     get.mockImplementation(async () => {
-      Object.assign(form.form, { isConnected: false });
+      form.form.remove();
       return stored;
     });
     expect(await fillStoredCredentials(form, 'silent', () => true)).toBe(false);

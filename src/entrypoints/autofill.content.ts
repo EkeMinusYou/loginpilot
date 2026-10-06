@@ -148,7 +148,7 @@ export default defineContentScript({
 
       inFlightForms.delete(candidate.form);
 
-      if (response.ok && response.action === 'submit') {
+      if (response.ok && response.action === 'submit' && response.method !== 'passkey') {
         if (!candidate.form.isConnected || !hasCredentials(candidate) || state.interactionVersion !== interactionVersion) return;
         try {
           submitLoginForm(candidate);
@@ -223,7 +223,9 @@ export default defineContentScript({
       state.userInteracted = false;
       state.autofillPreviewReported = false;
       state.credentialAttempted = false;
-      if (message.type === MESSAGE_TYPES.enableCredentialLogin) {
+      if (message.type === MESSAGE_TYPES.enableCredentialLogin || !hasCredentials(candidate)) {
+        // Registration includes the initial Chrome confirmation when needed;
+        // there is no separate popup action required to start automatic login.
         const filled = await requestCredentials(candidate, state, 'optional');
         return { ok: true, filled };
       }
@@ -243,7 +245,7 @@ export default defineContentScript({
       try {
         // Check registration before asking Chrome for credentials, including when no preview is visible.
         const response = await browser.runtime.sendMessage({ type: MESSAGE_TYPES.getLoginPolicy, origin }) as AutofillResponse;
-        if (response.ok && response.action === 'submit') {
+        if (response.ok && response.action === 'submit' && response.method !== 'passkey') {
           filled = await fillStoredCredentials(candidate, mediation, () =>
             !ctx.isInvalid && !state.userInteracted && document.visibilityState === 'visible',
           );
@@ -279,7 +281,8 @@ export default defineContentScript({
     observeForms();
 
     const onRuntimeMessage = (message: unknown, sender: Browser.runtime.MessageSender): Promise<CredentialSetupResponse> | undefined => {
-      if (sender.id === browser.runtime.id && sender.tab === undefined && isContentMessage(message)) {
+      if (sender.id === browser.runtime.id && sender.tab === undefined && isContentMessage(message) &&
+        (message.type === MESSAGE_TYPES.siteRegistered || message.type === MESSAGE_TYPES.enableCredentialLogin)) {
         return handleContentMessage(message);
       }
     };

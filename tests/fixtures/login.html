@@ -15,13 +15,73 @@
   <body>
     <h1>Login Pilot 動作確認用フォーム</h1>
     <p>ダミーの認証情報だけを使用してください。入力値は送信・保存しません。</p>
-    <nav><a href="/login">ログイン</a><a href="/signup">新規登録</a><a href="/password-change">パスワード変更</a><a href="/iframe">iframe</a></nav>
+    <nav><a href="/login">ログイン</a><a href="/signup">新規登録</a><a href="/password-change">パスワード変更</a><a href="/iframe">iframe</a><a href="/passkey">パスキー</a><a href="/passkey-email">メール入力後のパスキー</a><a href="/passkey-iframe">パスキーiframe</a><a href="/passkey-generic">利用後のパスキー検知</a></nav>
     <main></main>
     <p id="submissions" role="status">送信回数: 0</p>
     <script>
       const mode = location.pathname;
       const main = document.querySelector('main');
-      if (mode === '/iframe') {
+      if (mode === '/passkey' || mode === '/passkey-email' || mode === '/passkey-generic') {
+        // This fixture exercises local WebAuthn only; it never sends an assertion to a server.
+        const create = document.createElement('button');
+        create.type = 'button';
+        create.textContent = 'テスト用パスキーを作成';
+        const signIn = document.createElement('button');
+        signIn.type = 'button';
+        signIn.textContent = mode === '/passkey-generic' ? 'ログイン' : 'パスキーでログイン';
+        if (mode === '/passkey-email') {
+          const label = document.createElement('label');
+          label.textContent = 'ダミーのメールアドレスを入力するとログインボタンを表示します';
+          const email = document.createElement('input');
+          email.type = 'email';
+          email.autocomplete = 'username';
+          signIn.hidden = true;
+          email.addEventListener('input', () => { signIn.hidden = !email.value; });
+          label.append(email);
+          main.append(label);
+        }
+        const status = document.createElement('p');
+        status.setAttribute('role', 'status');
+        status.textContent = 'http://localhost:4174/passkey で開き、ダミーのパスキーを作成してください。';
+        let attempts = 0;
+        create.addEventListener('click', async () => {
+          try {
+            await navigator.credentials.create({ publicKey: {
+              challenge: crypto.getRandomValues(new Uint8Array(32)),
+              rp: { name: 'Login Pilot local test', id: location.hostname },
+              user: { id: new Uint8Array([1, 2, 3, 4]), name: 'loginpilot-test', displayName: 'Login Pilot dummy account' },
+              pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+              authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+              timeout: 60000,
+              attestation: 'none',
+            } });
+            status.textContent = 'テスト用パスキーを作成しました。登録後、ページを再読み込みしてください。';
+          } catch (error) {
+            status.textContent = `作成を終了しました: ${error.name}`;
+          }
+        });
+        signIn.addEventListener('click', async () => {
+          document.querySelector('#submissions').textContent = `認証開始回数: ${++attempts}`;
+          try {
+            const assertion = await navigator.credentials.get({ publicKey: {
+              challenge: crypto.getRandomValues(new Uint8Array(32)),
+              rpId: location.hostname,
+              userVerification: 'required',
+              timeout: 60000,
+            } });
+            status.textContent = assertion ? '本人確認が完了しました（サーバーでの署名検証は行わないローカルテストです）。' : '認証情報は返りませんでした。';
+          } catch (error) {
+            status.textContent = `認証を終了しました: ${error.name}。自動で再試行しないことを確認してください。`;
+          }
+        });
+        main.append(create, signIn, status);
+      } else if (mode === '/passkey-iframe') {
+        const frame = document.createElement('iframe');
+        frame.src = 'http://localhost:4174/passkey-email';
+        frame.title = 'Cross-origin passkey authentication fixture';
+        frame.allow = 'publickey-credentials-get';
+        main.append(frame);
+      } else if (mode === '/iframe') {
         const frame = document.createElement('iframe');
         frame.src = '/login';
         frame.title = 'iframe login fixture';

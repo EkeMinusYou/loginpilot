@@ -16,6 +16,8 @@ function authorized(message: RuntimeMessage, sender: object): boolean {
 describe('runtime message validation', () => {
   it.each([
     { type: MESSAGE_TYPES.autofillDetected, origin },
+    { type: MESSAGE_TYPES.passkeyDetected, origin },
+    { type: MESSAGE_TYPES.passkeyUsed, origin },
     { type: MESSAGE_TYPES.getLoginPolicy, origin },
     { type: MESSAGE_TYPES.getPopupState, currentOrigin: null },
     { type: MESSAGE_TYPES.getPopupState, currentOrigin: origin },
@@ -23,6 +25,8 @@ describe('runtime message validation', () => {
     { type: MESSAGE_TYPES.registerOrigin, origin, tabId: 1 },
     { type: MESSAGE_TYPES.removeOrigin, origin },
     { type: MESSAGE_TYPES.enableCredentialLogin, origin, tabId: 1 },
+    { type: MESSAGE_TYPES.startPasskeyLogin, origin, tabId: 1 },
+    { type: MESSAGE_TYPES.registerOrigin, origin, method: 'password' },
   ])('accepts a supported message (%j)', (message) => {
     expect(isRuntimeMessage(message)).toBe(true);
   });
@@ -38,6 +42,9 @@ describe('runtime message validation', () => {
     { type: MESSAGE_TYPES.registerOrigin, origin, tabId: 0.5 },
     { type: MESSAGE_TYPES.enableCredentialLogin, origin },
     { type: MESSAGE_TYPES.enableCredentialLogin, origin, tabId: Infinity },
+    { type: MESSAGE_TYPES.startPasskeyLogin, origin },
+    { type: 'set-login-method', origin, method: 'passkey' },
+    { type: MESSAGE_TYPES.registerOrigin, origin, method: 'unknown' },
     { type: MESSAGE_TYPES.getPopupState },
     { type: MESSAGE_TYPES.getPopupState, currentOrigin: 'chrome://settings' },
   ])('rejects malformed or unsupported messages (%j)', (message) => {
@@ -56,6 +63,14 @@ describe('runtime message validation', () => {
     expect(authorized(message, { ...popup, url: `${popupUrl}?forged` })).toBe(false);
   });
 
+  it.each([
+    { type: MESSAGE_TYPES.startPasskeyLogin, origin, tabId: 1 },
+  ] as RuntimeMessage[])('restricts passkey configuration to the popup (%j)', (message) => {
+    expect(authorized(message, popup)).toBe(true);
+    expect(authorized(message, content)).toBe(false);
+    expect(authorized(message, { ...popup, id: 'another-extension' })).toBe(false);
+  });
+
   it.each([MESSAGE_TYPES.autofillDetected, MESSAGE_TYPES.getLoginPolicy])(
     'restricts %s to a matching top-level content script', (type) => {
       const message = { type, origin };
@@ -68,12 +83,22 @@ describe('runtime message validation', () => {
       expect(authorized(message, { ...content, url: undefined })).toBe(false);
     },
   );
+  it.each([MESSAGE_TYPES.passkeyDetected, MESSAGE_TYPES.passkeyUsed, MESSAGE_TYPES.getPasskeyPolicy])('accepts authenticated passkey requests from a specific embedded document: %s', (type) => {
+    const message = { type, origin };
+    expect(authorized(message, { ...content, frameId: 1, documentId: 'auth-document' })).toBe(true);
+    expect(authorized(message, { ...content, frameId: -1 })).toBe(false);
+    expect(authorized(message, { ...content, frameId: 1, documentLifecycle: 'prerender' })).toBe(false);
+    expect(authorized(message, { ...content, id: 'another-extension' })).toBe(false);
+    expect(authorized(message, { ...content, url: 'https://other.example' })).toBe(false);
+    expect(authorized(message, popup)).toBe(false);
+  });
 });
 
 describe('content message validation', () => {
   it('accepts background commands with a canonical origin', () => {
     expect(isContentMessage({ type: MESSAGE_TYPES.siteRegistered, origin })).toBe(true);
     expect(isContentMessage({ type: MESSAGE_TYPES.enableCredentialLogin, origin })).toBe(true);
+    expect(isContentMessage({ type: MESSAGE_TYPES.startPasskeyLogin, origin })).toBe(true);
   });
   it('rejects arbitrary operations and malformed origins', () => {
     expect(isContentMessage({ type: MESSAGE_TYPES.registerOrigin, origin })).toBe(false);

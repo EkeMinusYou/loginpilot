@@ -100,4 +100,220 @@ describe('background message handling', () => {
     await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, tabId: 1 });
     expect(mocks.browser.tabs.sendMessage).not.toHaveBeenCalled();
   });
+
+  it('preserves the password method for existing installations', async () => {
+    const state = await dispatch({ type: MESSAGE_TYPES.getPopupState, currentOrigin: origin });
+    expect(state).toMatchObject({ registeredOrigins: [origin], passkeyOrigins: [] });
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyDetected, origin }, content)).toEqual({ ok: true, action: 'ignore' });
+    expect(mocks.browser.notifications.create).not.toHaveBeenCalled();
+  });
+
+  it('registers a passkey site and blocks password submission on it', async () => {
+    stored.registeredOrigins = [];
+    await dispatch({ type: MESSAGE_TYPES.passkeyDetected, origin }, content);
+    expect(stored.pendingSite).toMatchObject({ origin, method: 'passkey' });
+    await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: 'passkey', tabId: 1 });
+    expect(stored.passkeyOrigins).toEqual([origin]);
+    expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin }, content)).toEqual({ ok: true, action: 'submit', method: 'passkey' });
+    expect(await dispatch({ type: MESSAGE_TYPES.autofillDetected, origin }, content)).toEqual({ ok: true, action: 'ignore', method: 'passkey' });
+    expect(await dispatch({ type: MESSAGE_TYPES.enableCredentialLogin, origin, tabId: 1 })).toMatchObject({ ok: false });
+    expect(await dispatch({ type: MESSAGE_TYPES.startPasskeyLogin, origin, tabId: 1 })).toEqual({ ok: true, filled: true });
+    expect(mocks.browser.tabs.sendMessage).toHaveBeenLastCalledWith(1, { type: MESSAGE_TYPES.startPasskeyLogin, origin }, { frameId: 0 });
+  });
+
+  it('ignores the removed method change command', async () => {
+    expect(await dispatch({ type: 'set-login-method', origin, method: 'passkey' })).toBeUndefined();
+    expect(mocks.browser.storage.local.get).not.toHaveBeenCalled();
+    expect(mocks.browser.storage.local.set).not.toHaveBeenCalled();
+  });
+
+  it.each(['password', 'passkey'] as const)('requires removal before registering a different method from %s', async (method) => {
+    stored.passkeyOrigins = method === 'passkey' ? [origin] : [];
+    const nextMethod = method === 'passkey' ? 'password' : 'passkey';
+    expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: nextMethod })).toEqual({
+      ok: false, error: 'ログイン方式を変更するには、登録を解除してから登録し直してください。',
+    });
+    expect(mocks.browser.storage.local.set).not.toHaveBeenCalled();
+    expect(stored.passkeyOrigins).toEqual(method === 'passkey' ? [origin] : []);
+    await dispatch({ type: MESSAGE_TYPES.removeOrigin, origin });
+    expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: nextMethod })).toMatchObject({ ok: true });
+    expect(stored.registeredOrigins).toEqual([origin]);
+    expect(stored.passkeyOrigins).toEqual(nextMethod === 'passkey' ? [origin] : []);
+  });
+
+  it('offers registration after passkey usage without granting automatic login', async () => {
+    stored.registeredOrigins = [];
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin }, content)).toEqual({ ok: true, action: 'pending' });
+    expect(stored.pendingSite).toMatchObject({ origin, method: 'passkey', passkeyUsed: true });
+    expect(stored.registeredOrigins).toEqual([]);
+    expect(stored.passkeyOrigins).toBeUndefined();
+    expect(mocks.browser.tabs.sendMessage).not.toHaveBeenCalled();
+    expect(await dispatch({ type: MESSAGE_TYPES.getPopupState, currentOrigin: origin })).toMatchObject({
+      pendingSite: { origin, method: 'passkey', passkeyUsed: true },
+    });
+    await dispatch({ type: MESSAGE_TYPES.passkeyDetected, origin }, content);
+    expect(stored.pendingSite).toMatchObject({ passkeyUsed: true });
+    expect(mocks.browser.notifications.create).toHaveBeenCalledOnce();
+  });
+
+  it('ignores passkey usage on a registered password site without offering a switch', async () => {
+    stored.language = 'en';
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin }, content)).toEqual({ ok: true, action: 'ignore' });
+    expect(stored.registeredOrigins).toEqual([origin]);
+    expect(stored.passkeyOrigins).toBeUndefined();
+    expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin }, content)).toEqual({ ok: true, action: 'submit' });
+    expect(stored.pendingSite).toBeUndefined();
+    expect(mocks.browser.notifications.create).not.toHaveBeenCalled();
+  });
+
+  it('does not offer a passkey frame candidate for a registered password site', async () => {
+    const auth = 'https://idmsa.apple.com';
+    const frame = { ...content, url: `${auth}/auth`, frameId: 3, documentId: 'auth-document' };
+    mocks.browser.tabs.sendMessage.mockResolvedValue({ ok: true, visible: true });
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyDetected, origin: auth }, frame)).toEqual({ ok: true, action: 'ignore' });
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin: auth }, frame)).toEqual({ ok: true, action: 'ignore' });
+    expect(await dispatch({ type: MESSAGE_TYPES.getPopupState, currentOrigin: origin })).toMatchObject({ pendingSite: null });
+    expect(mocks.browser.notifications.create).not.toHaveBeenCalled();
+  });
+
+  it('keeps the authenticating origin as the candidate when login immediately redirects the tab', async () => {
+    stored.registeredOrigins = [];
+    mocks.browser.tabs.get.mockResolvedValue({ id: 1, url: 'https://destination.example/home' });
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin }, content)).toEqual({ ok: true, action: 'pending' });
+    expect(stored.pendingSite).toMatchObject({ origin, method: 'passkey', passkeyUsed: true });
+    expect(stored.registeredOrigins).toEqual([]);
+    expect(mocks.browser.tabs.get).not.toHaveBeenCalled();
+  });
+
+  it('does not re-prompt or re-authenticate an already approved passkey site after usage', async () => {
+    stored.passkeyOrigins = [origin];
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin }, content)).toEqual({ ok: true, action: 'ignore' });
+    expect(stored.pendingSite).toBeUndefined();
+    expect(mocks.browser.notifications.create).not.toHaveBeenCalled();
+    expect(mocks.browser.tabs.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('keeps usage evidence and the parent/authentication pair after a frame policy refresh', async () => {
+    const auth = 'https://idmsa.apple.com';
+    const frame = { ...content, url: `${auth}/auth`, frameId: 3, documentId: 'auth-document' };
+    stored.registeredOrigins = [];
+    mocks.browser.tabs.sendMessage.mockResolvedValue({ ok: true, visible: true });
+    await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin: auth }, frame);
+    await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: auth }, frame);
+    expect(await dispatch({ type: MESSAGE_TYPES.getPopupState, currentOrigin: origin })).toMatchObject({
+      pendingSite: { origin, authenticationOrigin: auth, method: 'passkey', passkeyUsed: true },
+    });
+    await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: 'passkey', authenticationOrigin: auth });
+    expect(stored.passkeyOrigins).toEqual([origin]);
+    expect(stored.passkeyFrameOrigins).toEqual({ [origin]: auth });
+    expect(mocks.browser.tabs.sendMessage.mock.calls.every(([, message]) => message.type === MESSAGE_TYPES.checkPasskeyFrame)).toBe(true);
+  });
+
+  it('rejects forged usage senders before reading or changing stored preferences', async () => {
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin }, popup)).toMatchObject({ ok: false });
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin }, { ...content, url: 'https://other.example' })).toMatchObject({ ok: false });
+    expect(mocks.browser.storage.local.get).not.toHaveBeenCalled();
+    expect(mocks.browser.storage.local.set).not.toHaveBeenCalled();
+  });
+
+  it('accepts usage from a recently verified iframe removed after authentication, without trusting another document', async () => {
+    const auth = 'https://idmsa.apple.com';
+    const frame = { ...content, url: `${auth}/auth`, frameId: 3, documentId: 'auth-document' };
+    stored.registeredOrigins = [];
+    mocks.browser.tabs.sendMessage.mockResolvedValue({ ok: true, visible: true });
+    await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: auth }, frame);
+    mocks.browser.tabs.sendMessage.mockResolvedValue({ ok: true, visible: false });
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin: auth }, { ...frame, documentId: 'another-document' })).toEqual({ ok: true, action: 'ignore' });
+    expect(stored.pendingSite).toBeUndefined();
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin: auth }, frame)).toEqual({ ok: true, action: 'pending' });
+    expect(stored.pendingSite).toMatchObject({ origin, authenticationOrigin: auth, passkeyUsed: true });
+    expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: auth }, frame)).toEqual({ ok: true, action: 'ignore' });
+    expect(stored.registeredOrigins).toEqual([]);
+  });
+
+  it('removes the method preference along with site registration', async () => {
+    stored.passkeyOrigins = [origin];
+    await dispatch({ type: MESSAGE_TYPES.removeOrigin, origin });
+    expect(stored.passkeyOrigins).toEqual([]);
+    expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin }, content)).toEqual({ ok: true, action: 'ignore' });
+  });
+
+  it('does not send passkey login to a tab that navigated away', async () => {
+    stored.passkeyOrigins = [origin];
+    mocks.browser.tabs.get.mockResolvedValue({ id: 1, url: 'https://another.example/login' });
+    expect(await dispatch({ type: MESSAGE_TYPES.startPasskeyLogin, origin, tabId: 1 })).toMatchObject({ ok: false });
+    expect(mocks.browser.tabs.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('registers an Apple authentication frame under its parent site and targets its document', async () => {
+    const site = 'https://appstoreconnect.apple.com';
+    const authenticationOrigin = 'https://idmsa.apple.com';
+    const frame = { ...content, url: `${authenticationOrigin}/appleauth/auth/signin`, frameId: 3, documentId: 'apple-auth-document' };
+    stored.registeredOrigins = [];
+    mocks.browser.tabs.get.mockResolvedValue({ id: 1, url: site });
+    mocks.browser.tabs.sendMessage.mockImplementation(async (_tab, message) => message.type === MESSAGE_TYPES.checkPasskeyFrame
+      ? { ok: true, visible: true } : { ok: true, filled: true });
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyDetected, origin: authenticationOrigin }, frame)).toEqual({ ok: true, action: 'pending' });
+    expect(stored.pendingSite).toMatchObject({ origin: site, method: 'passkey', authenticationOrigin });
+    expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: authenticationOrigin }, frame)).toEqual({ ok: true, action: 'ignore' });
+    await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin: site, method: 'passkey', authenticationOrigin, tabId: 1 });
+    expect(stored.registeredOrigins).toEqual([site]);
+    expect(stored.passkeyFrameOrigins).toEqual({ [site]: authenticationOrigin });
+    expect(mocks.browser.tabs.sendMessage).toHaveBeenLastCalledWith(1, { type: MESSAGE_TYPES.startPasskeyLogin, origin: authenticationOrigin }, { documentId: 'apple-auth-document' });
+    expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: authenticationOrigin }, frame)).toEqual({ ok: true, action: 'submit', method: 'passkey' });
+    expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin: authenticationOrigin }, frame)).toMatchObject({ ok: false });
+  });
+
+  it('does not inherit permission from a registered authentication origin or another parent site', async () => {
+    const auth = 'https://idmsa.apple.com';
+    stored.registeredOrigins = [auth, 'https://appstoreconnect.apple.com'];
+    stored.passkeyOrigins = [auth, 'https://appstoreconnect.apple.com'];
+    stored.passkeyFrameOrigins = { 'https://appstoreconnect.apple.com': auth };
+    mocks.browser.tabs.sendMessage.mockResolvedValue({ ok: true, visible: true });
+    const frame = { ...content, url: `${auth}/auth`, frameId: 3 };
+    expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: auth }, frame)).toEqual({ ok: true, action: 'ignore' });
+    stored.registeredOrigins = [origin];
+    stored.passkeyOrigins = [origin];
+    expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: auth }, frame)).toEqual({ ok: true, action: 'ignore' });
+    stored.passkeyFrameOrigins = { [origin]: auth };
+    expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: auth }, frame)).toEqual({ ok: true, action: 'submit', method: 'passkey' });
+  });
+
+  it('rejects hidden frames and insecure embedding pages before reporting a candidate', async () => {
+    const auth = 'https://idmsa.apple.com';
+    const frame = { ...content, url: `${auth}/auth`, frameId: 3 };
+    mocks.browser.tabs.sendMessage.mockResolvedValue({ ok: true, visible: false });
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyDetected, origin: auth }, frame)).toEqual({ ok: true, action: 'ignore' });
+    expect(stored.pendingSite).toBeUndefined();
+    mocks.browser.tabs.get.mockResolvedValue({ id: 1, url: 'http://example.com' });
+    mocks.browser.tabs.sendMessage.mockClear();
+    expect(await dispatch({ type: MESSAGE_TYPES.passkeyDetected, origin: auth }, frame)).toEqual({ ok: true, action: 'ignore' });
+    expect(mocks.browser.tabs.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('keeps the current frame candidate available after manual registration or a notification from another tab', async () => {
+    const auth = 'https://idmsa.apple.com';
+    const frame = { ...content, url: `${auth}/auth`, frameId: 3, documentId: 'auth-document' };
+    stored.registeredOrigins = [];
+    mocks.browser.tabs.sendMessage.mockResolvedValue({ ok: true, visible: true });
+    await dispatch({ type: MESSAGE_TYPES.passkeyDetected, origin: auth }, frame);
+    await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: 'passkey' });
+    stored.pendingSite = { origin: 'https://another.example', detectedAt: 1 };
+    expect(await dispatch({ type: MESSAGE_TYPES.getPopupState, currentOrigin: origin })).toMatchObject({ pendingSite: { origin, authenticationOrigin: auth } });
+    expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: 'passkey', authenticationOrigin: auth })).toMatchObject({ ok: true });
+    expect(stored.passkeyFrameOrigins).toEqual({ [origin]: auth });
+  });
+
+  it('rejects an authentication origin that was not detected', async () => {
+    expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: 'passkey', authenticationOrigin: 'https://forged.example' })).toMatchObject({ ok: false });
+    expect(mocks.browser.storage.local.set).not.toHaveBeenCalled();
+  });
+
+  it('requires frame approval again after removal and denies a top-level flow when a frame is configured', async () => {
+    stored.passkeyOrigins = [origin];
+    stored.passkeyFrameOrigins = { [origin]: 'https://idmsa.apple.com' };
+    expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin }, content)).toEqual({ ok: true, action: 'ignore' });
+    await dispatch({ type: MESSAGE_TYPES.removeOrigin, origin });
+    expect(stored.passkeyFrameOrigins).toEqual({});
+  });
 });

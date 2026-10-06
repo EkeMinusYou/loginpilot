@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Automatically submits registered login forms after autofill.",
+    "message": "Automatically submits autofilled login forms or starts passkey sign-in on registered sites.",
     "description": "Description displayed in Chrome’s extension manager and store."
   }
 }

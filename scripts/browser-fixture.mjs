@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 
 const html = await readFile(new URL('../tests/fixtures/login.html', import.meta.url));
-const paths = new Set(['/', '/login', '/signup', '/password-change', '/iframe']);
+const paths = new Set(['/', '/login', '/signup', '/password-change', '/iframe', '/passkey', '/passkey-iframe', '/passkey-email', '/passkey-generic']);
 const server = createServer((request, response) => {
   const path = new URL(request.url ?? '/', 'http://127.0.0.1:4174').pathname;
   if (request.method !== 'GET' || !paths.has(path)) {

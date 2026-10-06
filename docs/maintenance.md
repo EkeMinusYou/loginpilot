@@ -2,6 +2,12 @@
 
 Development setup and local validation commands are in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
+## Pull request policy
+
+Issues are open for bug reports and feature requests. Pull requests are used for maintainer changes and automated dependency updates; external pull requests are not accepted. See the [contribution policy](../CONTRIBUTING.md#contribution-policy).
+
+Keep pull requests enabled and set **Settings → General → Features → Pull requests** to **Collaborators only**. This restricts external creation while retaining maintainer PRs. See [GitHub's repository settings documentation](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/disabling-pull-requests). Dependabot can still create PRs with this restriction, as confirmed in [GitHub's feature announcement discussion](https://github.com/orgs/community/discussions/187038).
+
 ## CI and dependency updates
 
 | Workflow | Trigger | Purpose |
@@ -29,6 +35,7 @@ Adding workflow files does not configure GitHub repository settings. An administ
 2. Enable **Allow auto-merge**.
 3. Protect `main`, require pull requests, add **Checks** and **Dependency review** as required checks, and enable **Require branches to be up to date**. This project's unattended dependency updates use zero required approvals; choose a different review policy if your team requires one.
 4. Allow Actions with read-only default workflow permissions. Automatic approval of PR reviews is not needed.
+5. To retain this project's contribution policy, leave Issues open and restrict pull request creation to **Collaborators only**.
 
 Run CI once to make its check names available in the settings UI. Removing branch protection causes the auto-merge workflow's precondition to fail.
 

@@ -1,6 +1,6 @@
 import { browser, type Browser } from 'wxt/browser';
 import { defineContentScript } from 'wxt/utils/define-content-script';
-import { PasskeyLoginController, hasVisibleAuthenticationFrame } from '../shared/passkey-login';
+import { PASSKEY_ACCOUNT_INPUT_DELAY_MS, PasskeyLoginController, hasVisibleAuthenticationFrame } from '../shared/passkey-login';
 import { normalizeOrigin } from '../shared/origins';
 import { isContentMessage } from '../shared/message-validation';
 import { MESSAGE_TYPES, type AutofillResponse, type CredentialSetupResponse, type PasskeyFrameResponse } from '../shared/messages';
@@ -19,6 +19,11 @@ export default defineContentScript({
       getPolicy: async () => await browser.runtime.sendMessage({ type: MESSAGE_TYPES.getPasskeyPolicy, origin }) as AutofillResponse,
       reportCandidate: async () => await browser.runtime.sendMessage({ type: MESSAGE_TYPES.passkeyDetected, origin }) as AutofillResponse,
     });
+    let accountInputTimer: number | undefined;
+    const clearAccountInputTimer = (): void => {
+      if (accountInputTimer !== undefined) clearTimeout(accountInputTimer);
+      accountInputTimer = undefined;
+    };
     let usageReported = false;
     const onPasskeyUsed = (): void => {
       if (usageReported || ctx.isInvalid || document.visibilityState !== 'visible') return;
@@ -37,7 +42,13 @@ export default defineContentScript({
         input.matches('input[type="email"], input[autocomplete~="username" i]') &&
         !(event instanceof KeyboardEvent && event.key === 'Escape')) {
         login.pauseForAccountInput();
+        clearAccountInputTimer();
+        accountInputTimer = ctx.setTimeout(() => {
+          accountInputTimer = undefined;
+          void login.evaluate();
+        }, PASSKEY_ACCOUNT_INPUT_DELAY_MS);
       } else {
+        clearAccountInputTimer();
         login.markUserInteraction();
       }
     };
@@ -58,11 +69,16 @@ export default defineContentScript({
     };
     browser.runtime.onMessage.addListener(onMessage);
     const observer = new MutationObserver(() => void login.evaluate());
-    observer.observe(document, { childList: true, subtree: true, attributes: true,
-      attributeFilter: ['disabled', 'aria-disabled', 'aria-label', 'aria-labelledby', 'hidden', 'style', 'class'] });
+    observer.observe(document, { childList: true, subtree: true, characterData: true, attributes: true,
+      attributeFilter: ['disabled', 'aria-disabled', 'aria-label', 'aria-labelledby', 'aria-hidden', 'hidden', 'inert', 'value', 'style', 'class'] });
+    const evaluate = (): void => { void login.evaluate(); };
+    document.addEventListener('visibilitychange', evaluate);
     void login.evaluate();
-    ctx.setInterval(() => void login.evaluate(), 1000);
+    // CSS transitions and layout changes can make a button available without a DOM mutation.
+    ctx.setInterval(evaluate, 250);
     ctx.onInvalidated(() => {
+      clearAccountInputTimer();
+      document.removeEventListener('visibilitychange', evaluate);
       document.removeEventListener(PASSKEY_USAGE_EVENT, onPasskeyUsed);
       observer.disconnect();
       browser.runtime.onMessage.removeListener(onMessage);

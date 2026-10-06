@@ -63,9 +63,9 @@ describe('passkey login authorization and lifecycle', () => {
     login.pauseForAccountInput();
     button.removeAttribute('disabled');
     expect(await login.evaluate()).toBe(false);
-    vi.advanceTimersByTime(700);
+    vi.advanceTimersByTime(250);
     login.pauseForAccountInput();
-    vi.advanceTimersByTime(700);
+    vi.advanceTimersByTime(250);
     expect(await login.evaluate()).toBe(false);
     vi.advanceTimersByTime(50);
     expect(await login.evaluate()).toBe(true);
@@ -84,7 +84,7 @@ describe('passkey login authorization and lifecycle', () => {
     login.pauseForAccountInput();
     policy.resolve({ ok: true, action: 'submit', method: 'passkey' });
     expect(await evaluation).toBe(false);
-    vi.advanceTimersByTime(750);
+    vi.advanceTimersByTime(300);
     expect(await login.evaluate()).toBe(true);
     expect(click).toHaveBeenCalledOnce();
   });
@@ -94,11 +94,11 @@ describe('passkey login authorization and lifecycle', () => {
     const { login } = controller(page('<button>Sign in with passkey</button>'));
     login.markUserInteraction();
     login.pauseForAccountInput();
-    vi.advanceTimersByTime(750);
+    vi.advanceTimersByTime(300);
     expect(await login.evaluate()).toBe(false);
     expect(await login.evaluate(true)).toBe(true);
     login.pauseForAccountInput();
-    vi.advanceTimersByTime(750);
+    vi.advanceTimersByTime(300);
     expect(await login.evaluate()).toBe(false);
   });
 

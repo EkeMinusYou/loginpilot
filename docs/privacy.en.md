@@ -33,7 +33,7 @@ To offer registration after passkey use, Login Pilot adds a completion observer 
 
 Passkey button detection runs in secure pages and frames. For a frame, Login Pilot checks the parent page’s origin and authentication origin and verifies the frame’s visibility through the parent page. A usage-completed hint may also come from the same document and parent-site pair verified within the last 15 seconds if the site has just closed the authentication frame. This exception never authorizes automatic activation. The authentication origin is shown in the popup before registration; automatic activation is restricted to the combination approved by the user. Target tab, frame, and document identifiers are handled temporarily in background memory and are not stored persistently.
 
-Login Pilot does not automatically retry after cancellation or switch to password login. Password retrieval and automatic form submission are disabled on sites configured for passkey login. For email fields and fields marked `autocomplete="username"`, automatic activation waits until input has settled for 750 milliseconds. Other page interactions or the Escape key stop automatic activation. Usage-detected signals are only registration hints and do not stop automatic activation.
+Login Pilot does not automatically retry after cancellation or switch to password login. Password retrieval and automatic form submission are disabled on sites configured for passkey login. For email fields and fields marked `autocomplete="username"`, automatic activation waits until input has settled for 300 milliseconds. Other page interactions or the Escape key stop automatic activation. Usage-detected signals are only registration hints and do not stop automatic activation.
 
 ## External services
 

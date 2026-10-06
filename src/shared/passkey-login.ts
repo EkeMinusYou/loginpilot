@@ -1,6 +1,8 @@
 import type { AutofillResponse } from './messages';
 import { normalizeOrigin } from './origins';
 
+export const PASSKEY_ACCOUNT_INPUT_DELAY_MS = 300;
+
 function controlLabel(control: HTMLElement): string {
   const labelledBy = control.getAttribute('aria-labelledby');
   if (labelledBy) {
@@ -73,12 +75,13 @@ export class PasskeyLoginController {
 
   pauseForAccountInput(): void {
     // Account entry is part of passkey sign-in, rather than a choice to stop it.
-    this.accountInputUntil = Date.now() + 750;
+    this.accountInputUntil = Date.now() + PASSKEY_ACCOUNT_INPUT_DELAY_MS;
     this.generation += 1;
   }
 
   async evaluate(explicit = false): Promise<boolean> {
     if (this.inFlight || !this.options.canStart()) return false;
+    if (!explicit && this.attempted) return false;
     if (!explicit && Date.now() < this.accountInputUntil) return false;
     if (explicit) {
       this.interacted = false;

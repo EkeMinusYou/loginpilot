@@ -11,7 +11,7 @@ vi.mock('wxt/browser', () => ({ browser: mocks.browser }));
 
 let document: Document;
 let event: typeof Event;
-let ctx: { isInvalid: boolean; setInterval: ReturnType<typeof vi.fn>; onInvalidated: ReturnType<typeof vi.fn> };
+let ctx: { isInvalid: boolean; setInterval: ReturnType<typeof vi.fn>; setTimeout: ReturnType<typeof vi.fn>; onInvalidated: ReturnType<typeof vi.fn> };
 
 beforeEach(() => {
   vi.resetModules();
@@ -30,11 +30,12 @@ beforeEach(() => {
     observe() {}
     disconnect() { mocks.disconnect(); }
   });
-  ctx = { isInvalid: false, setInterval: vi.fn(), onInvalidated: vi.fn() };
+  ctx = { isInvalid: false, setInterval: vi.fn(), setTimeout: vi.fn((handler, delay) => setTimeout(handler, delay)), onInvalidated: vi.fn() };
   mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, action: 'pending' });
 });
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.clearAllTimers();
   vi.useRealTimers();
 });
 
@@ -61,11 +62,90 @@ describe('passkey usage content bridge', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(click).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(750);
-    ctx.setInterval.mock.calls[0]![0]();
-    await Promise.resolve();
-    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(299);
+    expect(click).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
     expect(click).toHaveBeenCalledOnce();
+  });
+
+  it('resets the deadline while account input continues', async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '<input type="email"><button disabled>Sign in with passkey</button>';
+    const input = document.querySelector('input')!;
+    const button = document.querySelector('button')!;
+    Object.defineProperty(button, 'getClientRects', { value: () => [{}] });
+    const click = vi.spyOn(button, 'click');
+    mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, action: 'submit', method: 'passkey' });
+    await start();
+    const type = (): void => {
+      const typing = new event('beforeinput', { bubbles: true });
+      Object.defineProperty(typing, 'isTrusted', { value: true });
+      input.dispatchEvent(typing);
+    };
+    type();
+    button.removeAttribute('disabled');
+    await vi.advanceTimersByTimeAsync(200);
+    type();
+    await vi.advanceTimersByTimeAsync(299);
+    expect(click).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(click).toHaveBeenCalledOnce();
+  });
+
+  it.each(['interaction', 'invalidation'])('cancels the scheduled activation on %s', async (reason) => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '<input type="email"><button disabled>Sign in with passkey</button>';
+    const input = document.querySelector('input')!;
+    const button = document.querySelector('button')!;
+    Object.defineProperty(button, 'getClientRects', { value: () => [{}] });
+    const click = vi.spyOn(button, 'click');
+    mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, action: 'submit', method: 'passkey' });
+    await start();
+    const typing = new event('beforeinput', { bubbles: true });
+    Object.defineProperty(typing, 'isTrusted', { value: true });
+    input.dispatchEvent(typing);
+    button.removeAttribute('disabled');
+    if (reason === 'invalidation') ctx.onInvalidated.mock.calls[0]![0]();
+    else {
+      const stop = new event('click', { bubbles: true });
+      Object.defineProperty(stop, 'isTrusted', { value: true });
+      document.body.dispatchEvent(stop);
+    }
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(click).not.toHaveBeenCalled();
+    expect(mocks.browser.runtime.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('quickly detects a button becoming available through layout without a DOM mutation', async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '<button>Sign in with passkey</button>';
+    const button = document.querySelector('button')!;
+    let visible = false;
+    Object.defineProperty(button, 'getClientRects', { value: () => visible ? [{}] : [] });
+    const click = vi.spyOn(button, 'click');
+    ctx.setInterval.mockImplementation((handler, delay) => setInterval(handler, delay));
+    mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, action: 'submit', method: 'passkey' });
+    await start();
+    visible = true;
+    await vi.advanceTimersByTimeAsync(250);
+    expect(click).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(click).toHaveBeenCalledOnce();
+    expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledOnce();
+  });
+
+  it('starts immediately when a hidden tab becomes visible', async () => {
+    document.body.innerHTML = '<button>Sign in with passkey</button>';
+    const button = document.querySelector('button')!;
+    Object.defineProperty(button, 'getClientRects', { value: () => [{}] });
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    const click = vi.spyOn(button, 'click');
+    mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, action: 'submit', method: 'passkey' });
+    await start();
+    expect(click).not.toHaveBeenCalled();
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    document.dispatchEvent(new event('visibilitychange'));
+    await vi.waitFor(() => expect(click).toHaveBeenCalledOnce());
   });
 
   it('does not cancel automatic button activation while a usage hint is being reported', async () => {

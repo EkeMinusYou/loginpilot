@@ -1,40 +1,41 @@
-# Login Pilot ポップアップ案
+# Popup design notes
 
-幅360pxを維持し、白を基調に採用アイコンC案（Pilot）のネイビーと水色を使う。現在のサイトの状態を最初に見せ、登録済みサイトは区切り線で整理する。以下のドメインはデザイン確認用の例。
+The popup uses a 360px width, a white surface, and the Pilot brand icon's navy and light blue palette. Show the current site's state first, followed by the registered-site list. Example origins in design files are placeholders.
 
-## 表示する3状態
+The approved design source is `popup-redesign.pen` at the repository root. The implementation in `src/entrypoints/popup/` and translations in `src/shared/i18n.ts` determine exact dimensions and copy. These notes describe interaction principles rather than a separate pixel specification.
 
-1. **登録済み**：現在のサイトのoriginと「自動ログイン有効」を表示。「自動入力を検知すると、ログインフォームを送信します。」で動作条件を説明する。ログイン済みとは表示しない。
-2. **自動入力を検知した未登録サイト**：「新しいサイトを検知」と対象originを表示。「登録して自動ログイン」を唯一の主ボタンにする。登録後、このページから自動ログインを試みることを説明する。現在のサイトと検知したサイトが異なる場合は、それぞれのoriginを分けて表示する。
-3. **登録なし**：現在のサイトに「未登録」を表示。「ログイン情報が自動入力されると、ここからサイトを登録できます。」で次の手順を案内する。自動入力の検知前には登録ボタンを表示しない。
+## Site states
 
-## 構成と寸法
+| State | Presentation and action |
+| --- | --- |
+| Registered | Show the origin, enabled state, and saved login method. The method is read-only; there is no start button or method switch. Enabled status does not imply a successful login. |
+| Candidate detected | Show the candidate origin and detection type: autofill, passkey button, or completed passkey use. Registration is the primary action. If the current and detected sites differ, identify both clearly. |
+| No candidate | Show the current site's unregistered state and allow manual registration. Method selection belongs to confirmation for a new registration, with Password as the default. |
+| Authentication iframe | Show the parent origin and authentication origin so consent applies to the visible pair. |
 
-- ヘッダー：32pxのC案アイコンとLogin Pilot。高さ64px。件数は登録済みサイトの見出しへ移す。
-- 本文：左右20px、上下16pxの余白。現在のサイトの表示を主領域とし、状態をアイコンと文言の両方で示す。
-- 登録済みサイト：originを表示し、右端に「解除」。カードを重ねず、行の境界を細い線で区切る。
-- フッター：「ID・パスワードは保存しません。」を控えめに表示。
-- 本文13px、補足12px、ドメイン19px。主ボタンは高さ44px、サイトの行は高さ52px。
-- 間隔は4・8・12・16・20px。カード角丸12px、ボタン角丸8px。
-- 背景 #FFFFFF、主文字 #0F172A、補足 #475569、境界 #E2E8F0。
-- 主操作 #0369A1、自動ログイン有効 #047857、エラー #B91C1C。状態は色だけで表現しない。
-- サンプルの高さは登録済み525px、登録確認569px、登録なし477px。
+Registration normally allows an attempt on the current page. Registration after completed passkey use applies to future visits without repeating authentication immediately. Changing a saved method requires removal and a new registration.
 
-## 操作と例外
+## Layout
 
-- 登録ボタンの処理中は「登録中…」と表示し、重複クリックを抑制する。
-- 登録成功は「サイトを登録しました。このページから自動ログインを試みます。」と表示する。ログイン成功とは扱わない。
-- 解除後は件数と一覧を更新し、「サイトの登録を解除しました。」と表示する。
-- エラーは成功表示と異なる色とアイコンで示し、操作の近くに具体的なメッセージを置く。
-- 読み込み中は「サイトの状態を確認しています…」と表示し、未登録と混同させない。
-- URLを取得できないページには「このページでは利用できません」と表示する。
-- 長いoriginは省略せず折り返す。scheme・portの違いを保持する。
-- 登録済みサイトが増えた場合は一覧のみ高さを制限してスクロールさせ、現在のサイトと主操作を表示したままにする。
+- Header: the 32px Pilot icon and product name.
+- Main area: current site or candidate status, with text and icons as well as color.
+- Registered sites: readable origins, login method, list count, and a secondary Remove action.
+- Footer: support link and language selector.
+- Long origins wrap and retain scheme and port differences.
+- When the list grows, keep the current site and primary action accessible.
 
-## レビュー項目
+The screenshot in `design/previews/registered.png` is an earlier visual reference, not the specification for current UI behavior.
 
-- 360px幅で文字・ボタン・originが欠けていない。
-- 現在のサイトと登録対象のサイトを取り違えない。
-- 「自動ログイン有効」と「ログイン成功」が混同されない。
-- 各状態の主操作が明確で、解除操作が主操作より目立たない。
-- 文字のコントラスト、余白、行揃えが保たれている。
+## Feedback and accessibility
+
+Show registration and removal progress and prevent duplicate actions. Confirm that a site was registered or removed without claiming successful login. Errors should be specific, visually distinct, and close to the action.
+
+Keep loading separate from unregistered status. Unsupported pages should explain why registration is unavailable. Preserve keyboard access and useful focus after actions.
+
+## Review checklist
+
+- Text, controls, and origins fit the popup width in both languages.
+- Current and candidate sites cannot be confused.
+- Enabled status is distinguishable from a successful login.
+- The primary action is clear and removal remains secondary.
+- Contrast, spacing, alignment, focus indicators, and keyboard interaction remain usable.

@@ -1,56 +1,68 @@
-# ブラウザ確認手順
+# Browser review
 
-ログインを自動送信するため、日常利用のChromeプロファイルではなく、テスト専用の一時プロファイルを使います。Chromeのログイン・同期は行わず、ダミーアカウントのみを保存してください。実アカウントのcookie・パスワードを持ち込まないでください。
+Use a temporary Chrome profile dedicated to testing. Do not sign it into Chrome or enable synchronization. Save only dummy accounts and avoid importing real account cookies or passwords.
 
-`npm run build`後に、テスト用Chromeの`chrome://extensions`から`.output/chrome-mv3`を読み込みます。拡張機能の変更後は、拡張機能と対象ページを両方再読み込みします。
+Run `npm run build` and load `.output/chrome-mv3` through `chrome://extensions`. Reload both the extension and target page after extension changes. Automated tests and browser checks provide different evidence; record which checks you actually completed.
 
-## ダミーのログインフォーム
+## Password fixture
 
-`npm run browser:fixture`で`http://127.0.0.1:4174`にローカルのテストページを開きます。ページは入力内容を外部へ送信せず、送信回数だけを表示します。Chromeのパスワードマネージャーへこのoriginのダミーアカウントを手動登録すると、ブラウザの自動入力も確認できます。保存する情報はテスト用のものだけにしてください。
+Run `npm run browser:fixture` and open `http://127.0.0.1:4174`. The fixture does not send entered values externally; it displays a submission count. Add a dummy account for that origin to Chrome's password manager to test browser autofill.
 
-| ケース | 期待結果 |
+| Scenario | Expected behavior |
 | --- | --- |
-| 未登録のログインフォームでChromeが自動入力 | 自動送信されず、ポップアップに登録候補が表示される |
-| ポップアップから候補を登録 | originが一覧に追加され、現在のページで送信を試みる |
-| 登録済みのログインフォームを再読み込み | 自動入力が確定すると送信が1回だけ行われる |
-| 自動入力が確定していないサイトを登録 | Chromeが対応する場合は、登録に続く初回確認後に取得・送信を試みる。別の開始ボタンは不要 |
-| 手入力・貼り付けを開始 | 入力を上書きせず、自動送信しない |
-| 新規登録とパスワード変更のフォーム | 保存済み認証情報を取得・入力せず、自動送信しない |
-| 登録済みoriginを解除して再読み込み | 自動送信しない |
-| iframe内のログインフォーム | 自動送信しない |
-| 同時に複数のアカウントを保存 | ブラウザがsilent取得を拒否した場合は通常の自動入力を待つ |
+| Chrome autofills an unregistered login form | No automatic submission; a registration candidate appears in the popup |
+| Register a candidate in the popup | The origin is saved and submission is attempted on the current page |
+| Reload a registered login form | Once autofill is confirmed, submission occurs once |
+| Register before autofill is confirmed | If Chrome supports retrieval, initial confirmation is followed by retrieval and submission; no separate start button |
+| Start manual input or paste | No overwrite or automatic submission |
+| Open a sign-up or password-change form | No saved credential retrieval, input, or automatic submission |
+| Remove an origin and reload | No automatic submission |
+| Open a password login form in an iframe | No automatic submission |
+| Save multiple matching accounts | If Chrome refuses silent retrieval, normal autofill is awaited |
 
-ポップアップはTab・Enterで登録と解除を操作し、長いorigin、エラー、登録0件、登録済み一覧のスクロールを確認します。画面のレビューを行うときは、保存したスクリーンショットの表示も確認してください。
+Use Tab and Enter to register and remove sites. Check long origins, error feedback, no registrations, and scrolling with many registered sites. Inspect any screenshots captured for visual review.
 
-## パスキー
+## Passkey fixtures
 
-`npm run browser:fixture`を起動したまま`http://localhost:4174/passkey`を開きます。WebAuthnのRP IDとしてIPアドレスを使わないため、`127.0.0.1`ではなく`localhost`を使ってください。「テスト用パスキーを作成」を手動で押し、テスト用プロファイルにダミーのパスキーを作成します。秘密鍵や認証結果はサーバーに送信しません。テスト終了後にテスト用のパスキーをブラウザ・OSの管理画面から削除してください。
+Keep the fixture server running and open `http://localhost:4174/passkey`. Use `localhost`, not `127.0.0.1`, because WebAuthn RP IDs cannot be IP addresses. Manually create a dummy test passkey with the fixture's creation button. Private keys and authentication results are not sent to a server.
 
-| ケース | 期待結果 |
+| Scenario | Expected behavior |
 | --- | --- |
-| 未登録サイトのパスキーログインボタン | 登録候補に表示するが、自動で押さない |
-| 手動でパスキー認証を完了 | 「パスキーの利用を検知」として候補に表示し、登録前は設定を変更しない |
-| 利用検知後の候補を登録 | 次回から使う方式を保存し、その場で認証を再度開始しない |
-| パスワード方式で登録済みのサイトでパスキーを利用 | 切り替えを提案せず、登録済みの方式を維持する |
-| パスキーの作成・キャンセル | 利用完了として検知しない |
-| パスキー方式で登録して再読み込み | 本人確認が始まり、認証開始回数は1回 |
-| ChromeやOSの本人確認をキャンセル | 1回のまま維持され、自動再試行しない |
-| キャンセル後に対象ページを再読み込み | 新しいページ表示では認証開始が1回だけ行われる |
-| 登録済みサイトでメール・username欄を入力 | 入力中は待ち、入力が落ち着くとボタンを1回自動で押す。ポップアップでの開始操作は不要 |
-| アカウント入力以外のページ操作やEscapeキー | 自動で押さず、入力内容を維持する |
-| 自動押下の許可確認中に利用検知の通知 | 利用検知で自動押下を停止しない |
-| 未登録サイトでアカウント入力後にボタンが表示される | 自動で押さず、登録候補には表示する |
-| 候補のないサイトを手動登録 | 「このサイトを登録」で方式を選択でき、パスワードが初期選択される。確定前は登録・自動ログインしない |
-| 別originの認証iframe | 親サイトと認証サイトを表示し、確認して登録した組み合わせだけで動く |
-| 同じ認証サイトを別の親サイトで表示 | 許可を引き継がず、登録候補として表示する |
-| 登録済みサイトのポップアップ | ログイン方式は表示のみで、切り替え操作や手動の開始ボタンがない |
-| 登録解除して別の方式で登録し直す | 登録解除するとどちらも自動実行せず、再登録後は選んだ方式だけが動く |
-| 日本語・英語のポップアップ | ログイン方式、説明、成功・失敗メッセージが選んだ言語になる |
+| An unregistered page has a passkey sign-in button | A candidate appears; the button is not activated automatically |
+| Complete passkey authentication manually | A passkey-use candidate appears without changing registration |
+| Register after detected use | The method is saved for future visits; authentication is not repeated immediately |
+| Use a passkey on a password-registered site | The saved method is retained; no switch is proposed |
+| Create a passkey or cancel authentication | No completed-usage detection |
+| Register for passkeys and reload | User verification starts; authentication starts once |
+| Cancel Chrome/OS verification | No automatic retry |
+| Reload after cancellation | One authentication attempt is allowed for the new page load |
+| Enter an email or username on a registered site | Activation waits for input to settle, then occurs once without a popup start action |
+| Interact elsewhere on the page or press Escape | Automatic activation stops and input is retained |
+| Detect usage while an activation permission check is pending | Usage detection does not stop activation |
+| Reveal a button after account input on an unregistered site | A candidate appears, but there is no automatic activation |
+| Manually register a site without a candidate | The method can be chosen, Password is the default, and nothing runs before confirmation |
+| Use an authentication iframe on another origin | Both origins are shown; only the confirmed parent/authentication pair is allowed |
+| Embed the same authentication origin under another parent | Permission is not inherited; it is offered as a new candidate |
+| Open the popup for a registered site | The method is read-only; there is no method switch or manual start button |
+| Remove and register with another method | Removal disables automation; registration enables only the chosen method |
+| Use the Japanese and English popup | Method labels, explanations, and feedback use the selected language |
 
-`http://localhost:4174/passkey-generic`は「ログイン」という汎用ボタンからWebAuthnを呼びます。登録候補がボタンだけでは表示されず、ダミーのパスキー認証を完了してから利用候補が表示されることを確認します。この画面での次回の汎用ボタン自動押下は対応範囲外です。
+Additional fixtures:
 
-メール入力後の検出は`http://localhost:4174/passkey-email`で確認できます。異なるoriginのiframeは`http://127.0.0.1:4174/passkey-iframe`で確認します。iframeには`http://localhost:4174/passkey-email`を埋め込み、WebAuthnの取得だけを許可します。パスキーの作成は先にトップレベルの`http://localhost:4174/passkey`で手動実行してください。
+| URL | Purpose |
+| --- | --- |
+| `http://localhost:4174/passkey-generic` | A generic login button calls WebAuthn. A usage candidate should appear only after authentication, not from button detection. Automatic activation of this generic button on future visits is outside the supported scope. |
+| `http://localhost:4174/passkey-email` | Check detection and activation after email input |
+| `http://127.0.0.1:4174/passkey-iframe` | Embeds `http://localhost:4174/passkey-email` and permits WebAuthn retrieval. Create the dummy passkey at the top-level passkey fixture first. |
 
-実サイトでは、埋め込まれた認証originと親サイトがポップアップに表示され、登録した組み合わせだけで開始するかを確認します。入れ子のiframe、Shadow DOM、候補リストだけの画面、実際のユーザー操作を要求するサイトは今回の対応範囲外です。App Store Connectの実ブラウザ確認は未実施です。ローカルテストの本人確認成功は、実サイトでのログイン成功を保証しません。
+## Real-site verification and recorded evidence
 
-テスト終了後はローカルサーバーをCtrl+Cで止め、一時プロファイルを閉じます。自動テストの成功と実ブラウザでのGoogleパスワードマネージャー確認は区別して記録してください。
+On a real site, check that the popup shows the parent and embedded authentication origins and that activation is limited to the approved pair. Nested iframes, Shadow DOM, candidate-list-only screens, and sites requiring an actual user gesture are outside the supported scope.
+
+During development, a user reported that App Store Connect automatically opened the passkey verification prompt. This confirms prompt activation in that user's environment, not a complete login result or a repeatable compatibility guarantee. A maintainer-run, repeatable browser review of that site has not been recorded.
+
+For a browser report, record the extension commit/version, Chrome and OS versions, scenario, and observed result. Local fixture success does not establish successful server-side login on a real site.
+
+## Cleanup
+
+Delete dummy passkeys from the browser or OS credential manager after testing. Stop the fixture server with Ctrl+C and close the temporary profile.

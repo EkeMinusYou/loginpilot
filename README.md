@@ -1,128 +1,73 @@
 # Login Pilot
 
-Googleパスワードマネージャーによる自動入力後のフォーム送信と、パスキーのログインボタンの押下を、登録済みサイトで自動化するChrome拡張機能です。
+[日本語](README.ja.md) · [Website](https://loginpilot.ekeminusyou.com/en/) · [User guide](docs/usage.md)
 
-## 使い方
+A Chrome extension that submits login forms after Google Password Manager autofills them and activates passkey sign-in buttons on sites you register.
 
-Chromeウェブストアでの公開は準備中です。現在はソースからビルドして利用できます。
+- Register sites explicitly; automatic login runs only on approved origins.
+- Start password or passkey login automatically on future visits.
+- Keep passkey verification and account selection in Chrome or your operating system.
+- Use the popup and notifications in English or Japanese.
 
-1. Node.js 24.15.0とnpmを用意し、このリポジトリをcloneします。nvmを利用している場合は`nvm install && nvm use`で`.nvmrc`のバージョンを選べます。
-2. `npm ci`、`npm run build`を実行します。
-3. Chromeで`chrome://extensions`を開き、「デベロッパーモード」を有効にして、「パッケージ化されていない拡張機能を読み込む」から`.output/chrome-mv3`を選びます。
-4. Googleパスワードマネージャーにログイン情報を保存したサイトのログインページを開きます。
-5. 自動入力を検知すると通知とポップアップに登録候補が表示されます。拡張機能アイコンを押し、対象のoriginを確認して「登録して自動ログイン」を押します。登録したページで、その時点から自動送信を試みます。
-6. 必要な場合は登録に続いてChromeのアカウント確認が表示されます。Chromeの画面で自動ログインを承認してください。次回からは拡張機能側で開始ボタンを押す操作は不要です。
+Chrome Web Store release is in preparation. You can currently build and load the extension from source.
 
-解除する場合は、ポップアップの登録済みサイト一覧から「解除」を押します。登録はorigin（scheme・host・port）単位で、同じoriginの別のログインページにも適用されます。拡張機能を更新した際は、ログインページを再読み込みしてください。
+## Install from source
 
-日本語・英語に対応しています。ポップアップ下部の言語メニューから、自動（Chromeの表示言語）・日本語・英語を選べます。選択は端末内に保存し、通知にも反映します。
+Use the Node.js version in [.nvmrc](.nvmrc) and npm. With nvm, run `nvm install && nvm use` after cloning the repository.
 
-### パスキーでのログイン
+```sh
+git clone https://github.com/EkeMinusYou/loginpilot.git
+cd loginpilot
+npm ci
+npm run build
+```
 
-未登録サイトで手動でパスキーを使った場合も、ブラウザの認証処理の完了を検知すると「パスキーの利用を検知」として登録候補を表示します。ポップアップで登録すると、次回からパスキー方式を使います。利用直後の登録では、認証を再度開始しません。登録済みサイトの方式は維持します。検知しただけで登録や方式変更は行いません。
+Open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select `.output/chrome-mv3`.
 
-未登録のHTTPSのログインページに「パスキーでログイン」「Sign in with passkey」などのボタンがある場合も、通知とポップアップに登録候補を表示します。登録すると、パスキー方式でそのボタンを自動で押します。既存の登録はパスワード方式のまま引き継ぎます。ログイン方式を変更する場合は、サイトの登録を解除してから別の方式で登録し直してください。
+## Get started
 
-候補が表示されない場合も、ポップアップの「このサイトを登録」から現在のサイトを登録できます。ログイン方式はパスワードが初期選択され、パスキーを使う場合は方式を変更して「登録して自動ログイン」を押します。メールアドレスや`autocomplete="username"`の入力欄にアカウントを入力する間は、自動押下を待ちます。入力が300ms落ち着いた時点で、ボタンが利用可能なら登録済みサイトでは自動で開始します。ボタンの追加・有効化などはページの変更時に確認し、CSSやレイアウトの変化は250msごとに再確認します。未登録サイトでは登録候補を表示します。利用検知の通知は登録候補を更新するだけで、自動押下を停止しません。
+1. Open a login page with credentials saved in Google Password Manager, or a page with an explicit passkey sign-in button.
+2. Open Login Pilot's popup, check the candidate site and login method, and choose **Register and enable auto login**.
+3. Approve Chrome's confirmation if prompted. On future visits, Login Pilot starts the registered login flow automatically.
 
-認証画面がiframe内にある場合は、親サイトのoriginと、埋め込まれた認証サイトのoriginを組み合わせて登録します。ポップアップの「認証サイト」を確認して登録してください。自動押下はその組み合わせに限定し、同じ認証サイトが別の親サイトに埋め込まれていても引き継ぎません。
+You can also register the current site manually from the popup. Remove a site from the registered list to disable automatic login. To change its login method, remove it and register it again.
 
-本人確認（Touch ID、顔認証、PINなど）とアカウント選択はChromeやOSで行ってください。拡張機能はWebAuthnのリクエストを作成・変更せず、サイト自身の認証処理を開始します。利用検知のため、サイトによる認証呼び出しの方式と完了したレスポンスの種類だけを確認します。秘密鍵、認証チャレンジ、署名、アカウント識別子、認証データ本体は読み取り・保存・転送しません。利用検知はサイト側でのログイン成功を保証しません。パスキーの作成やキャンセルは利用として扱いません。
+See the [user guide](docs/usage.md) for registration details, supported pages, and troubleshooting.
 
-自動押下はページの表示ごとに1回までです。キャンセル後は自動で再試行せず、パスワードへの自動切り替えも行いません。再試行したい場合は対象ページを再読み込みしてください。アカウント入力以外のページ操作やEscapeキーで自動押下を停止します。
+## Privacy and limitations
 
-![ポップアップのデザイン例](design/previews/registered.png)
+Credentials are handled temporarily in the page to fill and submit forms. They are never stored in extension storage or sent to the background process or a developer-operated server. Site registrations and language preferences stay in `chrome.storage.local`. See the [privacy policy](docs/privacy.en.md) ([日本語](docs/privacy.md)) for the complete data flow.
 
-## 対応条件と制限
+Password login supports ordinary username/password forms. Passkey automation requires a single explicit sign-in button; verification still takes place in Chrome or the OS. Additional steps such as two-factor authentication and CAPTCHA require your action. Login Pilot attempts login; it does not verify server-side success. See the [supported conditions](docs/usage.md#supported-conditions-and-limitations).
 
-- 対象はChromeのHTTP/HTTPSページにある、ユーザー名とパスワードを持つ通常の`form`です。Credential Management APIによる取得はHTTPSまたはlocalhostの安全なコンテキストでのみ試みます。
-- `autocomplete="new-password"`を含むフォームと、複数のパスワード欄があるフォームは、新規登録・パスワード変更を誤送信しないため除外します。
-- 意図を判別できないフォームでは正確にログインを識別できない場合があります。登録するサイトとフォームは自分で確認してください。
-- パスキーは、日本語・英語の明示的なログインボタンが1つある安全なページが対象です。iframeは、親ページから表示を確認でき、親サイトと認証サイトの組み合わせを登録したものに対応します。登録・作成・管理ボタンと、複数候補は押しません。明示的なボタンのない画面でもパスキーの利用後の登録候補は検知できますが、その画面での認証開始の自動化には対応しません。入れ子のiframe、Shadow DOM、サイトが実操作を要求する画面には対応しません。サイトが認証APIを独自に差し替える場合や、候補一覧を指定する認証で明示的なパスキーボタンがない場合は利用検知できないことがあります。App Store Connectでの実動作は未確認です。
-- 二段階認証、CAPTCHA、iframe内のフォーム、Shadow DOM、`form`を使わないパスワード画面、IDとパスワードが別画面にあるログインは対応対象外です。追加の認証はサイトの案内に従って操作してください。
-- 手入力を開始したフォームは自動送信しません。複数の保存済みアカウント、ブラウザの認証要求、サイト側の実装によって、クリックなしの取得ができない場合があります。
-- 自動送信を試みたことと、ログインが成功したことは別です。成功・失敗は対象サイトで確認してください。
+## Development
 
-## 権限とデータ
-
-| 権限・アクセス | 用途 |
-| --- | --- |
-| HTTP/HTTPSの全サイトへのcontent script適用 | 未登録サイトを含め、ログインフォームと自動入力の候補を検出するため。自動送信と保存済み認証情報の取得は登録済みoriginに限定します。 |
-| `activeTab` | ポップアップを開いたタブのURLを確認するため。 |
-| `notifications` | 未登録サイトで自動入力を検知したことを通知するため。 |
-| `storage` | 登録origin、サイトごとのログイン方式、直近の登録候補、表示言語を端末内に保存するため。 |
-
-保存するのは登録origin一覧、サイトごとのログイン方式、許可したiframeの認証origin、直近に検出したoriginと方式、検出日時、表示言語です。ID・パスワードは拡張機能のcontent script内で一時的に扱い、フォームに入力します。拡張機能のストレージ・バックグラウンド・外部サービスには保存・送信しません。フォームの送信により、ログイン情報は対象サイトの送信先に渡ります。
-
-拡張機能には解析・広告・独自サーバーへの通信がありません。公開LPはGoogle Fontsからフォントを読み込みます。詳しくは[プライバシー説明](docs/privacy.md)、脆弱性の報告は[SECURITY.md](SECURITY.md)を参照してください。
-
-## 困ったとき
-
-| 症状 | 確認すること |
-| --- | --- |
-| 登録候補が表示されない | Googleパスワードマネージャーによる自動入力があるか、通常の`form`とパスワード欄があるかを確認し、ページを再読み込みする。検知にはブラウザの制約があり、ページ操作で自動入力が確定する場合があります。 |
-| クリックなしの取得ができない | 保存済みアカウントが1件か、HTTPSか、Chromeの「自動的にログイン」が有効かを確認する。取得できない場合は通常の自動入力を使います。 |
-| 入力されたが送信されない | 手入力を始めていないか、複数のパスワード欄・追加認証・無効な送信ボタンがないかを確認する。サイト側の制約がある場合は手動でログインする。 |
-| 拡張機能の更新後に動かない | `chrome://extensions`から拡張機能を再読み込みし、ログインページも再読み込みする。 |
-
-不具合を報告する場合は、認証情報や個人情報を削除して[Issue](https://github.com/EkeMinusYou/loginpilot/issues/new/choose)を作成してください。
-
-## 使用技術
-
-- WXT 0.21
-- TypeScript
-- Chrome Extensions Manifest V3
-- Tailwind CSS 4
-- Vite
-
-## 開発
+Built with WXT, TypeScript, Manifest V3, Vite, and Tailwind CSS.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-生成された`.output/chrome-mv3`をChromeの「パッケージ化されていない拡張機能を読み込む」から読み込んでください。
+Load the generated extension in Chrome as described above. See [CONTRIBUTING.md](CONTRIBUTING.md) for validation commands, project structure, localization, and design assets.
 
-## 検証
+## Documentation and support
 
-```sh
-npm test
-npm run typecheck
-npm run build
-npm run lp:build
-npm run audit
-```
+| Topic | Document |
+| --- | --- |
+| Usage and troubleshooting | [User guide](docs/usage.md) |
+| Development and contributions | [Contributing](CONTRIBUTING.md) |
+| Dependency updates, CI, and releases | [Maintenance](docs/maintenance.md) |
+| Manual browser checks | [Browser review](docs/browser-review.md) |
+| Landing page deployment | [Deployment](docs/deployment.md) |
+| Vulnerability reporting | [Security policy](SECURITY.md) |
 
-CIでも同じ検証を行います。依存関係の自動更新・自動マージとリリースについては[保守手順](docs/maintenance.md)、開発への参加については[CONTRIBUTING.md](CONTRIBUTING.md)を参照してください。
+Report bugs or request features through [GitHub Issues](https://github.com/EkeMinusYou/loginpilot/issues/new/choose). Report vulnerabilities privately through the security policy.
 
-## LPの開発とデプロイ
+If you find Login Pilot useful, you can [support development on Buy Me a Coffee](https://buymeacoffee.com/euonymuslke).
 
-`npm run lp:dev`で`http://127.0.0.1:4173`に起動します。`npm run lp:build`で`.output/lp`へ出力し、`npm run lp:preview`でビルド結果を確認できます。Cloudflareへの配備は[デプロイ手順](docs/deployment.md)を参照してください。
+## License
 
-LPの`/ja/`が日本語、`/en/`が英語です。ルートURLでは、保存した言語またはブラウザの優先言語に合わせて移動します。ページ上部のリンクで切り替えられます。翻訳はLPの`sites/lp/locales/en.ts`、拡張機能の`src/shared/i18n.ts`にまとめています。
+Original code, the Pilot brand icon, and design files are released under the [MIT License](LICENSE). Third-party code, icons, and fonts retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-## アイコン
-
-Pencilで採用したC案（Pilot）のアイコンです。ネイビーの背景に、白い進路マークと水色の弧を組み合わせています。デザインは`popup-redesign.pen`に保存しています。`public/icon.svg`を元データとし、Chromeのツールバー・拡張機能一覧・通知には`public/icon/`内のPNG（16・32・48・128px）を使用します。
-
-SVGを変更したら、以下のコマンドでPNGを再生成してください。生成したPNGもリポジトリに含めます。
-
-```sh
-npm run icons:generate
-```
-
-## 動作仕様
-
-- IDやパスワードは拡張機能へ保存・送信しません。
-- 登録済みoriginでのみ自動送信します。
-- 拡張機能はメールアドレスなどの入力欄へ自動フォーカスせず、ページ側のフォーカスを維持したまま自動入力を監視します。
-- Chromeが自動入力を表示していても、ページへの操作があるまで入力値をページへ渡さない場合があります。登録済みサイトではCredential Management APIで保存済み情報を取得し、ページをクリックせずに入力・送信します。デバッグ接続や補助アプリは使用しません。
-- 初回は対象のログインページでサイトを登録すると、必要に応じてChromeのアカウント確認と自動ログインの確認が表示されます。Chromeの画面で承認してください。以降は確認画面を出さない`mediation: 'silent'`で取得します。登録時に自動入力が確定していない場合だけ`mediation: 'optional'`を使います。認証情報はページ内でのみ扱い、拡張機能のバックグラウンドへ送信したり保存したりしません。
-- この取得方法はHTTPS（またはlocalhost）のページで、対象サイトに一致する保存済みアカウントが1件あり、Chromeの「自動的にログイン」が有効な場合に利用できます。複数アカウント、デバイス認証の要求、ブラウザ側の拒否などで取得できない場合は、通常の自動入力が確定するのを待ちます。手入力中のフォームは上書きしません。
-- 未登録サイトでは自動送信せず、Chrome通知と拡張機能ポップアップから登録を確認します。登録後は現在のページで再評価し、次回以降も自動ログインします。
-- Chromeには入力元を完全に識別する公開APIがないため、自動入力状態の検知はフォームの値、入力イベント、autofill擬似クラスを組み合わせて行います。
-
-## ライセンス
-
-本プロジェクト独自のコード・アイコン・デザインは[MIT License](LICENSE)で公開しています。第三者のアイコン・フォントの利用条件は[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)を参照してください。`package.json`の`private: true`はnpmへの誤公開を防ぐ設定です。
+`private: true` in `package.json` prevents accidental publication to npm.

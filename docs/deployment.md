@@ -1,25 +1,34 @@
-# LPのデプロイ
+# Landing page deployment
 
-Node.jsは`.nvmrc`のバージョンを使い、`npm ci`と`npm run lp:build`を実行します。静的ファイルは`.output/lp`に出力されます。
+Use the Node.js version in [.nvmrc](../.nvmrc) and run commands from the repository root:
 
-## 自分のCloudflareアカウントへ配備
+```sh
+npm ci
+npm run lp:build
+```
+
+Static files are written to `.output/lp`. For local development and preview, see [CONTRIBUTING.md](../CONTRIBUTING.md#development-setup).
+
+## Deploy to your Cloudflare account
 
 ```sh
 npx wrangler login
 npm run lp:deploy
 ```
 
-共有の`sites/lp/wrangler.jsonc`はアカウントIDや独自ドメインを含まない設定です。このコマンドは、ログインしたアカウントの`loginpilot-lp` Workerを作成・更新し、`workers.dev`へ配備します。既存Workerと区別したい場合は設定の`name`を変更してください。複数アカウントを利用する場合は`CLOUDFLARE_ACCOUNT_ID`を環境変数で指定できます。
+The shared `sites/lp/wrangler.jsonc` contains no account ID or custom domain. The command creates or updates the `loginpilot-lp` Worker in the account you sign in to and deploys to `workers.dev`. Change its `name` if you need a separate Worker. With multiple accounts, you can select one using `CLOUDFLARE_ACCOUNT_ID`.
 
-## 独自ドメインの本番配備
+## Deploy to a custom domain
+
+Copy the example configuration:
 
 ```sh
 cp sites/lp/wrangler.production.example.jsonc sites/lp/wrangler.production.jsonc
 ```
 
-コピーしたファイルの`account_id`と`routes[].pattern`を自分のCloudflareアカウントID・ドメインへ置き換えます。このファイルはGitの管理対象外です。必要に応じてWorkerの`name`も変更してください。
+Replace `account_id` and `routes[].pattern` with your Cloudflare account ID and domain. Adjust the Worker `name` if needed. The local production configuration is ignored by Git.
 
-forkして独自ドメインで公開する場合は、`sites/lp/index.html`のcanonical・OGP URL・GitHubリンクと、`sites/lp/public/robots.txt`・`sitemap.xml`のURLも更新します。デプロイ先を変更するだけでは、これらのURLは自動で書き換わりません。
+For a fork deployed to another domain, update the canonical and social URLs, GitHub and support links in `sites/lp/index.html`, the URLs in `sites/lp/public/robots.txt` and `sitemap.xml`, and domain references in `sites/lp/localize.ts`, `privacy.ts`, and `scripts/generate-lp-social.mjs`. Regenerate social images if needed. Changing the deployment target does not rewrite site metadata.
 
 ```sh
 npm run lp:build
@@ -27,8 +36,16 @@ npx wrangler deploy --dry-run --config sites/lp/wrangler.production.jsonc
 npm run lp:deploy:production
 ```
 
-`--dry-run`はビルド・設定を確認し、公開しません。実際のデプロイ前にアカウント、Worker名、独自ドメインを確認してください。
+The dry run checks the build and configuration without publishing. Confirm the account, Worker name, and custom domain before the actual deployment.
 
-CIで配備する場合は、必要なWorker・ドメインだけを変更できるCloudflare APIトークンを用意し、`CLOUDFLARE_API_TOKEN`をCIのsecret、`CLOUDFLARE_ACCOUNT_ID`を環境変数に設定します。トークンを設定ファイルやIssueへ書き込まないでください。認証方式と権限の詳細は[Cloudflare公式ドキュメント](https://developers.cloudflare.com/workers/wrangler/system-environment-variables/)を参照してください。
+## CI authentication
 
-LPは`public/_headers`のCSPなどを配信します。公開後はページ、`404.html`、`robots.txt`、`sitemap.xml`、OGP画像、レスポンスヘッダーを確認してください。
+The repository's current workflows do not deploy the landing page. If you add deployment automation, use a Cloudflare API token scoped to the required Worker and domain, store `CLOUDFLARE_API_TOKEN` as a CI secret, and set `CLOUDFLARE_ACCOUNT_ID` as an environment variable. Do not put tokens in configuration files or issues.
+
+See [Cloudflare's environment variable documentation](https://developers.cloudflare.com/workers/wrangler/system-environment-variables/) for authentication options.
+
+## After deployment
+
+Check both language versions and privacy pages, `404.html`, `robots.txt`, `sitemap.xml`, and social images. Confirm the response headers from `sites/lp/public/_headers`, including the Content Security Policy.
+
+The privacy pages are built from `docs/privacy.md` and `docs/privacy.en.md`; keep both disclosures equivalent when changing them.

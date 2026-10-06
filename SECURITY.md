@@ -1,9 +1,22 @@
 # Security policy
 
-最新の`main`と最新リリースをセキュリティ修正の対象とします。古いバージョンは最新版への更新をお願いします。
+## Supported versions
 
-脆弱性はGitHubの[非公開の脆弱性報告](https://github.com/EkeMinusYou/loginpilot/security/advisories/new)から報告してください。公開Issueに認証情報、トークン、再現用の実アカウント情報を投稿しないでください。非公開報告を利用できない場合は、`euonymuslke@gmail.com`へ連絡してください。
+Security fixes target the latest `main` and the latest release. Please update older versions before reporting a problem.
 
-報告には、対象バージョン、ChromeとOSのバージョン、期待した挙動と実際の挙動、ダミーの認証情報で再現できる手順を含めてください。認証情報の取得・送信、登録の迂回、意図しないフォーム送信などを優先して調査します。応答・修正時期は個別に相談し、修正または対応方針が決まるまで詳細の公開を控えてください。
+## Report a vulnerability
 
-拡張機能の権限・保存データ・認証情報の扱いは[プライバシー説明](docs/privacy.md)、依存関係の監査と自動更新は[保守手順](docs/maintenance.md)に記載しています。
+Use GitHub's [private vulnerability reporting](https://github.com/EkeMinusYou/loginpilot/security/advisories/new). If that channel is unavailable, email `euonymuslke@gmail.com`.
+
+Do not post credentials, tokens, real account details, or vulnerability details in public issues. Include:
+
+- The affected extension version or commit.
+- Chrome and operating system versions.
+- Expected and observed behavior.
+- Steps to reproduce with dummy credentials and sanitized example forms.
+
+Credential exposure, registration bypasses, and unintended form submission receive priority. Response and remediation timelines are discussed for each report. Please coordinate disclosure until a fix or response plan is agreed.
+
+## Related documents
+
+See the [privacy policy](docs/privacy.en.md) ([日本語](docs/privacy.md)) for permissions, stored data, and credential handling, and [maintenance](docs/maintenance.md) for dependency auditing and updates.

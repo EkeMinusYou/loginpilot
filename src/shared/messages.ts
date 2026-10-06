@@ -14,6 +14,13 @@ export const MESSAGE_TYPES = {
 
 export type LoginMethod = 'password' | 'passkey';
 
+export type ErrorCode =
+  | 'operationNotAllowed' | 'invalidOrigin' | 'reregisterToChangeMethod'
+  | 'passkeyHttpsOnly' | 'reloadLoginPage' | 'unsupportedMessage'
+  | 'processingFailed' | 'loginFieldsRequired' | 'passkeyUnavailable';
+
+export type ErrorResponse = { ok: false; error: ErrorCode };
+
 export type RuntimeMessage =
   | { type: typeof MESSAGE_TYPES.passkeyDetected; origin: string }
   | { type: typeof MESSAGE_TYPES.passkeyUsed; origin: string }
@@ -36,10 +43,12 @@ export type RuntimeMessage =
       tabId?: number;
       method?: LoginMethod;
       authenticationOrigin?: string;
+      currentOrigin?: string | null;
     }
   | {
       type: typeof MESSAGE_TYPES.removeOrigin;
       origin: string;
+      currentOrigin?: string | null;
     };
 
 export type ContentMessage = {
@@ -47,13 +56,13 @@ export type ContentMessage = {
   origin: string;
 } | { type: typeof MESSAGE_TYPES.checkPasskeyFrame; origin?: string; authenticationOrigin: string };
 
-export type PasskeyFrameResponse = { ok: true; visible: boolean; origin?: string } | { ok: false; error: string };
+export type PasskeyFrameResponse = { ok: true; visible: boolean; origin?: string } | ErrorResponse;
 
-export type CredentialSetupResponse = { ok: true; filled: boolean } | { ok: false; error: string };
+export type CredentialSetupResponse = { ok: true; filled: boolean } | ErrorResponse;
 
 export type AutofillResponse =
   | { ok: true; action: 'submit' | 'ignore' | 'pending'; method?: LoginMethod; retry?: true }
-  | { ok: false; error: string };
+  | ErrorResponse;
 
 export interface PendingSite {
   origin: string;
@@ -73,4 +82,4 @@ export interface PopupState {
 
 export type PopupResponse =
   | ({ ok: true } & PopupState)
-  | { ok: false; error: string };
+  | ErrorResponse;

@@ -50,16 +50,11 @@ Do not commit generated `.wxt`, `.output`, or `.wrangler` directories, credentia
 Run the same checks used by CI:
 
 ```sh
-npm test
-npm run typecheck
-npm run test:package
-npm run zip
-npm run package:verify
 npx playwright install chromium
-npm run test:browser
-npm run lp:build
-npm run audit
+npm run check
 ```
+
+`npm run check` runs the shared release checks and builds the landing page. `npm run check:release` runs the dependency audit, unit and package tests, type checking, ZIP build and verification, and browser tests. CI and Prepare release use these scripts; individual commands remain available for focused checks.
 
 Python 3 is required for package checks. On Linux, use `npx playwright install --with-deps chromium` to install browser system dependencies. Integration tests load the production extension in a temporary profile, use localhost fixtures and virtual WebAuthn, and delete the profile afterward. Failure traces are saved under ignored `test-results/`. They never use your normal browser profile or saved accounts.
 
@@ -73,7 +68,15 @@ Developer documentation is maintained in English. Keep [README.md](README.md) an
 
 The Japanese and English privacy policies in `docs/privacy.md` and `docs/privacy.en.md` are also the source for the website's privacy pages. Keep their disclosures equivalent and their filenames stable.
 
-Extension UI strings are in `src/shared/i18n.ts`; Chrome metadata is in `public/_locales/`. Landing page translations are in `sites/lp/locales/en.ts`, with Japanese source copy in `sites/lp/index.html`. The website serves `/ja/` and `/en/`; its root redirects according to the saved preference or browser language. Website and extension language preferences are independent.
+Extension UI strings are in `src/shared/i18n.ts`; Chrome metadata is in `public/_locales/`. Runtime failures carry typed error codes from `src/shared/messages.ts`, and popup feedback stores translation keys so changing languages also updates existing feedback. Translate at the UI boundary rather than sending translated prose between scripts.
+
+Landing page English translations are in `sites/lp/locales/en.ts`, keyed by the stable `data-i18n` attributes in the Japanese template `sites/lp/index.html`. Use `data-i18n-aria-label` for accessible labels. Keep keys when editing Japanese copy, and update the corresponding English copy when its meaning changes. Mark only text elements, preserving links, icons, and line breaks outside them. Missing keys or unmarked Japanese copy fail the English build. The website serves `/ja/` and `/en/`; its root redirects according to the saved preference or browser language. Website and extension language preferences are independent.
+
+### Privacy Markdown format
+
+The privacy renderer intentionally supports a small subset: one `#` title, `##` headings, paragraphs, numbered lists starting at 1 with one line per item, and pipe tables with outer pipes and a `---` separator for each column. Separate blocks with blank lines. Inline code and links to HTTPS URLs or repository files starting with `../` are supported.
+
+Emphasis, unordered or nested lists, code blocks, HTML, images, hard line breaks, Markdown escapes, aligned tables, and pipes inside table cells are unsupported. The build rejects these instead of silently publishing incorrect formatting. If the documents need a wider syntax, replace the limited renderer with a standard parser rather than adding more ad hoc transformations.
 
 ## Design assets
 

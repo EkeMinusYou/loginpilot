@@ -23,8 +23,15 @@ describe('localized landing pages', () => {
     }
   });
 
-  it('fails the build when newly added Japanese copy lacks an English translation', () => {
-    expect(() => localizeHtml(template.replace('本文へ移動', '未翻訳の新しい文章'), 'en')).toThrow('Missing English LP translation');
+  it('keeps English translations independent of edits to Japanese copy', () => {
+    const { document } = parseHTML(localizeHtml(template.replace('本文へ移動', '本文に移動します'), 'en'));
+    expect(document.querySelector('[data-i18n="skipToContent"]')!.textContent).toBe('Skip to content');
+  });
+
+  it('fails the build for unknown translation keys or unmarked new copy', () => {
+    expect(() => localizeHtml(template.replace('data-i18n="skipToContent"', 'data-i18n="missingKey"'), 'en')).toThrow('Missing English LP translation: missingKey');
+    expect(() => localizeHtml(template.replace('data-i18n="skipToContent"', ''), 'en')).toThrow('missing a data-i18n key');
+    expect(() => localizeHtml(template.replace('data-i18n-aria-label="navLabel"', ''), 'en')).toThrow('missing a data-i18n-aria-label key');
   });
 
   it.each(['ja', 'en'] as const)('publishes the %s privacy document in the matching language', (locale) => {
@@ -36,5 +43,16 @@ describe('localized landing pages', () => {
     expect(document.querySelector('[rel="canonical"]')!.getAttribute('href')).toBe(`https://loginpilot.ekeminusyou.com/${locale}/privacy/`);
     expect(document.querySelector('main a')!.getAttribute('href')).toBe('https://github.com/EkeMinusYou/loginpilot/blob/main/SECURITY.md');
     expect(document.querySelector('[data-language="en"]')!.getAttribute('href')).toBe('/en/privacy/');
+  });
+
+  it.each([
+    '- unordered item', '**strong text**', '*emphasis*', '_emphasis_', '~~deleted~~',
+    '### Heading', '```js\ncode\n```', '> quotation', '---', '<strong>HTML</strong>',
+    '![image](https://example.com/image.png)', '[link](javascript:alert)',
+    '1. first\n   continuation', '2. non-default start', 'Text  \nHard break',
+    '| A | B |\n| --- | --- |\n| one |', '| A |\n| :--- |\n| one |',
+    '| A |\n| --- |\n| `a\\|b` |',
+  ])('rejects unsupported privacy syntax instead of silently misrendering it: %s', (block) => {
+    expect(() => privacyHtml(localizeHtml(template, 'en'), `# Policy\n\nDescription.\n\n${block}`, 'en')).toThrow('Unsupported privacy Markdown');
   });
 });

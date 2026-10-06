@@ -43,11 +43,13 @@ export async function getRegistrationState(): Promise<RegistrationState> {
 }
 
 /** Publish origin, method, and frame approval in one storage operation. */
-export async function setRegistrationState(state: RegistrationState): Promise<void> {
-  await browser.storage.local.set({ ...state,
+export async function setRegistrationState(state: RegistrationState): Promise<RegistrationState> {
+  const saved = { ...state,
     registeredOrigins: [...new Set(state.registeredOrigins)].sort(),
     passkeyOrigins: [...new Set(state.passkeyOrigins)].sort(),
-  });
+  };
+  await browser.storage.local.set(saved);
+  return saved;
 }
 
 export async function getPendingSite(): Promise<PendingSite | null> {

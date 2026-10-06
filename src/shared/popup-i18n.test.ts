@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseHTML } from 'linkedom';
-import { en } from './i18n';
+import { en, ja } from './i18n';
 
 const mocks = vi.hoisted(() => ({
   browser: {
@@ -29,7 +29,7 @@ beforeEach(() => {
   mocks.browser.storage.local.get.mockImplementation(async () => ({ language: preference }));
   mocks.browser.storage.local.set.mockImplementation(async (values: { language: string }) => { preference = values.language; });
   mocks.browser.tabs.query.mockResolvedValue([{ id: 1, url: 'https://example.com/login' }]);
-  mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, currentOrigin: 'https://example.com', registeredOrigins: [], pendingSite: null });
+  mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, currentOrigin: 'https://example.com', passkeyFrameOrigins: {}, registeredOrigins: [], passkeyOrigins: [], pendingSite: null });
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -71,10 +71,43 @@ describe('popup language controls', () => {
   it('restores a saved language and translates backend errors to that language', async () => {
     preference = 'en';
     mocks.browser.i18n.getUILanguage.mockReturnValue('ja');
-    mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: false, error: 'この操作は許可されていません。' });
+    mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: false, error: 'operationNotAllowed' });
     await openPopup();
     expect(document.documentElement.lang).toBe('en');
     expect(document.querySelector('[role="alert"]')!.textContent).toContain(en.operationNotAllowed);
+    selectLanguage('ja');
+    await vi.waitFor(() => expect(document.querySelector('[role="alert"]')!.textContent).toContain(ja.operationNotAllowed));
+  });
+
+  it('uses the complete state returned by registration without fetching or reconstructing it', async () => {
+    await openPopup();
+    mocks.browser.runtime.sendMessage.mockResolvedValueOnce({
+      ok: true, currentOrigin: 'https://example.com',
+      registeredOrigins: ['https://another.example', 'https://example.com'],
+      passkeyOrigins: ['https://another.example'],
+      passkeyFrameOrigins: { 'https://another.example': 'https://auth.example' }, pendingSite: null,
+    });
+    document.querySelector<HTMLButtonElement>('[data-focus-key="register-current-site"]')!.click();
+    document.querySelector<HTMLButtonElement>('[data-focus-key="confirm-registration"]')!.click();
+    await vi.waitFor(() => expect(document.body.textContent).toContain(en.registeredCurrent));
+    expect(document.querySelector('[data-focus-key="remove:https://another.example"]')).not.toBeNull();
+    expect(document.body.textContent).toContain('Login method: Password');
+    expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledTimes(2);
+    selectLanguage('ja');
+    await vi.waitFor(() => expect(document.body.textContent).toContain(ja.registeredCurrent));
+    expect(document.body.textContent).not.toContain(en.registeredCurrent);
+  });
+
+  it('keeps registered state after a failed removal and translates the error code', async () => {
+    mocks.browser.runtime.sendMessage.mockResolvedValueOnce({ ok: true, currentOrigin: 'https://example.com',
+      registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'],
+      passkeyFrameOrigins: {}, pendingSite: null });
+    await openPopup();
+    mocks.browser.runtime.sendMessage.mockResolvedValueOnce({ ok: false, error: 'processingFailed' });
+    document.querySelector<HTMLButtonElement>('[data-focus-key="remove:https://example.com"]')!.click();
+    await vi.waitFor(() => expect(document.querySelector('[role="alert"]')!.textContent).toContain(en.processingFailed));
+    expect(document.body.textContent).toContain('Login method: Passkey');
+    expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledTimes(2);
   });
 
   it('keeps the current language and shows an error when saving fails', async () => {
@@ -89,17 +122,17 @@ describe('popup language controls', () => {
 
   it('registers a passkey candidate with its method', async () => {
     mocks.browser.runtime.sendMessage.mockImplementation(async (message) => message.type === 'get-popup-state'
-      ? { ok: true, currentOrigin: 'https://example.com', registeredOrigins: [], passkeyOrigins: [], pendingSite: { origin: 'https://example.com', detectedAt: 1, method: 'passkey' } }
-      : { ok: true, action: 'ignore' });
+      ? { ok: true, currentOrigin: 'https://example.com', passkeyFrameOrigins: {}, registeredOrigins: [], passkeyOrigins: [], pendingSite: { origin: 'https://example.com', detectedAt: 1, method: 'passkey' } }
+      : { ok: true, currentOrigin: 'https://example.com', registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'], passkeyFrameOrigins: {}, pendingSite: null });
     await openPopup();
     expect(document.body.textContent).toContain(en.passkeyDetected);
     document.querySelector<HTMLButtonElement>('[data-focus-key="register"]')!.click();
-    await vi.waitFor(() => expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', origin: 'https://example.com', method: 'passkey', tabId: 1 }));
+    await vi.waitFor(() => expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', currentOrigin: 'https://example.com', origin: 'https://example.com', method: 'passkey', tabId: 1 }));
   });
 
   it('shows the registered method without method controls or a manual start action', async () => {
     mocks.browser.runtime.sendMessage.mockImplementation(async (message) => message.type === 'get-popup-state'
-      ? { ok: true, currentOrigin: 'https://example.com', registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'], pendingSite: null }
+      ? { ok: true, currentOrigin: 'https://example.com', passkeyFrameOrigins: {}, registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'], pendingSite: null }
       : { ok: true });
     await openPopup();
     expect(document.querySelector('[data-focus-key="setup"]')).toBeNull();
@@ -116,22 +149,22 @@ describe('popup language controls', () => {
 
   it('registers a used passkey for the next visit without starting authentication again', async () => {
     mocks.browser.runtime.sendMessage.mockImplementation(async (message) => message.type === 'get-popup-state'
-      ? { ok: true, currentOrigin: 'https://example.com', registeredOrigins: [], pendingSite: {
+      ? { ok: true, currentOrigin: 'https://example.com', passkeyFrameOrigins: {}, registeredOrigins: [], passkeyOrigins: [], pendingSite: {
         origin: 'https://example.com', detectedAt: 1, method: 'passkey', passkeyUsed: true,
-      } } : { ok: true, action: 'ignore' });
+      } } : { ok: true, currentOrigin: 'https://example.com', registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'], passkeyFrameOrigins: {}, pendingSite: null });
     await openPopup();
     expect(document.body.textContent).toContain(en.passkeyUsageDetected);
     document.querySelector<HTMLButtonElement>('[data-focus-key="register"]')!.click();
     await vi.waitFor(() => expect(document.body.textContent).toContain(en.registeredNext));
-    expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', origin: 'https://example.com', method: 'passkey' });
+    expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', currentOrigin: 'https://example.com', origin: 'https://example.com', method: 'passkey' });
     expect(mocks.browser.runtime.sendMessage.mock.calls.some(([message]) => message.type === 'start-passkey-login')).toBe(false);
   });
 
   it.each([undefined, 'https://idmsa.apple.com'])('hides stale passkey candidates on a registered password site (authentication: %s)', async (authenticationOrigin) => {
     mocks.browser.runtime.sendMessage.mockImplementation(async (message) => message.type === 'get-popup-state'
-      ? { ok: true, currentOrigin: 'https://example.com', registeredOrigins: ['https://example.com'], passkeyOrigins: [], pendingSite: {
+      ? { ok: true, currentOrigin: 'https://example.com', passkeyFrameOrigins: {}, registeredOrigins: ['https://example.com'], passkeyOrigins: [], pendingSite: {
         origin: 'https://example.com', detectedAt: 1, method: 'passkey', passkeyUsed: true, authenticationOrigin,
-      } } : { ok: true, action: 'ignore' });
+      } } : { ok: true, currentOrigin: 'https://example.com', registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'], passkeyFrameOrigins: {}, pendingSite: null });
     await openPopup();
     expect(document.body.textContent).toContain('Login method: Password');
     expect(document.querySelector('[data-focus-key="register"]')).toBeNull();
@@ -143,13 +176,13 @@ describe('popup language controls', () => {
     let registeredOrigins = ['https://example.com'];
     let passkeyOrigins: string[] = [];
     mocks.browser.runtime.sendMessage.mockImplementation(async (message) => {
-      if (message.type === 'get-popup-state') return { ok: true, currentOrigin: 'https://example.com', registeredOrigins, passkeyOrigins, pendingSite: null };
+      if (message.type === 'get-popup-state') return { ok: true, currentOrigin: 'https://example.com', passkeyFrameOrigins: {}, registeredOrigins, passkeyOrigins, pendingSite: null };
       if (message.type === 'remove-origin') registeredOrigins = [];
       if (message.type === 'register-origin') {
         registeredOrigins = [message.origin];
         passkeyOrigins = message.method === 'passkey' ? [message.origin] : [];
       }
-      return { ok: true };
+      return { ok: true, currentOrigin: 'https://example.com', registeredOrigins, passkeyOrigins, passkeyFrameOrigins: {}, pendingSite: null };
     });
     await openPopup();
     document.querySelector<HTMLButtonElement>('[data-focus-key="remove:https://example.com"]')!.click();
@@ -159,13 +192,13 @@ describe('popup language controls', () => {
     document.querySelector<HTMLButtonElement>('[data-focus-key="confirm-registration"]')!.click();
     await vi.waitFor(() => expect(document.body.textContent).toContain('Login method: Passkey'));
     expect(document.querySelector('[role="radiogroup"]')).toBeNull();
-    expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'remove-origin', origin: 'https://example.com' });
-    expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', origin: 'https://example.com', method: 'passkey', tabId: 1 });
+    expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'remove-origin', currentOrigin: 'https://example.com', origin: 'https://example.com' });
+    expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', currentOrigin: 'https://example.com', origin: 'https://example.com', method: 'passkey', tabId: 1 });
   });
 
   it('disables passkey selection on insecure sites while allowing password registration', async () => {
     mocks.browser.tabs.query.mockResolvedValue([{ id: 1, url: 'http://example.com/login' }]);
-    mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, currentOrigin: 'http://example.com', registeredOrigins: [], pendingSite: null });
+    mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, currentOrigin: 'http://example.com', passkeyFrameOrigins: {}, registeredOrigins: [], passkeyOrigins: [], pendingSite: null });
     await openPopup();
     document.querySelector<HTMLButtonElement>('[data-focus-key="register-current-site"]')!.click();
     expect(document.querySelector<HTMLInputElement>('input[name="registration-method"][value="passkey"]')!.disabled).toBe(true);
@@ -175,8 +208,8 @@ describe('popup language controls', () => {
 
   it('registers the current site without autofill or a detected button', async () => {
     mocks.browser.runtime.sendMessage.mockImplementation(async (message) => message.type === 'get-popup-state'
-      ? { ok: true, currentOrigin: 'https://example.com', registeredOrigins: [], pendingSite: null }
-      : { ok: true, action: 'ignore' });
+      ? { ok: true, currentOrigin: 'https://example.com', passkeyFrameOrigins: {}, registeredOrigins: [], passkeyOrigins: [], pendingSite: null }
+      : { ok: true, currentOrigin: 'https://example.com', registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'], passkeyFrameOrigins: {}, pendingSite: null });
     await openPopup();
     expect(document.body.textContent).toContain(en.registerCurrentSite);
     expect(document.body.textContent).not.toContain('Register this site for passkeys');
@@ -186,11 +219,11 @@ describe('popup language controls', () => {
     expect(document.querySelector<HTMLInputElement>('#registration-method')!.checked).toBe(true);
     expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledTimes(1);
     document.querySelector<HTMLButtonElement>('[data-focus-key="confirm-registration"]')!.click();
-    await vi.waitFor(() => expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', origin: 'https://example.com', method: 'password', tabId: 1 }));
+    await vi.waitFor(() => expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', currentOrigin: 'https://example.com', origin: 'https://example.com', method: 'password', tabId: 1 }));
   });
 
   it('keeps manual registration available when a different site has a pending notification', async () => {
-    mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, currentOrigin: 'https://example.com', registeredOrigins: [],
+    mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, currentOrigin: 'https://example.com', passkeyFrameOrigins: {}, registeredOrigins: [],
       pendingSite: { origin: 'https://another.example', detectedAt: 1 } });
     await openPopup();
     expect(document.querySelector('[data-focus-key="register-current-site"]')).not.toBeNull();
@@ -198,15 +231,15 @@ describe('popup language controls', () => {
 
   it('allows passkey registration only after selecting that method and confirming', async () => {
     mocks.browser.runtime.sendMessage.mockImplementation(async (message) => message.type === 'get-popup-state'
-      ? { ok: true, currentOrigin: 'https://example.com', registeredOrigins: [], pendingSite: null }
-      : { ok: true, action: 'ignore' });
+      ? { ok: true, currentOrigin: 'https://example.com', passkeyFrameOrigins: {}, registeredOrigins: [], passkeyOrigins: [], pendingSite: null }
+      : { ok: true, currentOrigin: 'https://example.com', registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'], passkeyFrameOrigins: {}, pendingSite: null });
     await openPopup();
     document.querySelector<HTMLButtonElement>('[data-focus-key="register-current-site"]')!.click();
     selectRegistrationMethod('passkey');
     expect(document.body.textContent).toContain(en.passkeyRegisterDescription);
     expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledTimes(1);
     document.querySelector<HTMLButtonElement>('[data-focus-key="confirm-registration"]')!.click();
-    await vi.waitFor(() => expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', origin: 'https://example.com', method: 'passkey', tabId: 1 }));
+    await vi.waitFor(() => expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', currentOrigin: 'https://example.com', origin: 'https://example.com', method: 'passkey', tabId: 1 }));
   });
 
   it('cancels registration without changing the site settings', async () => {
@@ -221,13 +254,13 @@ describe('popup language controls', () => {
   it('shows and approves the authentication origin even when the parent is already registered', async () => {
     const authenticationOrigin = 'https://idmsa.apple.com';
     mocks.browser.runtime.sendMessage.mockImplementation(async (message) => message.type === 'get-popup-state'
-      ? { ok: true, currentOrigin: 'https://example.com', registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'],
+      ? { ok: true, currentOrigin: 'https://example.com', passkeyFrameOrigins: {}, registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'],
         pendingSite: { origin: 'https://example.com', detectedAt: 1, method: 'passkey', authenticationOrigin } }
-      : { ok: true, action: 'ignore' });
+      : { ok: true, currentOrigin: 'https://example.com', registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'], passkeyFrameOrigins: {}, pendingSite: null });
     await openPopup();
     expect(document.body.textContent).toContain(`Authentication site: ${authenticationOrigin}`);
     expect(document.body.textContent).toContain(en.authenticationSiteConsent);
     document.querySelector<HTMLButtonElement>('[data-focus-key="register"]')!.click();
-    await vi.waitFor(() => expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', origin: 'https://example.com', method: 'passkey', authenticationOrigin, tabId: 1 }));
+    await vi.waitFor(() => expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', currentOrigin: 'https://example.com', origin: 'https://example.com', method: 'passkey', authenticationOrigin, tabId: 1 }));
   });
 });

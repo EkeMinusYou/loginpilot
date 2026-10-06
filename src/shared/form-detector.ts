@@ -84,25 +84,20 @@ function getBestInput<T extends HTMLInputElement>(
   return best;
 }
 
+function candidateForForm(form: HTMLFormElement): LoginFormCandidate | null {
+  const inputs = Array.from(form.querySelectorAll('input'));
+  const passwords = inputs.filter((input) => input.type.toLowerCase() === 'password');
+  // Registration and password-change forms must never receive saved login credentials.
+  if (passwords.length !== 1 || autocompleteTokens(passwords[0]!).includes('new-password')) return null;
+  const usernameInput = getBestInput(inputs, scoreUsernameInput);
+  const passwordInput = getBestInput(inputs, scorePasswordInput);
+  return usernameInput && passwordInput ? { form, usernameInput, passwordInput } : null;
+}
+
 export function findLoginForm(root: ParentNode = document): LoginFormCandidate | null {
-  const forms = Array.from(root.querySelectorAll('form'));
-
-  for (const form of forms) {
-    const inputs = Array.from(form.querySelectorAll('input'));
-    const passwordInputs = inputs.filter((input) => input.type.toLowerCase() === 'password');
-
-    // Registration and password-change forms must never receive saved login credentials.
-    if (passwordInputs.length !== 1 || passwordInputs.some((input) =>
-      autocompleteTokens(input).includes('new-password'),
-    )) {
-      continue;
-    }
-    const usernameInput = getBestInput(inputs, scoreUsernameInput);
-    const passwordInput = getBestInput(inputs, scorePasswordInput);
-
-    if (usernameInput && passwordInput) {
-      return { form, usernameInput, passwordInput };
-    }
+  for (const form of root.querySelectorAll('form')) {
+    const candidate = candidateForForm(form);
+    if (candidate) return candidate;
   }
 
   return null;
@@ -117,10 +112,8 @@ export function isCurrentLoginForm(candidate: LoginFormCandidate): boolean {
   const { form, usernameInput, passwordInput } = candidate;
   if (!form.isConnected || !usernameInput.isConnected || !passwordInput.isConnected ||
     usernameInput.form !== form || passwordInput.form !== form) return false;
-  const inputs = Array.from(form.querySelectorAll('input'));
-  const passwords = inputs.filter((input) => input.type.toLowerCase() === 'password');
-  return passwords.length === 1 && !autocompleteTokens(passwords[0]!).includes('new-password') &&
-    getBestInput(inputs, scoreUsernameInput) === usernameInput && getBestInput(inputs, scorePasswordInput) === passwordInput;
+  const current = candidateForForm(form);
+  return current?.usernameInput === usernameInput && current.passwordInput === passwordInput;
 }
 
 function matchesAutofillSelector(input: HTMLInputElement, selector: string): boolean {

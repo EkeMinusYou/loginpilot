@@ -27,15 +27,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run audit
-      - run: npm test
-      - run: npm run test:package
-      - run: npm run typecheck
-      - run: npm run zip
-      - run: npm run package:verify
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
-      - run: npm run lp:build
+      - run: npm run check
 
   dependency-review:
     name: Dependency review

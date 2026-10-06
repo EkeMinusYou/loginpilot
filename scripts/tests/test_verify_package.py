@@ -33,7 +33,7 @@ class PackageVerification(unittest.TestCase):
         self.files = {name: b'fixture' for name in validator.REQUIRED}
         self.files.update({
             'manifest.json': json.dumps(manifest).encode(), 'LICENSE.txt': b'license', 'THIRD_PARTY_LICENSES.txt': b'notices',
-            'popup.html': b'<script src="/chunks/popup-test.js"></script><link href="/assets/popup-test.css">',
+            'popup.html': b'<script src="/chunks/popup-test.js"></script><link rel="stylesheet" href="/assets/popup-test.css">',
             'chunks/popup-test.js': b'code', 'assets/popup-test.css': b'css',
         })
         for locale in ['en', 'ja']:
@@ -48,6 +48,38 @@ class PackageVerification(unittest.TestCase):
 
     def test_accepts_complete_package(self):
         self.check()
+
+    def test_accepts_renamed_split_assets_and_relative_dependencies(self):
+        del self.files['chunks/popup-test.js']
+        del self.files['assets/popup-test.css']
+        self.files.update({
+            'popup.html': b"<script type='module' src='/chunks/ui.js'></script><link rel='stylesheet' href='/assets/style.css'><link rel='modulepreload' href='/chunks/preload.js'>",
+            'chunks/ui.js': b'import{a}from"./shared.js";import("./lazy.js");',
+            'chunks/shared.js': b'export{b}from"./nested/dependency.js";',
+            'chunks/nested/dependency.js': b'code', 'chunks/lazy.js': b'code', 'chunks/preload.js': b'code',
+            'assets/style.css': b'@import "./base.css";body{background:url("./image.png")}',
+            'assets/base.css': b'@font-face{src:url(./font.woff2)}',
+            'assets/image.png': b'image', 'assets/font.woff2': b'font',
+        })
+        self.check()
+
+    def test_rejects_missing_transitive_dependencies(self):
+        for code in [b'import{a}from"./missing.js";', b'import("./missing.js");',
+                     b'new URL("../assets/missing.png",import.meta.url);']:
+            with self.subTest(code=code):
+                self.files['chunks/popup-test.js'] = code
+                with self.assertRaisesRegex(ValueError, 'Missing referenced asset'):
+                    self.check()
+
+    def test_rejects_unreferenced_generated_assets(self):
+        self.files['chunks/unused.js'] = b'code'
+        with self.assertRaisesRegex(ValueError, 'Unreferenced generated assets'):
+            self.check()
+
+    def test_rejects_non_local_runtime_assets(self):
+        self.files['chunks/popup-test.js'] = b'import "https://example.com/remote.js";'
+        with self.assertRaisesRegex(ValueError, 'Non-local runtime asset'):
+            self.check()
 
     def test_rejects_missing_locale_or_legal_notice(self):
         for name in ['_locales/ja/messages.json', 'LICENSE.txt', 'THIRD_PARTY_LICENSES.txt']:

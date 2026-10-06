@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTranslator, en, ja, translateMessage, type MessageKey } from './i18n';
+import { createTranslator, en, ja, type MessageKey } from './i18n';
 import { normalizeLocalePreference, resolveLocale } from './locale';
 
 describe('language selection', () => {
@@ -32,9 +32,4 @@ describe('extension translations', () => {
     expect(createTranslator('ja')('siteCount', { count: 12 })).toBe('12件');
   });
 
-  it('translates runtime errors and existing feedback after a language change', () => {
-    expect(translateMessage('en', ja.loginFieldsRequired)).toBe(en.loginFieldsRequired);
-    expect(translateMessage('ja', en.registeredCurrent)).toBe(ja.registeredCurrent);
-    expect(translateMessage('en', 'Unknown browser error')).toBe('Unknown browser error');
-  });
 });

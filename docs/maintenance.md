@@ -19,6 +19,8 @@ Keep pull requests enabled and set **Settings → General → Features → Pull 
 
 Pull requests require **Checks** and **Dependency review**. The latter checks added or updated dependencies against GitHub's vulnerability database.
 
+CI runs `npm run check`, which uses the same `check:release` script as Prepare release and then builds the landing page. Keep the shared validation sequence in `package.json`; the workflows handle environment setup and release artifact upload.
+
 Dependabot checks npm dependencies daily and GitHub Actions weekly. Patch/minor npm updates are grouped separately for routine and security updates; major updates require manual review. Keep Dependabot alerts and security updates enabled.
 
 Auto-merge is limited to non-draft Dependabot PRs from this repository into `main`, with verified signed commits and a highest update classification of patch or minor. A group containing a major update is not eligible. The workflow confirms branch protection and both required check names before enabling GitHub auto-merge.
@@ -62,7 +64,7 @@ Miniflare pins `sharp@0.35.4`, so `overrides.miniflare.sharp` in `package.json` 
 1. Merge the release changes into `main` and confirm CI succeeds.
 2. Update `package.json`'s version and run `npm install --package-lock-only --ignore-scripts`. Submit the version and lockfile change through a PR and CI.
 3. Run `npm run zip` followed by `npm run package:verify` to create and check `.output/loginpilot-VERSION-chrome.zip`, or manually run **Prepare release** on `main` and download the **loginpilot-chrome** artifact. The artifact download is a wrapper ZIP; the extension ZIP is inside it.
-4. Extract the extension ZIP, load it in a test Chrome profile, and complete the relevant [browser checks](browser-review.md). The automated ZIP validator checks permissions, content-script scopes, both locales, popup assets, legal notices, and an allowlist that excludes development and credential artifacts. Browser tests run against the build used for that ZIP.
+4. Extract the extension ZIP, load it in a test Chrome profile, and complete the relevant [browser checks](browser-review.md). The automated ZIP validator checks permissions, content-script scopes, both locales, legal notices, and an allowlist that excludes development and credential artifacts. It follows local HTML, JavaScript module, and CSS references to check runtime assets, including split chunks, without assuming a fixed generated filename or asset count. Browser tests run against the build used for that ZIP.
 5. Create a GitHub Release draft with a version tag pointing to the tested commit. Attach the extension ZIP and describe changes and known limitations, then review and publish it.
 6. Upload to the Chrome Web Store manually. After review and publication, update installation links in both READMEs and the landing page. Update the landing page's release-status translations and social images as needed.
 

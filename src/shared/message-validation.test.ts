@@ -25,6 +25,8 @@ describe('runtime message validation', () => {
     { type: MESSAGE_TYPES.registerOrigin, origin, tabId: 1 },
     { type: MESSAGE_TYPES.removeOrigin, origin },
     { type: MESSAGE_TYPES.registerOrigin, origin, method: 'password' },
+    { type: MESSAGE_TYPES.registerOrigin, origin, currentOrigin: origin },
+    { type: MESSAGE_TYPES.removeOrigin, origin, currentOrigin: null },
   ])('accepts a supported message (%j)', (message) => {
     expect(isRuntimeMessage(message)).toBe(true);
   });
@@ -38,6 +40,8 @@ describe('runtime message validation', () => {
     { type: MESSAGE_TYPES.registerOrigin, origin, tabId: '1' },
     { type: MESSAGE_TYPES.registerOrigin, origin, tabId: -1 },
     { type: MESSAGE_TYPES.registerOrigin, origin, tabId: 0.5 },
+    { type: MESSAGE_TYPES.registerOrigin, origin, currentOrigin: 'javascript:alert(1)' },
+    { type: MESSAGE_TYPES.removeOrigin, origin, currentOrigin: `${origin}/login` },
     { type: 'enable-credential-login', origin },
     { type: 'enable-credential-login', origin, tabId: Infinity },
     { type: MESSAGE_TYPES.startPasskeyLogin, origin },

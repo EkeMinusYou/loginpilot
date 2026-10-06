@@ -7,6 +7,7 @@ import {
   setPendingSite,
   getRegistrationState,
   setRegistrationState,
+  type RegistrationState,
 } from '../shared/storage';
 import {
   MESSAGE_TYPES,
@@ -17,6 +18,7 @@ import {
   type AutofillResponse,
   type LoginMethod,
   type PasskeyFrameResponse,
+  type PendingSite,
 } from '../shared/messages';
 import { createMutationQueue, shouldReplaceCandidate } from '../shared/state-mutations';
 import { normalizeOrigin } from '../shared/origins';
@@ -108,7 +110,7 @@ async function startPasskeyLogin(origin: string, tabId: number): Promise<Credent
   }
   const target = passkeyTargets.get(targetKey(tabId, origin, authenticationOrigin));
   if (!target || Date.now() - target.seenAt > 15000) {
-    return { ok: false, error: 'ログインページを再読み込みして、設定をやり直してください。' };
+    return { ok: false, error: 'reloadLoginPage' };
   }
   return await browser.tabs.sendMessage(tabId, {
     type: MESSAGE_TYPES.startPasskeyLogin, origin: authenticationOrigin,
@@ -140,8 +142,13 @@ async function notifySiteDetected(effects: Effect[], origin: string, method: Log
 }
 
 async function getPopupState(currentOrigin: string | null): Promise<PopupResponse> {
-  const { registeredOrigins, passkeyOrigins, passkeyFrameOrigins } = await getRegistrationState();
+  const registration = await getRegistrationState();
   const pending = await getPendingSite();
+  return popupState(currentOrigin, registration, pending);
+}
+
+function popupState(currentOrigin: string | null, registration: RegistrationState, pending: PendingSite | null): PopupResponse {
+  const { registeredOrigins, passkeyOrigins, passkeyFrameOrigins } = registration;
   const candidate = [...passkeyTargets.values()].filter((target) =>
     target.siteOrigin === currentOrigin && Date.now() - target.seenAt <= 15000 &&
     (!registeredOrigins.includes(target.siteOrigin) || passkeyOrigins.includes(target.siteOrigin)) &&
@@ -167,7 +174,7 @@ async function handleMessage(
   effects: Effect[],
 ): Promise<PopupResponse | CredentialSetupResponse | AutofillResponse> {
   if (!isAuthorizedRuntimeMessage(message, sender, browser.runtime.id, browser.runtime.getURL('/popup.html'))) {
-    return { ok: false, error: 'この操作は許可されていません。' };
+    return { ok: false, error: 'operationNotAllowed' };
   }
   if (message.type === MESSAGE_TYPES.passkeyDetected || message.type === MESSAGE_TYPES.passkeyUsed || message.type === MESSAGE_TYPES.getPasskeyPolicy) {
     const target = await passkeyContext(message.origin, sender, message.type === MESSAGE_TYPES.passkeyUsed);
@@ -218,7 +225,7 @@ async function handleMessage(
 
   const origin = normalizeOrigin(message.origin);
   if (!origin) {
-    return { ok: false, error: 'HTTPまたはHTTPSのoriginだけ登録できます。' };
+    return { ok: false, error: 'invalidOrigin' };
   }
 
   const registration = await getRegistrationState();
@@ -227,17 +234,17 @@ async function handleMessage(
   if (message.type === MESSAGE_TYPES.registerOrigin) {
     const savedMethod = passkeyOrigins.includes(origin) ? 'passkey' : 'password';
     if (origins.includes(origin) && message.method !== undefined && message.method !== savedMethod) {
-      return { ok: false, error: 'ログイン方式を変更するには、登録を解除してから登録し直してください。' };
+      return { ok: false, error: 'reregisterToChangeMethod' };
     }
-    if (message.method === 'passkey' && !isSecureLoginOrigin(origin)) return { ok: false, error: 'パスキーはHTTPSのサイトで設定してください。' };
+    if (message.method === 'passkey' && !isSecureLoginOrigin(origin)) return { ok: false, error: 'passkeyHttpsOnly' };
+    const pendingSite = await getPendingSite();
     if (message.authenticationOrigin !== undefined) {
-      const pending = await getPendingSite();
       const cached = [...passkeyTargets.values()].some((target) => target.siteOrigin === origin &&
         target.authenticationOrigin === message.authenticationOrigin && Date.now() - target.seenAt <= 15000 &&
         (message.tabId === undefined || target.tabId === message.tabId));
       if (!isSecureLoginOrigin(message.authenticationOrigin) ||
-        (!(pending?.origin === origin && pending.authenticationOrigin === message.authenticationOrigin) && !cached)) {
-        return { ok: false, error: 'ログインページを再読み込みして、設定をやり直してください。' };
+        (!(pendingSite?.origin === origin && pendingSite.authenticationOrigin === message.authenticationOrigin) && !cached)) {
+        return { ok: false, error: 'reloadLoginPage' };
       }
     }
     if (message.method !== undefined) {
@@ -247,8 +254,7 @@ async function handleMessage(
       else delete frames[origin];
     }
     registration.registeredOrigins = [...origins, origin];
-    await setRegistrationState(registration);
-    const pendingSite = await getPendingSite();
+    const saved = await setRegistrationState(registration);
     if (pendingSite?.origin === origin) {
       await clearPendingSite();
       effects.push(async () => {
@@ -267,18 +273,20 @@ async function handleMessage(
       });
     }
 
-    return { ok: true, action: 'ignore' };
+    return popupState(message.currentOrigin === undefined ? origin : message.currentOrigin, saved,
+      pendingSite?.origin === origin ? null : pendingSite);
   }
 
   if (message.type === MESSAGE_TYPES.removeOrigin) {
     registration.registeredOrigins = origins.filter((saved) => saved !== origin);
     registration.passkeyOrigins = passkeyOrigins.filter((saved) => saved !== origin);
     delete frames[origin];
-    await setRegistrationState(registration);
-    return { ok: true, action: 'ignore' };
+    const pendingSite = await getPendingSite();
+    const saved = await setRegistrationState(registration);
+    return popupState(message.currentOrigin === undefined ? origin : message.currentOrigin, saved, pendingSite);
   }
 
-  return { ok: false, error: '未対応のメッセージです。' };
+  return { ok: false, error: 'unsupportedMessage' };
 }
 
 export default defineBackground(() => {
@@ -293,11 +301,14 @@ export default defineBackground(() => {
     const effects: Effect[] = [];
     void (changesState ? mutateState(() => handleMessage(message, sender, effects)) : handleMessage(message, sender, effects))
       .then(async (response) => {
+        const returnsState = message.type === MESSAGE_TYPES.registerOrigin || message.type === MESSAGE_TYPES.removeOrigin;
+        // Return persisted state before a page can wait for Chrome's chooser.
+        if (returnsState) sendResponse(response);
         // UI/page failures never roll back or misreport persisted preferences.
         await Promise.allSettled(effects.map((effect) => effect()));
-        sendResponse(response);
+        if (!returnsState) sendResponse(response);
       })
-      .catch(() => sendResponse({ ok: false, error: '処理に失敗しました。' }));
+      .catch(() => sendResponse({ ok: false, error: 'processingFailed' }));
 
     return true;
   });

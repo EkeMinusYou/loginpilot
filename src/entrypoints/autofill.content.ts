@@ -44,7 +44,7 @@ export default defineContentScript({
       if (ctx.isInvalid || sender.id !== browser.runtime.id || sender.tab !== undefined || !isContentMessage(message) ||
         message.type !== MESSAGE_TYPES.siteRegistered || message.origin !== origin) return;
       const candidate = findLoginForm();
-      if (!candidate) return Promise.resolve({ ok: false, error: 'メールアドレスとパスワードの入力欄があるページで設定してください。' });
+      if (!candidate) return Promise.resolve({ ok: false, error: 'loginFieldsRequired' });
       return login.register(candidate).then((filled) => ({ ok: true, filled }));
     };
     const onStorageChanged = (changes: Record<string, unknown>, area: string): void => {

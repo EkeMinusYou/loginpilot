@@ -20,14 +20,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run audit
-      - run: npm test
-      - run: npm run test:package
-      - run: npm run typecheck
-      - run: npm run zip
-      - run: npm run package:verify
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+      - run: npm run check:release
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: loginpilot-chrome

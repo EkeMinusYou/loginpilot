@@ -40,23 +40,27 @@ export function localizeHtml(template: string, locale: Locale, depth = 0): strin
   if (locale === 'en') {
     meta('[name="description"]', 'A Chrome extension that uses Google Password Manager to automatically submit login forms on sites you register. Never stores your ID or password. Preparing for Chrome Web Store release.');
     meta('[property="og:description"]', 'Go beyond autofill. Go straight to login. A Chrome extension that works with Google Password Manager.');
-    document.getElementById('hero-title')!.innerHTML = '<span class="inline-block">One less click.</span><br /><span class="inline-block">At every login.</span>';
-    const translate = (value: string): string => {
-      const text = value.trim();
-      if (!japanese.test(text)) return value;
-      const translated = translations[text];
-      if (translated === undefined) throw new Error(`Missing English LP translation: ${text}`);
-      return value.replace(text, translated);
-    };
-    const walk = (node: Node): void => {
-      if (node.nodeType === 3) node.textContent = translate(node.textContent ?? '');
+    for (const [marker, attribute] of [['data-i18n', null], ['data-i18n-aria-label', 'aria-label']] as const) {
+      for (const node of document.querySelectorAll(`[${marker}]`)) {
+        const key = node.getAttribute(marker)!;
+        if (!Object.hasOwn(translations, key)) throw new Error(`Missing English LP translation: ${key}`);
+        const translated = translations[key as keyof typeof translations];
+        if (attribute) node.setAttribute(attribute, translated);
+        else node.textContent = (node.textContent ?? '').replace((node.textContent ?? '').trim(), () => translated);
+      }
+    }
+    // Catch new copy that was added without a stable translation key.
+    const checkCoverage = (node: Node): void => {
+      if (node.nodeType === 3 && japanese.test(node.textContent ?? '')) throw new Error('LP text is missing a data-i18n key');
       for (const child of node.childNodes) {
         if (child.nodeType === 1 && (child as Element).hasAttribute('data-language')) continue;
-        walk(child);
+        checkCoverage(child);
       }
     };
-    walk(document.body);
-    for (const node of document.querySelectorAll('[aria-label]')) node.setAttribute('aria-label', translate(node.getAttribute('aria-label')!));
+    checkCoverage(document.body);
+    for (const node of document.querySelectorAll('[aria-label]')) {
+      if (japanese.test(node.getAttribute('aria-label')!)) throw new Error('LP aria-label is missing a data-i18n-aria-label key');
+    }
   }
   document.querySelector('a[href$="/docs/privacy.md"]')?.setAttribute('href', `${path}privacy/`);
   if (depth > 0) {

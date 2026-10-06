@@ -16,6 +16,8 @@ export function isRuntimeMessage(value: unknown): value is RuntimeMessage {
     return 'currentOrigin' in value && (value.currentOrigin === null || isOrigin(value.currentOrigin));
   }
   if (!('origin' in value) || !isOrigin(value.origin)) return false;
+  if ((value.type === MESSAGE_TYPES.registerOrigin || value.type === MESSAGE_TYPES.removeOrigin) &&
+    'currentOrigin' in value && value.currentOrigin !== undefined && value.currentOrigin !== null && !isOrigin(value.currentOrigin)) return false;
   switch (value.type) {
     case MESSAGE_TYPES.autofillDetected:
     case MESSAGE_TYPES.passkeyDetected:

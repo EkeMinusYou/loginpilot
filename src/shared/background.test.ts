@@ -57,7 +57,7 @@ describe('background message handling', () => {
   });
   it.each([MESSAGE_TYPES.registerOrigin, MESSAGE_TYPES.removeOrigin, MESSAGE_TYPES.getPopupState])(
     'rejects %s from content scripts without reading or changing storage', async (type) => {
-      expect(await dispatch({ type, origin, currentOrigin: origin }, content)).toEqual({ ok: false, error: 'この操作は許可されていません。' });
+      expect(await dispatch({ type, origin, currentOrigin: origin }, content)).toEqual({ ok: false, error: 'operationNotAllowed' });
       expect(mocks.browser.storage.local.get).not.toHaveBeenCalled();
       expect(mocks.browser.storage.local.set).not.toHaveBeenCalled();
     },
@@ -71,7 +71,7 @@ describe('background message handling', () => {
 
   it('allows an authorized popup to register and remove an origin', async () => {
     const added = 'https://another.example';
-    expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin: added })).toEqual({ ok: true, action: 'ignore' });
+    expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin: added })).toMatchObject({ ok: true, registeredOrigins: [added, origin] });
     expect(stored.registeredOrigins).toEqual([added, origin]);
     await dispatch({ type: MESSAGE_TYPES.removeOrigin, origin: added });
     expect(stored.registeredOrigins).toEqual([origin]);
@@ -79,7 +79,7 @@ describe('background message handling', () => {
 
   it('only authorizes registered origins for matching top-level content scripts', async () => {
     expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin }, content)).toEqual({ ok: true, action: 'submit' });
-    expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin }, { ...content, frameId: 1 })).toEqual({ ok: false, error: 'この操作は許可されていません。' });
+    expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin }, { ...content, frameId: 1 })).toEqual({ ok: false, error: 'operationNotAllowed' });
     stored.registeredOrigins = [];
     expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin }, content)).toEqual({ ok: true, action: 'ignore' });
   });
@@ -123,7 +123,7 @@ describe('background message handling', () => {
     stored.passkeyOrigins = method === 'passkey' ? [origin] : [];
     const nextMethod = method === 'passkey' ? 'password' : 'passkey';
     expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: nextMethod })).toEqual({
-      ok: false, error: 'ログイン方式を変更するには、登録を解除してから登録し直してください。',
+      ok: false, error: 'reregisterToChangeMethod',
     });
     expect(mocks.browser.storage.local.set).not.toHaveBeenCalled();
     expect(stored.passkeyOrigins).toEqual(method === 'passkey' ? [origin] : []);
@@ -244,7 +244,7 @@ describe('background message handling', () => {
     await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin: site, method: 'passkey', authenticationOrigin, tabId: 1 });
     expect(stored.registeredOrigins).toEqual([site]);
     expect(stored.passkeyFrameOrigins).toEqual({ [site]: authenticationOrigin });
-    expect(mocks.browser.tabs.sendMessage).toHaveBeenLastCalledWith(1, { type: MESSAGE_TYPES.startPasskeyLogin, origin: authenticationOrigin }, { documentId: 'apple-auth-document' });
+    await vi.waitFor(() => expect(mocks.browser.tabs.sendMessage).toHaveBeenCalledWith(1, { type: MESSAGE_TYPES.startPasskeyLogin, origin: authenticationOrigin }, { documentId: 'apple-auth-document' }));
     expect(await dispatch({ type: MESSAGE_TYPES.getPasskeyPolicy, origin: authenticationOrigin }, frame)).toEqual({ ok: true, action: 'submit', method: 'passkey' });
     expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin: authenticationOrigin }, frame)).toMatchObject({ ok: false });
   });
@@ -327,20 +327,32 @@ it('gets the parent origin and frame visibility from the top-level script withou
 it('does not let notification failures turn a completed registration into a failure', async () => {
   stored.pendingSite = { origin, detectedAt: 1 };
   mocks.browser.notifications.clear.mockRejectedValueOnce(new Error('Notification unavailable'));
-  expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: 'password' })).toEqual({ ok: true, action: 'ignore' });
+  expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: 'password' })).toMatchObject({ ok: true, registeredOrigins: [origin], pendingSite: null });
   expect(stored.registeredOrigins).toContain(origin);
   expect(stored.pendingSite).toBeUndefined();
 });
 
-it('allows removal to finish while Chrome credential setup is still pending', async () => {
+it('returns the normalized saved state without another storage read after a mutation', async () => {
+  const read = mocks.browser.storage.local.get.getMockImplementation()!;
+  mocks.browser.storage.local.get.mockImplementation(async (...args) => {
+    if (mocks.browser.storage.local.set.mock.calls.length) throw new Error('Read unavailable after saving');
+    return read(...args);
+  });
+  expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin })).toMatchObject({
+    ok: true, registeredOrigins: [origin], passkeyOrigins: [], passkeyFrameOrigins: {},
+  });
+});
+
+it('returns saved registration state and allows removal while Chrome credential setup is still pending', async () => {
   const setup = Promise.withResolvers<unknown>();
   mocks.browser.tabs.sendMessage.mockReturnValue(setup.promise);
   const registration = dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: 'password', tabId: 1 });
+  expect(await registration).toMatchObject({ ok: true, registeredOrigins: [origin] });
   await vi.waitFor(() => expect(mocks.browser.tabs.sendMessage).toHaveBeenCalled());
   const removal = await dispatch({ type: MESSAGE_TYPES.removeOrigin, origin });
-  expect(removal).toEqual({ ok: true, action: 'ignore' });
+  expect(removal).toMatchObject({ ok: true, registeredOrigins: [], passkeyOrigins: [], passkeyFrameOrigins: {} });
   expect(stored.registeredOrigins).toEqual([]);
   setup.resolve({ ok: true, filled: false });
-  expect(await registration).toEqual({ ok: true, action: 'ignore' });
+  expect(await registration).toMatchObject({ ok: true, registeredOrigins: [origin] });
   expect(stored.registeredOrigins).toEqual([]);
 });

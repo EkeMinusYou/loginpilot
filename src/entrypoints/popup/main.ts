@@ -1,8 +1,8 @@
 import { browser } from 'wxt/browser';
 import './style.css';
-import { MESSAGE_TYPES, type PopupResponse, type PopupState, type LoginMethod } from '../../shared/messages';
-import { normalizeOrigin } from '../../shared/origins';
-import { createTranslator, translateMessage, type MessageKey } from '../../shared/i18n';
+import type { LoginMethod } from '../../shared/messages';
+import { PopupModel } from './state';
+import { createTranslator, type MessageKey } from '../../shared/i18n';
 import { getBrowserLocale, getLanguagePreference, setLanguagePreference } from '../../shared/extension-language';
 import { normalizeLocalePreference, resolveLocale, type LocalePreference } from '../../shared/locale';
 import { isSecureLoginOrigin } from '../../shared/passkey-login';
@@ -28,7 +28,7 @@ async function changeLanguage(preference: LocalePreference): Promise<void> {
     languagePreference = preference;
     locale = resolveLocale([browser.i18n.getUILanguage()], preference);
   } catch {
-    feedback = { kind: 'error', context: 'load', message: t('languageSaveFailed') };
+    model.feedback = { kind: 'error', context: 'load', key: 'languageSaveFailed' };
   } finally {
     languageChanging = false;
     focusAfterAction = 'language';
@@ -36,22 +36,20 @@ async function changeLanguage(preference: LocalePreference): Promise<void> {
   }
 }
 
-let state: PopupState = { registeredOrigins: [], passkeyOrigins: [], passkeyFrameOrigins: {}, pendingSite: null, currentOrigin: null };
-let isLoading = true;
-let hasLoaded = false;
 let registrationOrigin: string | null = null;
 let registrationMethod: LoginMethod = 'password';
-let action: { type: 'register' | 'remove'; origin: string } | null = null;
-let feedback: {
-  kind: 'success' | 'error';
-  context: 'register' | 'remove' | 'load';
-  message: string;
-} | null = null;
+const model = new PopupModel(() => {
+  if (model.feedback?.context === 'register') {
+    if (model.feedback.kind === 'success') registrationOrigin = null;
+    focusAfterAction = 'feedback';
+  } else if (model.feedback?.context === 'remove') {
+    focusAfterAction = model.feedback.kind === 'success' ? 'registered-title' : 'feedback';
+  }
+  render();
+});
 let focusAfterAction: 'feedback' | 'registered-title' | 'language' | 'registration-method' | 'register-current-site' | null = null;
 
 type IconName = 'globe' | 'check' | 'tick' | 'languages' | 'chevron' | 'alert' | 'arrow' | 'loader' | 'info';
-
-class PopupError extends Error {}
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -91,105 +89,18 @@ function icon(name: IconName, className = 'size-4 shrink-0'): SVGSVGElement {
 function button(label: string, className: string, onClick: () => void): HTMLButtonElement {
   const node = element('button', className, label);
   node.type = 'button';
-  node.disabled = action !== null;
+  node.disabled = model.action !== null;
   node.addEventListener('click', onClick);
   return node;
 }
 
-async function loadState(): Promise<void> {
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  const response = (await browser.runtime.sendMessage({
-    type: MESSAGE_TYPES.getPopupState,
-    currentOrigin: tab?.url ? normalizeOrigin(tab.url) : null,
-  })) as PopupResponse;
-  if (!response.ok) throw new PopupError(response.error);
-  state = { ...response, passkeyOrigins: response.passkeyOrigins ?? [], passkeyFrameOrigins: response.passkeyFrameOrigins ?? {} };
-  hasLoaded = true;
-}
-
-async function registerPendingSite(candidate = state.pendingSite): Promise<void> {
-  if (action || !candidate) return;
-  const origin = candidate.origin;
-  const method = candidate.method ?? 'password';
-  action = { type: 'register', origin };
-  feedback = null;
-  render();
-  try {
-    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-    const currentOrigin = tab?.url ? normalizeOrigin(tab.url) : null;
-    const matchesCurrentSite = currentOrigin === origin;
-    const response = (await browser.runtime.sendMessage({
-      type: MESSAGE_TYPES.registerOrigin,
-      origin,
-      method,
-      ...(candidate.authenticationOrigin ? { authenticationOrigin: candidate.authenticationOrigin } : {}),
-      ...(matchesCurrentSite && !candidate.passkeyUsed && tab?.id !== undefined ? { tabId: tab.id } : {}),
-    })) as { ok: boolean; error?: string };
-    if (!response.ok) throw new PopupError(response.error ?? t('registerFailed'));
-    registrationOrigin = null;
-    state = {
-      ...state,
-      currentOrigin,
-      registeredOrigins: [...new Set([...state.registeredOrigins, origin])].sort(),
-      passkeyOrigins: method === 'passkey' ? [...new Set([...state.passkeyOrigins, origin])].sort() : state.passkeyOrigins.filter((saved) => saved !== origin),
-      passkeyFrameOrigins: candidate.authenticationOrigin ? { ...state.passkeyFrameOrigins, [origin]: candidate.authenticationOrigin }
-        : Object.fromEntries(Object.entries(state.passkeyFrameOrigins).filter(([site]) => site !== origin)),
-      pendingSite: null,
-    };
-    feedback = {
-      kind: 'success',
-      context: 'register',
-      message: matchesCurrentSite && !candidate.passkeyUsed
-        ? t('registeredCurrent')
-        : t('registeredNext'),
-    };
-    try {
-      await loadState();
-    } catch {
-      feedback = { kind: 'error', context: 'register', message: t('registerRefreshFailed') };
-    }
-    focusAfterAction = 'feedback';
-  } catch (error) {
-    feedback = { kind: 'error', context: 'register', message: error instanceof PopupError ? error.message : t('registerFailed') };
-    focusAfterAction = 'feedback';
-  } finally {
-    action = null;
-    render();
-  }
-}
-
-async function removeOrigin(origin: string): Promise<void> {
-  if (action) return;
-  action = { type: 'remove', origin };
-  feedback = null;
-  render();
-  try {
-    const response = (await browser.runtime.sendMessage({ type: MESSAGE_TYPES.removeOrigin, origin })) as { ok: boolean; error?: string };
-    if (!response.ok) throw new PopupError(response.error ?? t('removeFailed'));
-    state = { ...state, registeredOrigins: state.registeredOrigins.filter((registered) => registered !== origin), passkeyOrigins: state.passkeyOrigins.filter((saved) => saved !== origin) };
-    feedback = { kind: 'success', context: 'remove', message: t('removed') };
-    try {
-      await loadState();
-    } catch {
-      feedback = { kind: 'error', context: 'remove', message: t('removeRefreshFailed') };
-    }
-    focusAfterAction = 'registered-title';
-  } catch (error) {
-    feedback = { kind: 'error', context: 'remove', message: error instanceof PopupError ? error.message : t('removeFailed') };
-    focusAfterAction = 'feedback';
-  } finally {
-    action = null;
-    render();
-  }
-}
-
 function feedbackElement(): HTMLElement {
-  const success = feedback?.kind === 'success';
+  const success = model.feedback?.kind === 'success';
   const node = element('div', `flex items-start gap-2 rounded-lg p-3 text-xs leading-relaxed ${success ? 'bg-success-soft text-success' : 'bg-error-soft text-error'}`);
   node.id = 'feedback';
   node.tabIndex = -1;
   node.setAttribute('role', success ? 'status' : 'alert');
-  node.append(icon(success ? 'check' : 'alert', 'mt-0.5 size-4 shrink-0'), element('p', 'min-w-0 [overflow-wrap:anywhere]', feedback ? translateMessage(locale, feedback.message) : undefined));
+  node.append(icon(success ? 'check' : 'alert', 'mt-0.5 size-4 shrink-0'), element('p', 'min-w-0 [overflow-wrap:anywhere]', model.feedback ? t(model.feedback.key) : undefined));
   return node;
 }
 
@@ -208,7 +119,7 @@ function registrationMethodControl(origin: string, selected: LoginMethod, onChan
     input.checked = value === selected;
     input.id = value === selected ? 'registration-method' : `registration-method-${value}`;
     input.dataset.focusKey = `registration-method-${value}`;
-    input.disabled = action !== null || (value === 'passkey' && !isSecureLoginOrigin(origin));
+    input.disabled = model.action !== null || (value === 'passkey' && !isSecureLoginOrigin(origin));
     if (value === 'passkey' && !isSecureLoginOrigin(origin)) label.title = t('passkeyHttpsOnly');
     const choice = element('span', `flex w-full items-center justify-center gap-1.5 rounded-[5px] border text-xs leading-normal transition peer-focus-visible:outline-2 peer-focus-visible:outline-accent peer-focus-visible:outline-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 ${value === selected ? 'border-method-line bg-method-soft font-semibold text-accent' : 'border-transparent font-medium text-secondary hover:bg-soft'}`);
     if (value === selected) choice.append(icon('tick', 'size-3.5 shrink-0'));
@@ -243,8 +154,8 @@ function manualRegistration(origin: string): HTMLElement {
   const description = element('p', 'sr-only', t(registrationMethod === 'passkey' ? 'passkeyRegisterDescription' : 'registerDescription'));
   description.id = 'registration-description';
   method.setAttribute('aria-describedby', description.id);
-  const register = button(action?.type === 'register' ? t('registering') : t('register'), primaryButtonClasses,
-    () => void registerPendingSite({ origin, detectedAt: Date.now(), method: registrationMethod }));
+  const register = button(model.action?.type === 'register' ? t('registering') : t('register'), primaryButtonClasses,
+    () => void model.register({ origin, detectedAt: Date.now(), method: registrationMethod }));
   register.dataset.focusKey = 'confirm-registration';
   const cancel = button(t('cancel'), 'min-h-8 w-full rounded-lg text-xs text-secondary hover:bg-soft disabled:opacity-70', () => {
     registrationOrigin = null;
@@ -257,28 +168,28 @@ function manualRegistration(origin: string): HTMLElement {
 }
 
 function currentSite(compact = false): HTMLElement {
-  const registered = state.currentOrigin !== null && state.registeredOrigins.includes(state.currentOrigin);
+  const registered = model.state.currentOrigin !== null && model.state.registeredOrigins.includes(model.state.currentOrigin);
   const node = element('section', 'flex shrink-0 flex-col gap-3.5 rounded-xl bg-surface p-4 ring-1 ring-line ring-inset');
   node.setAttribute('aria-label', t('currentSite'));
   const labelRow = element('div', 'flex min-h-6 items-center justify-between gap-2');
   labelRow.append(element('h2', 'text-[11px] leading-normal text-secondary', t('currentSite')));
-  if (state.currentOrigin) {
+  if (model.state.currentOrigin) {
     const status = element('span', `flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-[11px] leading-4 ${registered ? 'bg-success-soft font-medium text-success' : 'bg-line text-secondary'}`, registered ? undefined : t('unregistered'));
     if (registered) status.append(icon('check', 'size-3.5 shrink-0'), element('span', undefined, t('enabled')));
     labelRow.append(status);
   }
   node.append(labelRow);
-  if (!state.currentOrigin) {
+  if (!model.state.currentOrigin) {
     const message = element('div', 'flex items-start gap-2');
     message.append(icon('info', 'mt-0.5 size-4 shrink-0 text-muted'), element('p', 'text-sm font-medium', t('unavailablePage')));
     node.append(message, element('p', 'text-xs leading-relaxed text-secondary', t('openSite')));
     return node;
   }
-  const origin = state.currentOrigin;
+  const origin = model.state.currentOrigin;
   node.append(element('p', `font-latin min-w-0 font-semibold [overflow-wrap:anywhere] ${compact ? 'text-sm leading-normal' : 'text-[18px] leading-[1.4]'}`, origin));
   if (compact && registered) return node;
   if (registered) {
-    const usesPasskey = state.passkeyOrigins.includes(origin);
+    const usesPasskey = model.state.passkeyOrigins.includes(origin);
     const method = element('p', 'text-xs text-secondary', `${t('loginMethod')}: ${t(usesPasskey ? 'passkeyMethod' : 'passwordMethod')}`);
     const description = element('p', 'sr-only', t(usesPasskey ? 'passkeyDescription' : 'submitDescription'));
     description.id = 'login-description';
@@ -291,25 +202,25 @@ function currentSite(compact = false): HTMLElement {
 }
 
 function pendingSite(): HTMLElement {
-  const matchesCurrentSite = state.pendingSite?.origin === state.currentOrigin;
-  const usesPasskey = state.pendingSite?.method === 'passkey';
-  const usedPasskey = state.pendingSite?.passkeyUsed === true;
+  const matchesCurrentSite = model.state.pendingSite?.origin === model.state.currentOrigin;
+  const usesPasskey = model.state.pendingSite?.method === 'passkey';
+  const usedPasskey = model.state.pendingSite?.passkeyUsed === true;
   const node = element('section', 'flex shrink-0 flex-col gap-3.5 rounded-xl bg-detected-soft p-4 ring-1 ring-detected-line ring-inset');
   node.setAttribute('aria-label', t('pendingSite'));
   const labelRow = element('div', 'flex min-h-6 items-center justify-between gap-2');
   labelRow.append(element('h2', 'text-[11px] leading-normal text-secondary', matchesCurrentSite ? t('currentSite') : t('detectedSite')));
   labelRow.append(element('span', 'rounded-full bg-method-soft px-2 py-1 text-[11px] font-medium leading-4 text-accent', t(usedPasskey ? 'passkeyUsageDetected' : usesPasskey ? 'passkeyDetected' : 'detected')));
-  const registerButton = button(action?.type === 'register' ? t('registering') : t('register'), primaryButtonClasses, () => void registerPendingSite());
+  const registerButton = button(model.action?.type === 'register' ? t('registering') : t('register'), primaryButtonClasses, () => void model.register());
   registerButton.dataset.focusKey = 'register';
-  registerButton.append(icon(action?.type === 'register' ? 'loader' : 'arrow', `size-4 shrink-0 ${action?.type === 'register' ? 'motion-safe:animate-spin' : ''}`));
-  node.append(labelRow, element('p', 'font-latin min-w-0 text-[18px] font-semibold leading-[1.4] [overflow-wrap:anywhere]', state.pendingSite?.origin));
-  if (state.pendingSite?.authenticationOrigin) {
-    node.append(element('p', 'text-xs leading-relaxed text-secondary [overflow-wrap:anywhere]', t('authenticationSite', { origin: state.pendingSite.authenticationOrigin })),
+  registerButton.append(icon(model.action?.type === 'register' ? 'loader' : 'arrow', `size-4 shrink-0 ${model.action?.type === 'register' ? 'motion-safe:animate-spin' : ''}`));
+  node.append(labelRow, element('p', 'font-latin min-w-0 text-[18px] font-semibold leading-[1.4] [overflow-wrap:anywhere]', model.state.pendingSite?.origin));
+  if (model.state.pendingSite?.authenticationOrigin) {
+    node.append(element('p', 'text-xs leading-relaxed text-secondary [overflow-wrap:anywhere]', t('authenticationSite', { origin: model.state.pendingSite.authenticationOrigin })),
       element('p', 'text-[11px] leading-relaxed text-secondary', t('authenticationSiteConsent')));
   }
   node.append(registerButton);
   if (!matchesCurrentSite) node.append(element('p', 'text-[11px] leading-relaxed text-secondary', t('registerOtherHint')));
-  if (feedback?.context === 'register') node.append(feedbackElement());
+  if (model.feedback?.context === 'register') node.append(feedbackElement());
   return node;
 }
 
@@ -320,10 +231,10 @@ function registeredSites(): HTMLElement {
   const title = element('h2', 'text-[13px] font-semibold', t('registeredSites'));
   title.id = 'registered-title';
   title.tabIndex = -1;
-  heading.append(title, element('span', 'shrink-0 py-1 text-[11px] leading-4 text-secondary', t(state.registeredOrigins.length === 1 ? 'siteCountOne' : 'siteCount', { count: state.registeredOrigins.length })));
+  heading.append(title, element('span', 'shrink-0 py-1 text-[11px] leading-4 text-secondary', t(model.state.registeredOrigins.length === 1 ? 'siteCountOne' : 'siteCount', { count: model.state.registeredOrigins.length })));
   node.append(heading);
-  if (feedback?.context === 'remove') node.append(feedbackElement());
-  if (!state.registeredOrigins.length) {
+  if (model.feedback?.context === 'remove') node.append(feedbackElement());
+  if (!model.state.registeredOrigins.length) {
     const empty = element('div', 'flex min-h-[52px] items-center gap-2 py-4');
     empty.append(icon('globe', 'size-4 shrink-0 text-muted'), element('p', 'min-w-0 text-xs leading-5 text-secondary', t('emptySites')));
     node.append(empty);
@@ -332,14 +243,14 @@ function registeredSites(): HTMLElement {
   const list = element('ul', 'site-list min-h-[52px] max-h-[208px] overflow-y-auto overscroll-contain');
   list.tabIndex = 0;
   list.setAttribute('aria-label', t('siteList'));
-  for (const origin of state.registeredOrigins) {
+  for (const origin of model.state.registeredOrigins) {
     const item = element('li', 'flex min-h-[52px] items-center gap-2.5 border-b border-line');
-    const remove = button(action?.type === 'remove' && action.origin === origin ? t('removing') : t('remove'), 'min-h-8 shrink-0 rounded-md px-2 text-xs text-secondary transition hover:bg-error-soft hover:text-error disabled:cursor-wait disabled:opacity-60', () => void removeOrigin(origin));
+    const remove = button(model.action?.type === 'remove' && model.action.origin === origin ? t('removing') : t('remove'), 'min-h-8 shrink-0 rounded-md px-2 text-xs text-secondary transition hover:bg-error-soft hover:text-error disabled:cursor-wait disabled:opacity-60', () => void model.remove(origin));
     remove.setAttribute('aria-label', t('removeLabel', { origin }));
     remove.dataset.focusKey = `remove:${origin}`;
     const site = element('div', 'min-w-0 flex-1 py-3');
     site.append(element('p', 'font-latin text-[13px] leading-normal [overflow-wrap:anywhere]', origin),
-      element('p', 'mt-1 text-[11px] text-secondary', t(state.passkeyOrigins.includes(origin) ? 'passkeyMethod' : 'passwordMethod')));
+      element('p', 'mt-1 text-[11px] text-secondary', t(model.state.passkeyOrigins.includes(origin) ? 'passkeyMethod' : 'passwordMethod')));
     item.append(icon('globe', 'size-4 shrink-0 text-muted'), site, remove);
     list.append(item);
   }
@@ -359,26 +270,26 @@ function render(): void {
   brandIcon.height = 32;
   header.append(brandIcon, element('h1', 'font-latin min-w-0 text-[17px] font-semibold leading-normal', 'Login Pilot'));
   const content = element('div', 'popup-content flex min-h-0 flex-col gap-6 overflow-y-auto p-5');
-  content.setAttribute('aria-busy', String(isLoading));
-  if (isLoading) {
+  content.setAttribute('aria-busy', String(model.isLoading));
+  if (model.isLoading) {
     const loading = element('div', 'flex items-center gap-3 rounded-xl bg-soft p-4 text-xs leading-relaxed text-secondary');
     loading.setAttribute('role', 'status');
     loading.append(icon('loader', 'size-4 shrink-0 motion-safe:animate-spin'), element('p', undefined, t('loading')));
     content.append(loading);
-  } else if (hasLoaded) {
-    const pending = state.pendingSite && (!state.registeredOrigins.includes(state.pendingSite.origin) ||
-      (state.passkeyOrigins.includes(state.pendingSite.origin) && state.pendingSite.method === 'passkey' &&
-        state.pendingSite.authenticationOrigin &&
-        state.passkeyFrameOrigins[state.pendingSite.origin] !== state.pendingSite.authenticationOrigin));
+  } else if (model.hasLoaded) {
+    const pending = model.state.pendingSite && (!model.state.registeredOrigins.includes(model.state.pendingSite.origin) ||
+      (model.state.passkeyOrigins.includes(model.state.pendingSite.origin) && model.state.pendingSite.method === 'passkey' &&
+        model.state.pendingSite.authenticationOrigin &&
+        model.state.passkeyFrameOrigins[model.state.pendingSite.origin] !== model.state.pendingSite.authenticationOrigin));
     if (pending) {
       content.append(pendingSite());
-      if (state.pendingSite?.origin !== state.currentOrigin) content.append(currentSite(true));
+      if (model.state.pendingSite?.origin !== model.state.currentOrigin) content.append(currentSite(true));
     } else {
       content.append(currentSite());
     }
-    if (feedback && feedback.context !== 'remove' && !(pending && feedback.context === 'register')) content.append(feedbackElement());
+    if (model.feedback && model.feedback.context !== 'remove' && !(pending && model.feedback.context === 'register')) content.append(feedbackElement());
     content.append(registeredSites());
-  } else if (feedback) {
+  } else if (model.feedback) {
     content.append(feedbackElement());
   }
   const footer = element('footer', 'shrink-0 border-t border-line bg-soft px-5 py-2 text-secondary');
@@ -423,12 +334,5 @@ void getLanguagePreference()
   .then((preference) => {
     languagePreference = preference;
     locale = resolveLocale([browser.i18n.getUILanguage()], preference);
-    return loadState();
-  })
-  .catch((error: unknown) => {
-    feedback = { kind: 'error', context: 'load', message: error instanceof PopupError ? error.message : t('loadFailed') };
-  })
-  .finally(() => {
-    isLoading = false;
-    render();
+    return model.load();
   });

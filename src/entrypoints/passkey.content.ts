@@ -66,7 +66,7 @@ export default defineContentScript({
       if (message.type === MESSAGE_TYPES.startPasskeyLogin) {
         return login.evaluate(true).then((started) => started
           ? { ok: true, filled: true }
-          : { ok: false, error: 'パスキーのログインボタンを開始できませんでした。対象ページで手動ログインしてください。' });
+          : { ok: false, error: 'passkeyUnavailable' });
       }
     };
     browser.runtime.onMessage.addListener(onMessage);

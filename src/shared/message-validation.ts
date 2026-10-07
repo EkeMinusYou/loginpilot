@@ -1,6 +1,7 @@
 import type { Browser } from 'wxt/browser';
 import { MESSAGE_TYPES, type ContentMessage, type RuntimeMessage } from './messages';
 import { normalizeOrigin } from './origins';
+import { isFederatedProvider } from './federated-providers';
 
 function isOrigin(value: unknown): value is string {
   return typeof value === 'string' && normalizeOrigin(value) === value;
@@ -24,11 +25,19 @@ export function isRuntimeMessage(value: unknown): value is RuntimeMessage {
     case MESSAGE_TYPES.passkeyUsed:
     case MESSAGE_TYPES.getPasskeyPolicy:
     case MESSAGE_TYPES.getLoginPolicy:
+    case MESSAGE_TYPES.passwordUsed:
+    case MESSAGE_TYPES.getFederatedPolicy:
     case MESSAGE_TYPES.removeOrigin:
       return true;
+    case MESSAGE_TYPES.federatedDetected:
+    case MESSAGE_TYPES.federatedUsed:
+      return 'provider' in value && isFederatedProvider(value.provider);
     case MESSAGE_TYPES.registerOrigin:
       return (!('tabId' in value) || value.tabId === undefined || isTabId(value.tabId)) &&
-        (!('method' in value) || value.method === undefined || value.method === 'password' || value.method === 'passkey') &&
+        (!('method' in value) || value.method === undefined || value.method === 'password' || value.method === 'passkey' || value.method === 'federated') &&
+        ('method' in value && value.method === 'federated'
+          ? 'provider' in value && isFederatedProvider(value.provider)
+          : !('provider' in value) || value.provider === undefined) &&
         (!('authenticationOrigin' in value) || value.authenticationOrigin === undefined ||
           ('method' in value && value.method === 'passkey' && isOrigin(value.authenticationOrigin)));
     default:
@@ -48,7 +57,8 @@ export function isAuthorizedRuntimeMessage(
       (sender.documentLifecycle === undefined || sender.documentLifecycle === 'active') &&
       typeof sender.url === 'string' && normalizeOrigin(sender.url) === message.origin;
   }
-  if (message.type === MESSAGE_TYPES.autofillDetected || message.type === MESSAGE_TYPES.getLoginPolicy) {
+  if (message.type === MESSAGE_TYPES.autofillDetected || message.type === MESSAGE_TYPES.passwordUsed || message.type === MESSAGE_TYPES.getLoginPolicy ||
+      message.type === MESSAGE_TYPES.getFederatedPolicy || message.type === MESSAGE_TYPES.federatedDetected || message.type === MESSAGE_TYPES.federatedUsed) {
     return isTabId(sender.tab?.id) && sender.frameId === 0 &&
       (sender.documentLifecycle === undefined || sender.documentLifecycle === 'active') &&
       typeof sender.url === 'string' && normalizeOrigin(sender.url) === message.origin;

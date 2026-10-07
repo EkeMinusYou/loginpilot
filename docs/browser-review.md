@@ -23,7 +23,7 @@ Run `npm run browser:fixture` and open `http://127.0.0.1:4174`. The fixture does
 | Chrome autofills an unregistered login form | No automatic submission; a registration candidate appears in the popup |
 | Register a candidate in the popup | The origin is saved and submission is attempted on the current page |
 | Reload a registered login form | Once autofill is confirmed, submission occurs once |
-| Register before autofill is confirmed | If Chrome supports retrieval, initial confirmation is followed by retrieval and submission; no separate start button |
+| Register a detected autofill preview before field values are exposed | If Chrome supports retrieval, initial confirmation is followed by retrieval and submission; no separate start button |
 | Start manual input or paste | No overwrite or automatic submission |
 | Open a sign-up or password-change form | No saved credential retrieval, input, or automatic submission |
 | The form changes to new-password while a policy/credential request is pending | No filling or submission |
@@ -41,7 +41,7 @@ Keep the fixture server running and open `http://localhost:4174/passkey`. Use `l
 
 | Scenario | Expected behavior |
 | --- | --- |
-| An unregistered page has a passkey sign-in button | A candidate appears; the button is not activated automatically |
+| An unregistered page has a passkey sign-in button | No registration suggestion or automatic activation |
 | Complete passkey authentication manually | A passkey-use candidate appears without changing registration |
 | Register after detected use | The method is saved for future visits; authentication is not repeated immediately |
 | Use a passkey on a password-registered site | The saved method is retained; no switch is proposed |
@@ -52,10 +52,10 @@ Keep the fixture server running and open `http://localhost:4174/passkey`. Use `l
 | Enter an email or username on a registered site | Activation waits for input to settle, then occurs once without a popup start action |
 | Interact elsewhere on the page or press Escape | Automatic activation stops and input is retained |
 | Detect usage while an activation permission check is pending | Usage detection does not stop activation |
-| Reveal a button after account input on an unregistered site | A candidate appears, but there is no automatic activation |
-| Manually register a site without a candidate | The method can be chosen, Password is the default, and nothing runs before confirmation |
+| Reveal a button after account input on an unregistered site | No suggestion until completed passkey use; no automatic activation |
+| Open an unrelated page without a candidate | Guidance and registered sites appear without a current-site card, registration button, or method selector |
 | Use an authentication iframe on another origin | Both origins are shown; only the confirmed parent/authentication pair is allowed |
-| Embed the same authentication origin under another parent | Permission is not inherited; it is offered as a new candidate |
+| Embed the same authentication origin under another parent | Permission is not inherited; completed passkey use is required to offer registration |
 | Open the popup for a registered site | The method is read-only; there is no method switch or manual start button |
 | Remove and register with another method | Removal disables automation; registration enables only the chosen method |
 | Use the Japanese and English popup | Method labels, explanations, and feedback use the selected language |
@@ -67,6 +67,12 @@ Additional fixtures:
 | `http://localhost:4174/passkey-generic` | A generic login button calls WebAuthn. A usage candidate should appear only after authentication, not from button detection. Automatic activation of this generic button on future visits is outside the supported scope. |
 | `http://localhost:4174/passkey-email` | Check detection and activation after email input |
 | `http://127.0.0.1:4174/passkey-iframe` | Embeds `http://localhost:4174/passkey-email` and permits WebAuthn retrieval. Create the dummy passkey at the top-level passkey fixture first. |
+
+## External login
+
+Automated integration tests reproduce Buy Me a Coffee's nested **Continue with Google** button alongside other provider and password choices. They verify a single configured-provider click, the site's own redirect, manual-click registration hints, no password submission or fallback provider, cancellation, removal, and manual input. The fixtures redirect only to localhost; they do not sign into real provider accounts.
+
+Before release, click the desired provider on a real site's login page, register the detected candidate, reload without interacting, and confirm that the provider's login flow opens. Account selection, consent, and verification remain manual. If the site is already registered for Password or Passkey, remove it, use the desired provider manually, and register the new candidate. Record the observed result separately from fixture success. Embedded provider frames and flows requiring a genuine user gesture are outside the supported scope.
 
 ## Real-site verification and recorded evidence
 

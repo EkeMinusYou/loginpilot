@@ -1,18 +1,8 @@
-import { isControlAvailable as isAvailable } from './control-availability';
+import { controlLabel, isControlAvailable as isAvailable } from './control-availability';
 import type { AutofillResponse } from './messages';
 import { normalizeOrigin } from './origins';
 
 export const PASSKEY_ACCOUNT_INPUT_DELAY_MS = 300;
-
-function controlLabel(control: HTMLElement): string {
-  const labelledBy = control.getAttribute('aria-labelledby');
-  if (labelledBy) {
-    const labels = labelledBy.split(/\s+/).map((id) => control.ownerDocument.getElementById(id)?.textContent ?? '').join(' ').trim();
-    if (labels) return labels;
-  }
-  return control.getAttribute('aria-label')?.trim() ||
-    (control.tagName === 'INPUT' ? control.getAttribute('value') : control.textContent)?.trim() || '';
-}
 
 export function isSecureLoginOrigin(origin: string): boolean {
   const url = new URL(origin);
@@ -51,14 +41,12 @@ interface PasskeyLoginOptions {
   root: ParentNode;
   canStart: () => boolean;
   getPolicy: () => Promise<AutofillResponse>;
-  reportCandidate: () => Promise<AutofillResponse>;
 }
 
 export class PasskeyLoginController {
   private attempted = false;
   private inFlight = false;
   private interacted = false;
-  private reported = false;
   private generation = 0;
   private accountInputUntil = 0;
   private policy: AutofillResponse | undefined;
@@ -115,10 +103,6 @@ export class PasskeyLoginController {
         this.attempted = true;
         candidate.click();
         return true;
-      }
-      if (policy.ok && policy.action === 'ignore' && !policy.retry && !this.reported) {
-        const response = await this.options.reportCandidate();
-        if (response.ok) this.reported = true;
       }
     } catch {
       // Leave browser policy failures and extension disconnection to the normal site UI.

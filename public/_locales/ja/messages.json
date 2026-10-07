@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "登録したサイトで、パスワード自動入力後のログインやパスキーの認証開始を自動化します。",
+    "message": "登録したサイトで、パスワード自動入力後のログイン、パスキーの認証開始、Googleなどの外部ログインボタンのクリックを自動化します。",
     "description": "Description displayed in Chrome’s extension manager and store."
   }
 }

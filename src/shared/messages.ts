@@ -1,5 +1,8 @@
+import type { FederatedProvider } from './federated-providers';
+
 export const MESSAGE_TYPES = {
   autofillDetected: 'autofill-detected',
+  passwordUsed: 'password-used',
   getPopupState: 'get-popup-state',
   registerOrigin: 'register-origin',
   removeOrigin: 'remove-origin',
@@ -10,18 +13,25 @@ export const MESSAGE_TYPES = {
   startPasskeyLogin: 'start-passkey-login',
   getPasskeyPolicy: 'get-passkey-policy',
   checkPasskeyFrame: 'check-passkey-frame',
+  federatedDetected: 'federated-detected',
+  federatedUsed: 'federated-used',
+  getFederatedPolicy: 'get-federated-policy',
 } as const;
 
-export type LoginMethod = 'password' | 'passkey';
+export type LoginMethod = 'password' | 'passkey' | 'federated';
 
 export type ErrorCode =
   | 'operationNotAllowed' | 'invalidOrigin' | 'reregisterToChangeMethod'
   | 'passkeyHttpsOnly' | 'reloadLoginPage' | 'unsupportedMessage'
-  | 'processingFailed' | 'loginFieldsRequired' | 'passkeyUnavailable';
+  | 'processingFailed' | 'loginFieldsRequired' | 'passkeyUnavailable'
+  | 'federatedHttpsOnly' | 'federatedUnavailable';
 
 export type ErrorResponse = { ok: false; error: ErrorCode };
 
 export type RuntimeMessage =
+  | { type: typeof MESSAGE_TYPES.passwordUsed; origin: string }
+  | { type: typeof MESSAGE_TYPES.federatedDetected | typeof MESSAGE_TYPES.federatedUsed; origin: string; provider: FederatedProvider }
+  | { type: typeof MESSAGE_TYPES.getFederatedPolicy; origin: string }
   | { type: typeof MESSAGE_TYPES.passkeyDetected; origin: string }
   | { type: typeof MESSAGE_TYPES.passkeyUsed; origin: string }
   | { type: typeof MESSAGE_TYPES.getPasskeyPolicy; origin: string }
@@ -42,6 +52,7 @@ export type RuntimeMessage =
       origin: string;
       tabId?: number;
       method?: LoginMethod;
+      provider?: FederatedProvider;
       authenticationOrigin?: string;
       currentOrigin?: string | null;
     }
@@ -61,7 +72,7 @@ export type PasskeyFrameResponse = { ok: true; visible: boolean; origin?: string
 export type CredentialSetupResponse = { ok: true; filled: boolean } | ErrorResponse;
 
 export type AutofillResponse =
-  | { ok: true; action: 'submit' | 'ignore' | 'pending'; method?: LoginMethod; retry?: true }
+  | { ok: true; action: 'submit' | 'ignore' | 'pending'; method?: LoginMethod; provider?: FederatedProvider; retry?: true }
   | ErrorResponse;
 
 export interface PendingSite {
@@ -70,12 +81,16 @@ export interface PendingSite {
   method?: LoginMethod;
   authenticationOrigin?: string;
   passkeyUsed?: true;
+  passwordUsed?: true;
+  provider?: FederatedProvider;
+  federatedUsed?: true;
 }
 
 export interface PopupState {
   registeredOrigins: string[];
   passkeyOrigins: string[];
   passkeyFrameOrigins: Record<string, string>;
+  federatedProviders: Record<string, FederatedProvider>;
   pendingSite: PendingSite | null;
   currentOrigin: string | null;
 }

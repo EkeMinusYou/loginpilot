@@ -36,6 +36,121 @@ async function settle(page: import('@playwright/test').Page) {
   await page.waitForTimeout(1200);
 }
 
+test('does not suggest registration on ordinary pages or unused provider and passkey buttons', async ({ extension }) => {
+  const page = await extension.context.newPage();
+  for (const query of ['plain', 'manual', 'federated-single', 'passkey']) {
+    await page.goto(`${origin}/?${query}`);
+    if (query === 'passkey') await page.locator('#passkey').evaluate((button) => { (button as HTMLButtonElement).disabled = false; });
+    await settle(page);
+    expect(await extension.worker.evaluate(() => chrome.storage.local.get(['pendingSite', 'registeredOrigins']))).toEqual({});
+    await expect(page.locator('#clicks')).toHaveText('0');
+  }
+});
+
+test('suggests the submitting origin after manual password entry and a cross-origin redirect', async ({ extension }) => {
+  const page = await extension.context.newPage();
+  await page.goto(`${origin}/?manual&redirect`);
+  await page.locator('input[type="email"]').fill('manual@example.com');
+  await page.locator('input[type="password"]').fill('fixture-password');
+  await page.locator('button').evaluate((button) => { (button as HTMLButtonElement).disabled = false; });
+  await settle(page);
+  expect(await extension.worker.evaluate(() => chrome.storage.local.get('pendingSite'))).toEqual({});
+  await page.locator('button').click();
+  await expect(page).toHaveURL('http://localhost:4176/?plain');
+  await expect.poll(async () => await extension.worker.evaluate(() => chrome.storage.local.get('pendingSite')))
+    .toMatchObject({ pendingSite: { origin, passwordUsed: true } });
+  expect(await extension.worker.evaluate(() => chrome.storage.local.get('registeredOrigins'))).toEqual({});
+});
+
+test('suggests passkey registration only after manually completed authentication', async ({ extension }) => {
+  const page = await extension.context.newPage();
+  const session = await extension.context.newCDPSession(page);
+  await session.send('WebAuthn.enable', { enableUI: false });
+  const { authenticatorId } = await session.send('WebAuthn.addVirtualAuthenticator', { options: {
+    protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true,
+    isUserVerified: true, automaticPresenceSimulation: true,
+  } });
+  await page.goto(`${origin}/?passkey`);
+  await page.evaluate(async () => {
+    await navigator.credentials.create({ publicKey: {
+      challenge: new Uint8Array([5, 6, 7, 8]), rp: { name: 'Fixture', id: 'localhost' },
+      user: { id: new Uint8Array([1]), name: 'fixture@example.com', displayName: 'Fixture' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+      authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+    } });
+  });
+  await page.locator('#passkey').evaluate((button) => { (button as HTMLButtonElement).disabled = false; });
+  await settle(page);
+  expect(await extension.worker.evaluate(() => chrome.storage.local.get('pendingSite'))).toEqual({});
+  await page.locator('#passkey').click();
+  await expect(page.locator('#auth')).toHaveText('success');
+  await expect.poll(async () => await extension.worker.evaluate(() => chrome.storage.local.get('pendingSite')))
+    .toMatchObject({ pendingSite: { origin, method: 'passkey', passkeyUsed: true } });
+  expect(await extension.worker.evaluate(() => chrome.storage.local.get('registeredOrigins'))).toEqual({});
+  await session.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId });
+});
+
+test('automatically clicks the configured external provider and follows the site redirect', async ({ extension }) => {
+  await extension.worker.evaluate(({ origin }) => chrome.storage.local.set({
+    registeredOrigins: [origin], passkeyOrigins: [], passkeyFrameOrigins: {}, federatedProviders: { [origin]: 'google' },
+  }), { origin });
+  const page = await extension.context.newPage();
+  await page.goto(`${origin}/?federated`);
+  await settle(page);
+  await expect(page.locator('#submits')).toHaveText('0');
+  await expect(page.locator('#clicks')).toHaveText('0');
+  await page.locator('#google-login-page').evaluate((button) => { (button as HTMLButtonElement).disabled = false; });
+  await expect(page).toHaveURL(`${origin}/?federated-complete=google`);
+  await expect(page.locator('#auth')).toHaveText('google');
+  await settle(page);
+  await expect(page).toHaveURL(`${origin}/?federated-complete=google`);
+});
+
+test('does not retry a cancelled external login or switch to another provider', async ({ extension }) => {
+  await extension.worker.evaluate(({ origin }) => chrome.storage.local.set({
+    registeredOrigins: [origin], passkeyOrigins: [], passkeyFrameOrigins: {}, federatedProviders: { [origin]: 'google' },
+  }), { origin });
+  const page = await extension.context.newPage();
+  await page.goto(`${origin}/?federated&cancel`);
+  await page.locator('#google-login-page').evaluate((button) => { (button as HTMLButtonElement).disabled = false; });
+  await expect(page.locator('#clicks')).toHaveText('1');
+  await expect(page.locator('#auth')).toHaveText('cancelled');
+  await settle(page);
+  await expect(page.locator('#submits')).toHaveText('0');
+  await expect(page.locator('#clicks')).toHaveText('1');
+});
+
+test('detects the manually used provider without automatically registering or repeating it', async ({ extension }) => {
+  const page = await extension.context.newPage();
+  await page.goto(`${origin}/?federated&cancel`);
+  await page.locator('#google-login-page').evaluate((button) => { (button as HTMLButtonElement).disabled = false; });
+  await settle(page);
+  await expect(page.locator('#clicks')).toHaveText('0');
+  await page.locator('#google-login-page').click();
+  await expect.poll(async () => await extension.worker.evaluate(() => chrome.storage.local.get('pendingSite')))
+    .toMatchObject({ pendingSite: { origin, method: 'federated', provider: 'google', federatedUsed: true } });
+  expect(await extension.worker.evaluate(() => chrome.storage.local.get('registeredOrigins'))).toEqual({});
+  await settle(page);
+  await expect(page.locator('#clicks')).toHaveText('1');
+});
+
+test('removal and manual input stop external login before the button becomes available', async ({ extension }) => {
+  for (const stop of ['removal', 'input']) {
+    await extension.worker.evaluate(({ origin }) => chrome.storage.local.set({
+      registeredOrigins: [origin], passkeyOrigins: [], passkeyFrameOrigins: {}, federatedProviders: { [origin]: 'google' },
+    }), { origin });
+    const page = await extension.context.newPage();
+    await page.goto(`${origin}/?federated&cancel`);
+    if (stop === 'removal') await extension.worker.evaluate(() => chrome.storage.local.set({ registeredOrigins: [], federatedProviders: {} }));
+    else await page.locator('input[type="email"]').fill('manual@example.com');
+    await page.locator('#google-login-page').evaluate((button) => { (button as HTMLButtonElement).disabled = false; });
+    await settle(page);
+    await expect(page.locator('#clicks')).toHaveText('0');
+    await expect(page.locator('#submits')).toHaveText('0');
+    await page.close();
+  }
+});
+
 test('waits for an enabled submit button and submits exactly once', async ({ extension }) => {
   await register(extension.worker, 'password');
   const page = await extension.context.newPage();

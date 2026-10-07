@@ -14,7 +14,7 @@ export class PopupError extends Error {
 }
 
 export class PopupModel {
-  state: PopupState = { registeredOrigins: [], passkeyOrigins: [], passkeyFrameOrigins: {}, pendingSite: null, currentOrigin: null };
+  state: PopupState = { registeredOrigins: [], passkeyOrigins: [], passkeyFrameOrigins: {}, federatedProviders: {}, pendingSite: null, currentOrigin: null };
   isLoading = true;
   hasLoaded = false;
   action: { type: 'register' | 'remove'; origin: string } | null = null;
@@ -25,7 +25,7 @@ export class PopupModel {
   private apply(response: PopupResponse): void {
     if (!response.ok) throw new PopupError(response.error);
     const { ok: _ok, ...state } = response;
-    this.state = state;
+    this.state = { ...state, federatedProviders: state.federatedProviders ?? {} };
     this.hasLoaded = true;
   }
 
@@ -64,11 +64,12 @@ export class PopupModel {
         origin: candidate.origin,
         currentOrigin,
         method: candidate.method ?? 'password',
+        ...(candidate.provider ? { provider: candidate.provider } : {}),
         ...(candidate.authenticationOrigin ? { authenticationOrigin: candidate.authenticationOrigin } : {}),
-        ...(matchesCurrentSite && !candidate.passkeyUsed && tab?.id !== undefined ? { tabId: tab.id } : {}),
+        ...(matchesCurrentSite && !candidate.passwordUsed && !candidate.passkeyUsed && !candidate.federatedUsed && tab?.id !== undefined ? { tabId: tab.id } : {}),
       }) as PopupResponse);
       this.feedback = { kind: 'success', context: 'register',
-        key: matchesCurrentSite && !candidate.passkeyUsed ? 'registeredCurrent' : 'registeredNext' };
+        key: matchesCurrentSite && !candidate.passwordUsed && !candidate.passkeyUsed && !candidate.federatedUsed ? 'registeredCurrent' : 'registeredNext' };
     } catch (error) {
       this.fail(error, 'register', 'registerFailed');
     } finally {

@@ -17,7 +17,6 @@ export default defineContentScript({
       root: document,
       canStart: () => !ctx.isInvalid && document.visibilityState === 'visible',
       getPolicy: async () => await browser.runtime.sendMessage({ type: MESSAGE_TYPES.getPasskeyPolicy, origin }) as AutofillResponse,
-      reportCandidate: async () => await browser.runtime.sendMessage({ type: MESSAGE_TYPES.passkeyDetected, origin }) as AutofillResponse,
     });
     let accountInputTimer: number | undefined;
     const clearAccountInputTimer = (): void => {
@@ -80,7 +79,7 @@ export default defineContentScript({
       });
     };
     const onStorageChanged = (changes: Record<string, unknown>, area: string): void => {
-      if (area !== 'local' || !['registeredOrigins', 'passkeyOrigins', 'passkeyFrameOrigins'].some((key) => key in changes)) return;
+      if (area !== 'local' || !['registeredOrigins', 'passkeyOrigins', 'passkeyFrameOrigins', 'federatedProviders'].some((key) => key in changes)) return;
       login.invalidatePolicy();
       evaluate();
     };

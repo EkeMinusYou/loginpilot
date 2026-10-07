@@ -24,6 +24,7 @@ class PackageVerification(unittest.TestCase):
             'description': '__MSG_extensionDescription__', 'background': {'service_worker': 'background.js'},
             'action': {'default_popup': 'popup.html'},
             'content_scripts': [
+                {'js': ['content-scripts/federated.js'], 'matches': ['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*'], 'run_at': 'document_start'},
                 {'js': ['content-scripts/autofill.js'], 'matches': ['http://*/*', 'https://*/*'], 'run_at': 'document_start'},
                 *[{'js': [f'content-scripts/{name}.js'], 'matches': ['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*'],
                    'all_frames': True, 'run_at': 'document_start', **({'world': 'MAIN'} if name == 'passkey-usage' else {})}

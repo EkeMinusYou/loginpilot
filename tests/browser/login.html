@@ -7,7 +7,26 @@
 <script>
   const query = new URLSearchParams(location.search);
   let clicks = 0, submits = 0;
-  if (query.has('frame')) {
+  if (query.has('plain')) {
+    document.body.insertAdjacentHTML('beforeend', '<p>Ordinary content page</p>');
+  } else if (query.has('federated-single')) {
+    document.body.insertAdjacentHTML('beforeend', '<button>Continue with Google</button>');
+  } else if (query.has('federated-complete')) {
+    document.querySelector('#auth').value = query.get('federated-complete');
+  } else if (query.has('federated')) {
+    document.body.insertAdjacentHTML('beforeend', '<form><input type="email" autocomplete="username" value="fixture@example.com"><input type="password" autocomplete="current-password" value="fixture-password"><button type="submit">Login</button></form><button type="submit" disabled id="google-login-page"><span><span>Continue with Google</span></span></button><button id="apple">Continue with Apple</button>');
+    document.querySelector('form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      document.querySelector('#submits').value = String(++submits);
+    });
+    for (const [id, provider] of [['google-login-page', 'google'], ['apple', 'apple']]) {
+      document.getElementById(id).addEventListener('click', () => {
+        document.querySelector('#clicks').value = String(++clicks);
+        if (query.has('cancel')) document.querySelector('#auth').value = 'cancelled';
+        else location.href = `/?federated-complete=${provider}`;
+      });
+    }
+  } else if (query.has('frame')) {
     document.body.insertAdjacentHTML('beforeend', '<iframe hidden src="http://localhost:4176/?passkey" allow="publickey-credentials-get"></iframe>');
   } else if (query.has('passkey')) {
     document.body.insertAdjacentHTML('beforeend', '<button id="passkey" disabled>Sign in with passkey</button>');
@@ -30,9 +49,13 @@
   } else {
     document.body.insertAdjacentHTML('beforeend', '<form><input type="email" autocomplete="username" value="fixture@example.com"><input type="password" autocomplete="current-password" value="fixture-password"><button type="submit" disabled>Sign in</button></form>');
     const form = document.querySelector('form');
+    if (query.has('manual')) {
+      for (const input of form.querySelectorAll('input')) input.value = '';
+    }
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       document.querySelector('#submits').value = String(++submits);
+      if (query.has('redirect')) location.href = 'http://localhost:4176/?plain';
     });
     document.querySelector('button').addEventListener('click', () => {
       document.querySelector('#clicks').value = String(++clicks);

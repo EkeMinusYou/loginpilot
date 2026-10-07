@@ -2,10 +2,11 @@
 
 [日本語](README.ja.md) · [Website](https://loginpilot.ekeminusyou.com/en/) · [User guide](docs/usage.md)
 
-A Chrome extension that submits login forms after Google Password Manager autofills them and activates passkey sign-in buttons on sites you register.
+A Chrome extension that submits login forms after Google Password Manager autofills them and activates passkey or external sign-in buttons on sites you register.
 
 - Register sites explicitly; automatic login runs only on approved origins.
-- Start password or passkey login automatically on future visits.
+- Start password, passkey, or external login automatically on future visits.
+- Choose a provider such as Google, Apple, Facebook, X / Twitter, Microsoft, or GitHub for each external-login site.
 - Keep passkey verification and account selection in Chrome or your operating system.
 - Use the popup and notifications in English or Japanese.
 
@@ -26,11 +27,11 @@ Open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**,
 
 ## Get started
 
-1. Open a login page with credentials saved in Google Password Manager, or a page with an explicit passkey sign-in button.
+1. Sign in once with password autofill, a password form, a passkey, or a recognized external provider such as Google.
 2. Open Login Pilot's popup, check the candidate site and login method, and choose **Register and enable auto login**.
 3. Approve Chrome's confirmation if prompted. On future visits, Login Pilot starts the registered login flow automatically.
 
-You can also register the current site manually from the popup. Remove a site from the registered list to disable automatic login. To change its login method, remove it and register it again.
+Registration is offered only after login activity is detected, using the origin and method detected at that time. There is no registration button for an unrelated page. Remove a site from the registered list to disable automatic login. To change its login method or provider, remove it, sign in with the desired method, and register the new candidate.
 
 See the [user guide](docs/usage.md) for registration details, supported pages, and troubleshooting.
 

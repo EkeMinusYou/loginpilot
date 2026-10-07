@@ -1,6 +1,6 @@
 import { browser, type Browser } from 'wxt/browser';
 import { defineContentScript } from 'wxt/utils/define-content-script';
-import { findLoginForm } from '../shared/form-detector';
+import { findLoginForm, hasCredentials } from '../shared/form-detector';
 import { PasswordLoginController } from '../shared/password-login';
 import { MESSAGE_TYPES, type AutofillResponse, type CredentialSetupResponse } from '../shared/messages';
 import { normalizeOrigin } from '../shared/origins';
@@ -28,6 +28,15 @@ export default defineContentScript({
       evaluate();
       for (const delay of [100, 500, 1500]) ctx.setTimeout(evaluate, delay);
     };
+    let usageReported = false;
+    const onSubmit = (event: Event): void => {
+      if (ctx.isInvalid || !event.isTrusted || usageReported) return;
+      const candidate = findLoginForm();
+      if (!candidate || candidate.form !== event.target || !hasCredentials(candidate)) return;
+      usageReported = true;
+      // Observe the login attempt before navigation; never send field values.
+      void browser.runtime.sendMessage({ type: MESSAGE_TYPES.passwordUsed, origin }).catch(() => { usageReported = false; });
+    };
     const observeForms = (): void => {
       if (ctx.isInvalid) return;
       const candidate = findLoginForm();
@@ -48,7 +57,7 @@ export default defineContentScript({
       return login.register(candidate).then((filled) => ({ ok: true, filled }));
     };
     const onStorageChanged = (changes: Record<string, unknown>, area: string): void => {
-      if (area !== 'local' || !['registeredOrigins', 'passkeyOrigins', 'passkeyFrameOrigins'].some((key) => key in changes)) return;
+      if (area !== 'local' || !['registeredOrigins', 'passkeyOrigins', 'passkeyFrameOrigins', 'federatedProviders'].some((key) => key in changes)) return;
       login.invalidatePolicy();
       evaluate();
     };
@@ -57,6 +66,7 @@ export default defineContentScript({
     for (const type of ['keydown', 'beforeinput', 'paste']) document.addEventListener(type, onInteraction, { capture: true, passive: true });
     for (const type of ['input', 'change', 'visibilitychange']) document.addEventListener(type, evaluate, { passive: true });
     document.addEventListener('focusin', onFocus, { passive: true });
+    document.addEventListener('submit', onSubmit, { capture: true, passive: true });
     const observer = new MutationObserver(observeForms);
     observer.observe(document, { childList: true, subtree: true, attributes: true,
       attributeFilter: ['autocomplete', 'type', 'disabled', 'readonly', 'hidden', 'inert', 'aria-disabled', 'aria-hidden', 'style', 'class'] });
@@ -68,6 +78,7 @@ export default defineContentScript({
       for (const type of ['keydown', 'beforeinput', 'paste']) document.removeEventListener(type, onInteraction, true);
       for (const type of ['input', 'change', 'visibilitychange']) document.removeEventListener(type, evaluate);
       document.removeEventListener('focusin', onFocus);
+      document.removeEventListener('submit', onSubmit, true);
     });
     observeForms();
     for (const delay of [100, 300, 700, 1500, 3000]) ctx.setTimeout(evaluate, delay);

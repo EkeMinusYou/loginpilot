@@ -105,7 +105,7 @@ export class PasswordLoginController {
     let filled = false;
     try {
       const policy = await this.options.getPolicy();
-      if (policy.ok && policy.action === 'submit' && policy.method !== 'passkey' && this.guard(candidate, state, generation)) {
+      if (policy.ok && policy.action === 'submit' && (policy.method === undefined || policy.method === 'password') && this.guard(candidate, state, generation)) {
         filled = await fillStoredCredentials(candidate, mediation, () => this.guard(candidate, state, generation));
       }
     } catch {
@@ -144,7 +144,7 @@ export class PasswordLoginController {
       const safe = (): boolean => this.guard(candidate, state, generation) &&
         candidate.usernameInput.value === username && candidate.passwordInput.value === password;
       if (!safe()) return;
-      if (policy.ok && policy.action === 'submit' && policy.method !== 'passkey') {
+      if (policy.ok && policy.action === 'submit' && (policy.method === undefined || policy.method === 'password')) {
         state.completed = submitLoginForm(candidate, safe);
       } else if (policy.ok && policy.action === 'pending') {
         state.completed = true;

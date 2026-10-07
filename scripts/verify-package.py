@@ -14,7 +14,7 @@ REQUIRED = {
     'manifest.json', 'popup.html', 'background.js', 'LICENSE.txt', 'THIRD_PARTY_LICENSES.txt',
     '_locales/en/messages.json', '_locales/ja/messages.json', 'icon.svg',
     'icon/16.png', 'icon/32.png', 'icon/48.png', 'icon/128.png',
-    'content-scripts/autofill.js', 'content-scripts/passkey.js', 'content-scripts/passkey-usage.js',
+    'content-scripts/autofill.js', 'content-scripts/passkey.js', 'content-scripts/passkey-usage.js', 'content-scripts/federated.js',
 }
 GENERATED = re.compile(r'(?:assets|chunks)/(?:[\w-]+/)*[\w-]+\.(?:m?js|css|svg|png|jpe?g|webp|gif|woff2?|ttf|otf)\Z')
 
@@ -97,6 +97,7 @@ def verify(path, root=ROOT):
         require(manifest.get('background') == {'service_worker': 'background.js'}, 'Unexpected background worker')
         require(manifest.get('action', {}).get('default_popup') == 'popup.html', 'Unexpected popup')
         expected_scripts = {
+            'content-scripts/federated.js': (['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*'], False, 'ISOLATED'),
             'content-scripts/autofill.js': (['http://*/*', 'https://*/*'], False, 'ISOLATED'),
             'content-scripts/passkey.js': (['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*'], True, 'ISOLATED'),
             'content-scripts/passkey-usage.js': (['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*'], True, 'MAIN'),

@@ -16,7 +16,6 @@ import {
   type RuntimeMessage,
   type CredentialSetupResponse,
   type AutofillResponse,
-  type LoginMethod,
   type PasskeyFrameResponse,
   type PendingSite,
 } from '../shared/messages';
@@ -26,6 +25,7 @@ import { isAuthorizedRuntimeMessage, isRuntimeMessage } from '../shared/message-
 import { createTranslator } from '../shared/i18n';
 import { getExtensionLocale } from '../shared/extension-language';
 import { isSecureLoginOrigin } from '../shared/passkey-login';
+import { FEDERATED_PROVIDERS } from '../shared/federated-providers';
 
 const NOTIFICATION_ID = 'auto-signin-site-detected';
 const mutateState = createMutationQueue();
@@ -117,11 +117,10 @@ async function startPasskeyLogin(origin: string, tabId: number): Promise<Credent
   }, target.documentId ? { documentId: target.documentId } : { frameId: target.frameId }) as CredentialSetupResponse;
 }
 
-async function notifySiteDetected(effects: Effect[], origin: string, method: LoginMethod = 'password', authenticationOrigin?: string, passkeyUsed = false): Promise<void> {
+async function notifySiteDetected(effects: Effect[], candidate: Omit<PendingSite, 'detectedAt'>): Promise<void> {
+  const { origin, passwordUsed, passkeyUsed, provider } = candidate;
   const pending = await getPendingSite();
-  const next = { origin, detectedAt: Date.now(), ...(method === 'passkey' ? { method } : {}),
-    ...(passkeyUsed ? { passkeyUsed: true as const } : {}),
-    ...(authenticationOrigin ? { authenticationOrigin } : {}) };
+  const next = { ...candidate, detectedAt: Date.now() };
   if (!shouldReplaceCandidate(pending, next)) return;
   await setPendingSite(next);
   effects.push(async () => {
@@ -133,7 +132,8 @@ async function notifySiteDetected(effects: Effect[], origin: string, method: Log
         type: 'basic',
         iconUrl: browser.runtime.getURL('/icon/128.png'),
         title: 'Login Pilot',
-        message: t(passkeyUsed ? 'passkeyUsedNotification' : method === 'passkey' ? 'passkeyNotification' : 'notification', { origin }),
+        message: t(provider ? 'federatedNotification' : passwordUsed ? 'passwordUsedNotification' : passkeyUsed ? 'passkeyUsedNotification' : 'notification',
+          { origin, provider: provider ? FEDERATED_PROVIDERS[provider] : '' }),
       });
     } catch {
       return;
@@ -148,20 +148,13 @@ async function getPopupState(currentOrigin: string | null): Promise<PopupRespons
 }
 
 function popupState(currentOrigin: string | null, registration: RegistrationState, pending: PendingSite | null): PopupResponse {
-  const { registeredOrigins, passkeyOrigins, passkeyFrameOrigins } = registration;
-  const candidate = [...passkeyTargets.values()].filter((target) =>
-    target.siteOrigin === currentOrigin && Date.now() - target.seenAt <= 15000 &&
-    (!registeredOrigins.includes(target.siteOrigin) || passkeyOrigins.includes(target.siteOrigin)) &&
-    passkeyFrameOrigins[target.siteOrigin] !== target.authenticationOrigin,
-  ).sort((a, b) => b.seenAt - a.seenAt)[0];
+  const { registeredOrigins, passkeyOrigins, passkeyFrameOrigins, federatedProviders } = registration;
   const state: PopupState = {
     registeredOrigins,
     passkeyOrigins,
     passkeyFrameOrigins,
-    pendingSite: candidate && !(pending?.passkeyUsed && pending.origin === candidate.siteOrigin &&
-      pending.authenticationOrigin === candidate.authenticationOrigin)
-      ? { origin: candidate.siteOrigin, detectedAt: candidate.seenAt,
-        method: 'passkey', authenticationOrigin: candidate.authenticationOrigin } : pending,
+    federatedProviders,
+    pendingSite: pending,
     currentOrigin,
   };
 
@@ -176,6 +169,17 @@ async function handleMessage(
   if (!isAuthorizedRuntimeMessage(message, sender, browser.runtime.id, browser.runtime.getURL('/popup.html'))) {
     return { ok: false, error: 'operationNotAllowed' };
   }
+  if (message.type === MESSAGE_TYPES.getFederatedPolicy || message.type === MESSAGE_TYPES.federatedDetected || message.type === MESSAGE_TYPES.federatedUsed) {
+    if (!isSecureLoginOrigin(message.origin)) return { ok: true, action: 'ignore' };
+    const preferences = await getRegistrationState();
+    const provider = preferences.federatedProviders[message.origin];
+    if (message.type === MESSAGE_TYPES.getFederatedPolicy) {
+      return provider ? { ok: true, action: 'submit', method: 'federated', provider } : { ok: true, action: 'ignore' };
+    }
+    if (message.type === MESSAGE_TYPES.federatedDetected || preferences.registeredOrigins.includes(message.origin)) return { ok: true, action: 'ignore' };
+    await notifySiteDetected(effects, { origin: message.origin, method: 'federated', provider: message.provider, federatedUsed: true });
+    return { ok: true, action: 'pending' };
+  }
   if (message.type === MESSAGE_TYPES.passkeyDetected || message.type === MESSAGE_TYPES.passkeyUsed || message.type === MESSAGE_TYPES.getPasskeyPolicy) {
     const target = await passkeyContext(message.origin, sender, message.type === MESSAGE_TYPES.passkeyUsed);
     if (!target) return { ok: true, action: 'ignore',
@@ -188,17 +192,16 @@ async function handleMessage(
     if (message.type === MESSAGE_TYPES.passkeyUsed) {
       if (registered && (!usesPasskey || frameAllowed)) return { ok: true, action: 'ignore' };
       // Usage only suggests registration or approval of a new authentication origin.
-      await notifySiteDetected(effects, target.siteOrigin, 'passkey', target.frameId !== 0 ? target.authenticationOrigin : undefined, true);
+      await notifySiteDetected(effects, { origin: target.siteOrigin, method: 'passkey', passkeyUsed: true,
+        ...(target.frameId !== 0 ? { authenticationOrigin: target.authenticationOrigin } : {}) });
       return { ok: true, action: 'pending' };
     }
     if (usesPasskey && frameAllowed) return { ok: true, action: 'submit', method: 'passkey' };
     if (message.type === MESSAGE_TYPES.getPasskeyPolicy) return { ok: true, action: 'ignore' };
-    // A new authentication origin must be reviewed even when the parent site is registered.
-    if (registered && (!usesPasskey || frameAllowed || target.frameId === 0)) return { ok: true, action: 'ignore' };
-    await notifySiteDetected(effects, target.siteOrigin, 'passkey', target.frameId !== 0 ? target.authenticationOrigin : undefined);
-    return { ok: true, action: 'pending' };
+    // Button visibility alone does not imply that the user signs in here.
+    return { ok: true, action: 'ignore' };
   }
-  if (message.type === MESSAGE_TYPES.autofillDetected || message.type === MESSAGE_TYPES.getLoginPolicy) {
+  if (message.type === MESSAGE_TYPES.autofillDetected || message.type === MESSAGE_TYPES.passwordUsed || message.type === MESSAGE_TYPES.getLoginPolicy) {
     const senderUrl = sender.url ?? sender.tab?.url;
     const senderOrigin = senderUrl ? normalizeOrigin(senderUrl) : null;
     if (!senderOrigin || senderOrigin !== message.origin) {
@@ -207,6 +210,8 @@ async function handleMessage(
 
     const preferences = await getRegistrationState();
     if (preferences.registeredOrigins.includes(message.origin)) {
+      if (message.type === MESSAGE_TYPES.passwordUsed) return { ok: true, action: 'ignore' };
+      if (preferences.federatedProviders[message.origin]) return { ok: true, action: 'ignore', method: 'federated' };
       if (preferences.passkeyOrigins.includes(message.origin)) {
         return { ok: true, action: message.type === MESSAGE_TYPES.autofillDetected ? 'ignore' : 'submit', method: 'passkey' };
       }
@@ -215,7 +220,8 @@ async function handleMessage(
 
     if (message.type === MESSAGE_TYPES.getLoginPolicy) return { ok: true, action: 'ignore' };
 
-    await notifySiteDetected(effects, message.origin);
+    await notifySiteDetected(effects, { origin: message.origin,
+      ...(message.type === MESSAGE_TYPES.passwordUsed ? { passwordUsed: true as const } : {}) });
     return { ok: true, action: 'pending' };
   }
 
@@ -229,14 +235,16 @@ async function handleMessage(
   }
 
   const registration = await getRegistrationState();
-  const { registeredOrigins: origins, passkeyOrigins, passkeyFrameOrigins: frames } = registration;
+  const { registeredOrigins: origins, passkeyOrigins, passkeyFrameOrigins: frames, federatedProviders } = registration;
 
   if (message.type === MESSAGE_TYPES.registerOrigin) {
-    const savedMethod = passkeyOrigins.includes(origin) ? 'passkey' : 'password';
-    if (origins.includes(origin) && message.method !== undefined && message.method !== savedMethod) {
+    const savedMethod = passkeyOrigins.includes(origin) ? 'passkey' : federatedProviders[origin] ? 'federated' : 'password';
+    if (origins.includes(origin) && message.method !== undefined && (message.method !== savedMethod ||
+      (message.method === 'federated' && message.provider !== federatedProviders[origin]))) {
       return { ok: false, error: 'reregisterToChangeMethod' };
     }
     if (message.method === 'passkey' && !isSecureLoginOrigin(origin)) return { ok: false, error: 'passkeyHttpsOnly' };
+    if (message.method === 'federated' && !isSecureLoginOrigin(origin)) return { ok: false, error: 'federatedHttpsOnly' };
     const pendingSite = await getPendingSite();
     if (message.authenticationOrigin !== undefined) {
       const cached = [...passkeyTargets.values()].some((target) => target.siteOrigin === origin &&
@@ -252,6 +260,8 @@ async function handleMessage(
         ? [...passkeyOrigins, origin] : passkeyOrigins.filter((saved) => saved !== origin);
       if (message.authenticationOrigin) frames[origin] = message.authenticationOrigin;
       else delete frames[origin];
+      if (message.method === 'federated' && message.provider) federatedProviders[origin] = message.provider;
+      else delete federatedProviders[origin];
     }
     registration.registeredOrigins = [...origins, origin];
     const saved = await setRegistrationState(registration);
@@ -280,6 +290,7 @@ async function handleMessage(
   if (message.type === MESSAGE_TYPES.removeOrigin) {
     registration.registeredOrigins = origins.filter((saved) => saved !== origin);
     registration.passkeyOrigins = passkeyOrigins.filter((saved) => saved !== origin);
+    delete federatedProviders[origin];
     delete frames[origin];
     const pendingSite = await getPendingSite();
     const saved = await setRegistrationState(registration);
@@ -297,7 +308,8 @@ export default defineBackground(() => {
     }
 
     const changesState = message.type === MESSAGE_TYPES.registerOrigin || message.type === MESSAGE_TYPES.removeOrigin ||
-      message.type === MESSAGE_TYPES.autofillDetected || message.type === MESSAGE_TYPES.passkeyDetected || message.type === MESSAGE_TYPES.passkeyUsed;
+      message.type === MESSAGE_TYPES.autofillDetected || message.type === MESSAGE_TYPES.passwordUsed || message.type === MESSAGE_TYPES.passkeyDetected || message.type === MESSAGE_TYPES.passkeyUsed ||
+      message.type === MESSAGE_TYPES.federatedDetected || message.type === MESSAGE_TYPES.federatedUsed;
     const effects: Effect[] = [];
     void (changesState ? mutateState(() => handleMessage(message, sender, effects)) : handleMessage(message, sender, effects))
       .then(async (response) => {

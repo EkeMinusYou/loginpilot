@@ -102,11 +102,9 @@ it('caches denial for an unchanged unregistered passkey button', async () => {
   const document = page('<button>Sign in with passkey</button>');
   const { PasskeyLoginController } = await import('./passkey-login');
   const getPolicy = vi.fn().mockResolvedValue({ ok: true, action: 'ignore' });
-  const reportCandidate = vi.fn().mockResolvedValue({ ok: true, action: 'pending' });
-  const controller = new PasskeyLoginController({ root: document, canStart: () => true, getPolicy, reportCandidate });
+  const controller = new PasskeyLoginController({ root: document, canStart: () => true, getPolicy });
   for (let i = 0; i < 5; i++) await controller.evaluate();
   expect(getPolicy).toHaveBeenCalledOnce();
-  expect(reportCandidate).toHaveBeenCalledOnce();
 });
 
 it('must retain completed passkey-use evidence when autofill is detected afterward', async () => {
@@ -191,7 +189,7 @@ it('preserves method and frame state for concurrent registration/removal', async
   ]);
   expect(stored).toMatchObject({ registeredOrigins: ['https://new.example'], passkeyOrigins: ['https://new.example'], passkeyFrameOrigins: {} });
   for (const [update] of mocks.browser.storage.local.set.mock.calls) {
-    expect(Object.keys(update).sort()).toEqual(['passkeyFrameOrigins', 'passkeyOrigins', 'registeredOrigins']);
+    expect(Object.keys(update).sort()).toEqual(['federatedProviders', 'passkeyFrameOrigins', 'passkeyOrigins', 'registeredOrigins']);
   }
 });
 
@@ -212,7 +210,7 @@ it('refreshes a cached passkey denial after registration changes', async () => {
   const { PasskeyLoginController } = await import('./passkey-login');
   const getPolicy = vi.fn().mockResolvedValue({ ok: true, action: 'ignore' });
   const login = new PasskeyLoginController({ root: document, canStart: () => true,
-    getPolicy, reportCandidate: vi.fn().mockResolvedValue({ ok: true, action: 'pending' }) });
+    getPolicy });
   const click = vi.spyOn(document.querySelector('button')!, 'click');
   await login.evaluate();
   getPolicy.mockResolvedValue({ ok: true, action: 'submit', method: 'passkey' });
@@ -229,7 +227,7 @@ it('does not scan a page with no passkey candidate on every availability tick', 
   const { PasskeyLoginController } = await import('./passkey-login');
   const query = vi.spyOn(document, 'querySelectorAll');
   const getPolicy = vi.fn();
-  const login = new PasskeyLoginController({ root: document, canStart: () => true, getPolicy, reportCandidate: vi.fn() });
+  const login = new PasskeyLoginController({ root: document, canStart: () => true, getPolicy });
   for (let i = 0; i < 8; i++) await login.evaluate();
   expect(query).toHaveBeenCalledOnce();
   expect(getPolicy).not.toHaveBeenCalled();

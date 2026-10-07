@@ -11,6 +11,12 @@ export function createMutationQueue() {
 }
 
 export function shouldReplaceCandidate(current: PendingSite | null, next: PendingSite): boolean {
+  if (current?.origin === next.origin && current.passwordUsed) {
+    return next.passkeyUsed === true || next.federatedUsed === true;
+  }
+  if (current?.origin === next.origin && current.federatedUsed) {
+    return next.passkeyUsed === true || next.federatedUsed === true;
+  }
   if (current?.origin !== next.origin || !current.passkeyUsed) return true;
   // A completed use outranks autofill and button hints on the same site.
   // A different authentication pair still needs its own review.

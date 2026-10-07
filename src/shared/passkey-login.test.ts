@@ -18,7 +18,6 @@ function controller(document: Document, policy: AutofillResponse = { ok: true, a
     root: document,
     canStart: vi.fn(() => true),
     getPolicy: vi.fn(async () => policy),
-    reportCandidate: vi.fn(async (): Promise<AutofillResponse> => ({ ok: true, action: 'pending' })),
   };
   return { options, login: new PasskeyLoginController(options) };
 }
@@ -119,14 +118,14 @@ describe('passkey login authorization and lifecycle', () => {
     expect(await login.evaluate(true)).toBe(false);
     expect(click).toHaveBeenCalledTimes(1);
   });
-  it('reports an unregistered site once without clicking it', async () => {
+  it('only checks authorization for an unregistered site without clicking it', async () => {
     const document = page('<button>Sign in with passkey</button>');
     const click = vi.spyOn(document.querySelector('button')!, 'click');
     const { login, options } = controller(document, { ok: true, action: 'ignore' });
     await login.evaluate();
     await login.evaluate();
     expect(click).not.toHaveBeenCalled();
-    expect(options.reportCandidate).toHaveBeenCalledTimes(1);
+    expect(options.getPolicy).toHaveBeenCalledOnce();
   });
   it('leaves a password-configured site on its existing login path', async () => {
     const document = page('<button>Sign in with passkey</button>');
@@ -134,7 +133,6 @@ describe('passkey login authorization and lifecycle', () => {
     const { login, options } = controller(document, { ok: true, action: 'submit' });
     await login.evaluate();
     expect(click).not.toHaveBeenCalled();
-    expect(options.reportCandidate).not.toHaveBeenCalled();
   });
   it('does not act in a hidden or insecure context', async () => {
     const { login, options } = controller(page('<button>Sign in with passkey</button>'));
@@ -176,7 +174,7 @@ describe('passkey login authorization and lifecycle', () => {
     expect(click).not.toHaveBeenCalled();
     expect(await login.evaluate(true)).toBe(true);
   });
-  it('reports a button that appears after typing an Apple Account email without starting it', async () => {
+  it('leaves an unregistered passkey button untouched after typing an Apple Account email', async () => {
     const document = page('<input type="email"><button disabled>パスキーでサインイン</button>');
     const button = document.querySelector('button')!;
     const click = vi.spyOn(button, 'click');
@@ -185,7 +183,7 @@ describe('passkey login authorization and lifecycle', () => {
     expect(await login.evaluate()).toBe(false);
     button.removeAttribute('disabled');
     await login.evaluate();
-    expect(options.reportCandidate).toHaveBeenCalledOnce();
+    expect(options.getPolicy).toHaveBeenCalledOnce();
     expect(click).not.toHaveBeenCalled();
     options.getPolicy.mockResolvedValue({ ok: true, action: 'submit', method: 'passkey' });
     expect(await login.evaluate(true)).toBe(true);

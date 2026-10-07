@@ -7,3 +7,13 @@ export function isControlAvailable(control: HTMLElement): boolean {
   }
   return true;
 }
+
+export function controlLabel(control: HTMLElement): string {
+  const labelledBy = control.getAttribute('aria-labelledby');
+  if (labelledBy) {
+    const labels = labelledBy.split(/\s+/).map((id) => control.ownerDocument.getElementById(id)?.textContent ?? '').join(' ').trim();
+    if (labels) return labels;
+  }
+  return control.getAttribute('aria-label')?.trim() ||
+    (control.tagName === 'INPUT' ? control.getAttribute('value') : control.textContent)?.trim() || '';
+}

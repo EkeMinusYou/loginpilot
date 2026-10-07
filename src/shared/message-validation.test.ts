@@ -16,9 +16,14 @@ function authorized(message: RuntimeMessage, sender: object): boolean {
 describe('runtime message validation', () => {
   it.each([
     { type: MESSAGE_TYPES.autofillDetected, origin },
+    { type: MESSAGE_TYPES.passwordUsed, origin },
     { type: MESSAGE_TYPES.passkeyDetected, origin },
     { type: MESSAGE_TYPES.passkeyUsed, origin },
     { type: MESSAGE_TYPES.getLoginPolicy, origin },
+    { type: MESSAGE_TYPES.getFederatedPolicy, origin },
+    { type: MESSAGE_TYPES.federatedDetected, origin, provider: 'google' },
+    { type: MESSAGE_TYPES.federatedUsed, origin, provider: 'apple' },
+    { type: MESSAGE_TYPES.registerOrigin, origin, method: 'federated', provider: 'google' },
     { type: MESSAGE_TYPES.getPopupState, currentOrigin: null },
     { type: MESSAGE_TYPES.getPopupState, currentOrigin: origin },
     { type: MESSAGE_TYPES.registerOrigin, origin },
@@ -47,6 +52,12 @@ describe('runtime message validation', () => {
     { type: MESSAGE_TYPES.startPasskeyLogin, origin },
     { type: 'set-login-method', origin, method: 'passkey' },
     { type: MESSAGE_TYPES.registerOrigin, origin, method: 'unknown' },
+    { type: MESSAGE_TYPES.registerOrigin, origin, method: 'federated' },
+    { type: MESSAGE_TYPES.registerOrigin, origin, method: 'federated', provider: 'unknown' },
+    { type: MESSAGE_TYPES.registerOrigin, origin, method: 'password', provider: 'google' },
+    { type: MESSAGE_TYPES.federatedDetected, origin },
+    { type: MESSAGE_TYPES.federatedUsed, origin, provider: 'unknown' },
+    { type: MESSAGE_TYPES.registerOrigin, origin, method: 'federated', provider: 'google', authenticationOrigin: 'https://auth.example' },
     { type: MESSAGE_TYPES.getPopupState },
     { type: MESSAGE_TYPES.getPopupState, currentOrigin: 'chrome://settings' },
   ])('rejects malformed or unsupported messages (%j)', (message) => {
@@ -64,7 +75,7 @@ describe('runtime message validation', () => {
     expect(authorized(message, { ...popup, url: `${popupUrl}?forged` })).toBe(false);
   });
 
-  it.each([MESSAGE_TYPES.autofillDetected, MESSAGE_TYPES.getLoginPolicy])(
+  it.each([MESSAGE_TYPES.autofillDetected, MESSAGE_TYPES.passwordUsed, MESSAGE_TYPES.getLoginPolicy])(
     'restricts %s to a matching top-level content script', (type) => {
       const message = { type, origin };
       expect(authorized(message, content)).toBe(true);
@@ -74,6 +85,18 @@ describe('runtime message validation', () => {
       expect(authorized(message, { ...content, id: 'another-extension' })).toBe(false);
       expect(authorized(message, { ...content, tab: undefined })).toBe(false);
       expect(authorized(message, { ...content, url: undefined })).toBe(false);
+    },
+  );
+  it.each([MESSAGE_TYPES.federatedDetected, MESSAGE_TYPES.federatedUsed, MESSAGE_TYPES.getFederatedPolicy])(
+    'restricts external login message %s to its active top-level document', (type) => {
+      const message: RuntimeMessage = type === MESSAGE_TYPES.getFederatedPolicy
+        ? { type, origin }
+        : { type, origin, provider: 'google' };
+      expect(authorized(message, content)).toBe(true);
+      for (const sender of [popup, { ...content, frameId: 1 }, { ...content, url: 'https://other.example' },
+        { ...content, documentLifecycle: 'prerender' }, { ...content, id: 'other-extension' }]) {
+        expect(authorized(message, sender)).toBe(false);
+      }
     },
   );
   it.each([MESSAGE_TYPES.passkeyDetected, MESSAGE_TYPES.passkeyUsed, MESSAGE_TYPES.getPasskeyPolicy])('accepts authenticated passkey requests from a specific embedded document: %s', (type) => {

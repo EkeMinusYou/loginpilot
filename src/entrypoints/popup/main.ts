@@ -1,11 +1,10 @@
 import { browser } from 'wxt/browser';
 import './style.css';
-import type { LoginMethod } from '../../shared/messages';
 import { PopupModel } from './state';
 import { createTranslator, type MessageKey } from '../../shared/i18n';
 import { getBrowserLocale, getLanguagePreference, setLanguagePreference } from '../../shared/extension-language';
 import { normalizeLocalePreference, resolveLocale, type LocalePreference } from '../../shared/locale';
-import { isSecureLoginOrigin } from '../../shared/passkey-login';
+import { FEDERATED_PROVIDERS } from '../../shared/federated-providers';
 
 const appRoot = document.querySelector<HTMLElement>('#app');
 if (!appRoot) throw new Error('Popup root element was not found.');
@@ -14,6 +13,7 @@ const app = appRoot;
 let locale = getBrowserLocale();
 let languagePreference: LocalePreference = 'auto';
 let languageChanging = false;
+let siteSearch = '';
 
 function t(key: MessageKey, values?: Record<string, string | number>): string {
   return createTranslator(locale)(key, values);
@@ -36,20 +36,17 @@ async function changeLanguage(preference: LocalePreference): Promise<void> {
   }
 }
 
-let registrationOrigin: string | null = null;
-let registrationMethod: LoginMethod = 'password';
 const model = new PopupModel(() => {
   if (model.feedback?.context === 'register') {
-    if (model.feedback.kind === 'success') registrationOrigin = null;
     focusAfterAction = 'feedback';
   } else if (model.feedback?.context === 'remove') {
     focusAfterAction = model.feedback.kind === 'success' ? 'registered-title' : 'feedback';
   }
   render();
 });
-let focusAfterAction: 'feedback' | 'registered-title' | 'language' | 'registration-method' | 'register-current-site' | null = null;
+let focusAfterAction: 'feedback' | 'registered-title' | 'language' | null = null;
 
-type IconName = 'globe' | 'check' | 'tick' | 'languages' | 'chevron' | 'alert' | 'arrow' | 'loader' | 'info';
+type IconName = 'globe' | 'check' | 'tick' | 'languages' | 'chevron' | 'alert' | 'arrow' | 'loader' | 'info' | 'search';
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -79,6 +76,7 @@ function icon(name: IconName, className = 'size-4 shrink-0'): SVGSVGElement {
     arrow: 'M5 12h14M12 5l7 7-7 7',
     loader: 'M12 3a9 9 0 1 1-9 9',
     info: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 11v5M12 7h.01',
+    search: 'M21 21l-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z',
   };
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   path.setAttribute('d', paths[name]);
@@ -106,110 +104,34 @@ function feedbackElement(): HTMLElement {
 
 const primaryButtonClasses = 'flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold leading-normal text-white transition hover:bg-accent-hover disabled:cursor-wait disabled:opacity-70';
 
-function registrationMethodControl(origin: string, selected: LoginMethod, onChange: (method: LoginMethod) => void): HTMLElement {
-  const node = element('div', 'flex h-12 w-full shrink-0 items-stretch gap-1 rounded-lg bg-surface p-1 ring-1 ring-line ring-inset');
-  node.setAttribute('role', 'radiogroup');
-  node.setAttribute('aria-label', t('loginMethod'));
-  for (const value of ['password', 'passkey'] as const) {
-    const label = element('label', 'relative flex min-w-0 flex-1');
-    const input = element('input', 'peer sr-only');
-    input.type = 'radio';
-    input.name = 'registration-method';
-    input.value = value;
-    input.checked = value === selected;
-    input.id = value === selected ? 'registration-method' : `registration-method-${value}`;
-    input.dataset.focusKey = `registration-method-${value}`;
-    input.disabled = model.action !== null || (value === 'passkey' && !isSecureLoginOrigin(origin));
-    if (value === 'passkey' && !isSecureLoginOrigin(origin)) label.title = t('passkeyHttpsOnly');
-    const choice = element('span', `flex w-full items-center justify-center gap-1.5 rounded-[5px] border text-xs leading-normal transition peer-focus-visible:outline-2 peer-focus-visible:outline-accent peer-focus-visible:outline-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 ${value === selected ? 'border-method-line bg-method-soft font-semibold text-accent' : 'border-transparent font-medium text-secondary hover:bg-soft'}`);
-    if (value === selected) choice.append(icon('tick', 'size-3.5 shrink-0'));
-    choice.append(element('span', undefined, t(value === 'password' ? 'passwordMethod' : 'passkeyMethod')));
-    input.addEventListener('change', () => {
-      if (input.checked && !input.disabled && value !== selected) onChange(value);
-    });
-    label.append(input, choice);
-    node.append(label);
-  }
-  return node;
-}
-
-function manualRegistration(origin: string): HTMLElement {
-  const node = element('div', 'flex flex-col gap-2.5');
-  if (registrationOrigin !== origin) {
-    const register = button(t('registerCurrentSite'), primaryButtonClasses, () => {
-      registrationOrigin = origin;
-      registrationMethod = 'password';
-      focusAfterAction = 'registration-method';
-      render();
-    });
-    register.id = 'register-current-site';
-    register.dataset.focusKey = 'register-current-site';
-    node.append(register);
-    return node;
-  }
-  const method = registrationMethodControl(origin, registrationMethod, (value) => {
-    registrationMethod = value;
-    render();
-  });
-  const description = element('p', 'sr-only', t(registrationMethod === 'passkey' ? 'passkeyRegisterDescription' : 'registerDescription'));
-  description.id = 'registration-description';
-  method.setAttribute('aria-describedby', description.id);
-  const register = button(model.action?.type === 'register' ? t('registering') : t('register'), primaryButtonClasses,
-    () => void model.register({ origin, detectedAt: Date.now(), method: registrationMethod }));
-  register.dataset.focusKey = 'confirm-registration';
-  const cancel = button(t('cancel'), 'min-h-8 w-full rounded-lg text-xs text-secondary hover:bg-soft disabled:opacity-70', () => {
-    registrationOrigin = null;
-    focusAfterAction = 'register-current-site';
-    render();
-  });
-  cancel.dataset.focusKey = 'cancel-registration';
-  node.append(method, description, register, cancel);
-  return node;
-}
-
-function currentSite(compact = false): HTMLElement {
-  const registered = model.state.currentOrigin !== null && model.state.registeredOrigins.includes(model.state.currentOrigin);
+function currentSite(origin: string): HTMLElement {
   const node = element('section', 'flex shrink-0 flex-col gap-3.5 rounded-xl bg-surface p-4 ring-1 ring-line ring-inset');
   node.setAttribute('aria-label', t('currentSite'));
   const labelRow = element('div', 'flex min-h-6 items-center justify-between gap-2');
-  labelRow.append(element('h2', 'text-[11px] leading-normal text-secondary', t('currentSite')));
-  if (model.state.currentOrigin) {
-    const status = element('span', `flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-[11px] leading-4 ${registered ? 'bg-success-soft font-medium text-success' : 'bg-line text-secondary'}`, registered ? undefined : t('unregistered'));
-    if (registered) status.append(icon('check', 'size-3.5 shrink-0'), element('span', undefined, t('enabled')));
-    labelRow.append(status);
-  }
-  node.append(labelRow);
-  if (!model.state.currentOrigin) {
-    const message = element('div', 'flex items-start gap-2');
-    message.append(icon('info', 'mt-0.5 size-4 shrink-0 text-muted'), element('p', 'text-sm font-medium', t('unavailablePage')));
-    node.append(message, element('p', 'text-xs leading-relaxed text-secondary', t('openSite')));
-    return node;
-  }
-  const origin = model.state.currentOrigin;
-  node.append(element('p', `font-latin min-w-0 font-semibold [overflow-wrap:anywhere] ${compact ? 'text-sm leading-normal' : 'text-[18px] leading-[1.4]'}`, origin));
-  if (compact && registered) return node;
-  if (registered) {
-    const usesPasskey = model.state.passkeyOrigins.includes(origin);
-    const method = element('p', 'text-xs text-secondary', `${t('loginMethod')}: ${t(usesPasskey ? 'passkeyMethod' : 'passwordMethod')}`);
-    const description = element('p', 'sr-only', t(usesPasskey ? 'passkeyDescription' : 'submitDescription'));
-    description.id = 'login-description';
-    method.setAttribute('aria-describedby', description.id);
-    node.append(method, description);
-  } else {
-    node.append(manualRegistration(origin));
-  }
+  const status = element('span', 'flex shrink-0 items-center gap-1.5 rounded-full bg-success-soft px-2 py-1 text-[11px] font-medium leading-4 text-success');
+  status.append(icon('check', 'size-3.5 shrink-0'), element('span', undefined, t('enabled')));
+  labelRow.append(element('h2', 'text-[11px] leading-normal text-secondary', t('currentSite')), status);
+  const usesPasskey = model.state.passkeyOrigins.includes(origin);
+  const provider = model.state.federatedProviders[origin];
+  const method = element('p', 'text-xs text-secondary', `${t('loginMethod')}: ${provider ? FEDERATED_PROVIDERS[provider] : t(usesPasskey ? 'passkeyMethod' : 'passwordMethod')}`);
+  const description = element('p', 'sr-only', t(provider ? 'federatedDescription' : usesPasskey ? 'passkeyDescription' : 'submitDescription',
+    { provider: provider ? FEDERATED_PROVIDERS[provider] : '' }));
+  description.id = 'login-description';
+  method.setAttribute('aria-describedby', description.id);
+  node.append(labelRow, element('p', 'font-latin min-w-0 text-[18px] font-semibold leading-[1.4] [overflow-wrap:anywhere]', origin), method, description);
   return node;
 }
 
 function pendingSite(): HTMLElement {
   const matchesCurrentSite = model.state.pendingSite?.origin === model.state.currentOrigin;
-  const usesPasskey = model.state.pendingSite?.method === 'passkey';
   const usedPasskey = model.state.pendingSite?.passkeyUsed === true;
   const node = element('section', 'flex shrink-0 flex-col gap-3.5 rounded-xl bg-detected-soft p-4 ring-1 ring-detected-line ring-inset');
   node.setAttribute('aria-label', t('pendingSite'));
   const labelRow = element('div', 'flex min-h-6 items-center justify-between gap-2');
-  labelRow.append(element('h2', 'text-[11px] leading-normal text-secondary', matchesCurrentSite ? t('currentSite') : t('detectedSite')));
-  labelRow.append(element('span', 'rounded-full bg-method-soft px-2 py-1 text-[11px] font-medium leading-4 text-accent', t(usedPasskey ? 'passkeyUsageDetected' : usesPasskey ? 'passkeyDetected' : 'detected')));
+  labelRow.append(element('h2', 'text-[11px] leading-normal text-secondary', t('detectedSite')));
+  const provider = model.state.pendingSite?.provider;
+  labelRow.append(element('span', 'rounded-full bg-method-soft px-2 py-1 text-[11px] font-medium leading-4 text-accent',
+    t(provider ? 'federatedUsageDetected' : usedPasskey ? 'passkeyUsageDetected' : model.state.pendingSite?.passwordUsed ? 'passwordUsageDetected' : 'detected')));
   const registerButton = button(model.action?.type === 'register' ? t('registering') : t('register'), primaryButtonClasses, () => void model.register());
   registerButton.dataset.focusKey = 'register';
   registerButton.append(icon(model.action?.type === 'register' ? 'loader' : 'arrow', `size-4 shrink-0 ${model.action?.type === 'register' ? 'motion-safe:animate-spin' : ''}`));
@@ -218,6 +140,7 @@ function pendingSite(): HTMLElement {
     node.append(element('p', 'text-xs leading-relaxed text-secondary [overflow-wrap:anywhere]', t('authenticationSite', { origin: model.state.pendingSite.authenticationOrigin })),
       element('p', 'text-[11px] leading-relaxed text-secondary', t('authenticationSiteConsent')));
   }
+  if (provider) node.append(element('p', 'text-xs leading-relaxed text-secondary', t('federatedDescription', { provider: FEDERATED_PROVIDERS[provider] })));
   node.append(registerButton);
   if (!matchesCurrentSite) node.append(element('p', 'text-[11px] leading-relaxed text-secondary', t('registerOtherHint')));
   if (model.feedback?.context === 'register') node.append(feedbackElement());
@@ -231,7 +154,10 @@ function registeredSites(): HTMLElement {
   const title = element('h2', 'text-[13px] font-semibold', t('registeredSites'));
   title.id = 'registered-title';
   title.tabIndex = -1;
-  heading.append(title, element('span', 'shrink-0 py-1 text-[11px] leading-4 text-secondary', t(model.state.registeredOrigins.length === 1 ? 'siteCountOne' : 'siteCount', { count: model.state.registeredOrigins.length })));
+  const count = element('span', 'shrink-0 py-1 text-[11px] leading-4 text-secondary');
+  count.setAttribute('role', 'status');
+  heading.append(title, count);
+  count.textContent = t(model.state.registeredOrigins.length === 1 ? 'siteCountOne' : 'siteCount', { count: model.state.registeredOrigins.length });
   node.append(heading);
   if (model.feedback?.context === 'remove') node.append(feedbackElement());
   if (!model.state.registeredOrigins.length) {
@@ -240,21 +166,51 @@ function registeredSites(): HTMLElement {
     node.append(empty);
     return node;
   }
+  const searchField = element('div', 'mt-2 mb-1 flex min-h-9 items-center gap-2 rounded-lg border border-line bg-soft px-2.5');
+  const search = element('input', 'min-w-0 flex-1 bg-transparent py-2 text-xs text-ink placeholder:text-muted');
+  search.type = 'search';
+  search.value = siteSearch;
+  search.placeholder = t('searchSites');
+  search.autocomplete = 'off';
+  search.spellcheck = false;
+  search.setAttribute('aria-label', t('searchSites'));
+  search.setAttribute('aria-controls', 'registered-site-list');
+  search.dataset.focusKey = 'site-search';
+  searchField.append(icon('search', 'size-3.5 shrink-0 text-muted'), search);
+  node.append(searchField);
   const list = element('ul', 'site-list min-h-[52px] max-h-[208px] overflow-y-auto overscroll-contain');
+  list.id = 'registered-site-list';
   list.tabIndex = 0;
   list.setAttribute('aria-label', t('siteList'));
-  for (const origin of model.state.registeredOrigins) {
-    const item = element('li', 'flex min-h-[52px] items-center gap-2.5 border-b border-line');
-    const remove = button(model.action?.type === 'remove' && model.action.origin === origin ? t('removing') : t('remove'), 'min-h-8 shrink-0 rounded-md px-2 text-xs text-secondary transition hover:bg-error-soft hover:text-error disabled:cursor-wait disabled:opacity-60', () => void model.remove(origin));
-    remove.setAttribute('aria-label', t('removeLabel', { origin }));
-    remove.dataset.focusKey = `remove:${origin}`;
-    const site = element('div', 'min-w-0 flex-1 py-3');
-    site.append(element('p', 'font-latin text-[13px] leading-normal [overflow-wrap:anywhere]', origin),
-      element('p', 'mt-1 text-[11px] text-secondary', t(model.state.passkeyOrigins.includes(origin) ? 'passkeyMethod' : 'passwordMethod')));
-    item.append(icon('globe', 'size-4 shrink-0 text-muted'), site, remove);
-    list.append(item);
-  }
-  node.append(list);
+  const noResults = element('p', 'py-4 text-xs leading-5 text-secondary', t('noMatchingSites'));
+  const updateResults = (): void => {
+    const query = siteSearch.trim().toLowerCase();
+    const origins = model.state.registeredOrigins.filter((origin) => origin.toLowerCase().includes(query));
+    count.textContent = query ? t('filteredSiteCount', { count: origins.length, total: model.state.registeredOrigins.length })
+      : t(origins.length === 1 ? 'siteCountOne' : 'siteCount', { count: origins.length });
+    list.replaceChildren();
+    list.hidden = origins.length === 0;
+    noResults.hidden = origins.length !== 0;
+    for (const origin of origins) {
+      const item = element('li', 'flex min-h-[52px] items-center gap-2.5 border-b border-line');
+      const remove = button(model.action?.type === 'remove' && model.action.origin === origin ? t('removing') : t('remove'), 'min-h-8 shrink-0 rounded-md px-2 text-xs text-secondary transition hover:bg-error-soft hover:text-error disabled:cursor-wait disabled:opacity-60', () => void model.remove(origin));
+      remove.setAttribute('aria-label', t('removeLabel', { origin }));
+      remove.dataset.focusKey = `remove:${origin}`;
+      const site = element('div', 'min-w-0 flex-1 py-3');
+      site.append(element('p', 'font-latin text-[13px] leading-normal [overflow-wrap:anywhere]', origin),
+        element('p', 'mt-1 text-[11px] text-secondary', model.state.federatedProviders[origin]
+          ? FEDERATED_PROVIDERS[model.state.federatedProviders[origin]!] : t(model.state.passkeyOrigins.includes(origin) ? 'passkeyMethod' : 'passwordMethod')));
+      item.append(icon('globe', 'size-4 shrink-0 text-muted'), site, remove);
+      list.append(item);
+    }
+  };
+  search.addEventListener('input', () => {
+    siteSearch = search.value;
+    // Keep the input in place so typing, caret position, and IME composition survive filtering.
+    updateResults();
+  });
+  updateResults();
+  node.append(list, noResults);
   return node;
 }
 
@@ -283,9 +239,12 @@ function render(): void {
         model.state.passkeyFrameOrigins[model.state.pendingSite.origin] !== model.state.pendingSite.authenticationOrigin));
     if (pending) {
       content.append(pendingSite());
-      if (model.state.pendingSite?.origin !== model.state.currentOrigin) content.append(currentSite(true));
+    } else if (model.state.currentOrigin && model.state.registeredOrigins.includes(model.state.currentOrigin)) {
+      content.append(currentSite(model.state.currentOrigin));
     } else {
-      content.append(currentSite());
+      const hint = element('div', 'flex items-start gap-2 text-xs leading-relaxed text-secondary');
+      hint.append(icon('info', 'mt-0.5 size-4 shrink-0 text-muted'), element('p', undefined, t('loginActivityHint')));
+      content.append(hint);
     }
     if (model.feedback && model.feedback.context !== 'remove' && !(pending && model.feedback.context === 'register')) content.append(feedbackElement());
     content.append(registeredSites());

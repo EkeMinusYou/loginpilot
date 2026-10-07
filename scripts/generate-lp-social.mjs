@@ -9,11 +9,11 @@ for (const locale of ['ja', 'en']) {
     <rect width="1200" height="630" fill="#F4F8FC" />
     ${icon}
     <text x="166" y="111" font-family="Helvetica Neue, sans-serif" font-size="40" font-weight="700" fill="#14233B">Login Pilot</text>
-    <text x="72" y="218" font-family="monospace" font-size="17" letter-spacing="3" fill="#53657B">ONE LESS CLICK. MORE FLOW.</text>
+    <text x="72" y="218" font-family="Noto Sans JP, Hiragino Sans, monospace" font-size="17" letter-spacing="2" fill="#53657B">${english ? 'GO BEYOND CHROME AUTOFILL' : 'CHROMEの自動入力、その先へ'}</text>
     <g font-family="Noto Sans JP, Hiragino Sans, sans-serif" fill="#14233B">
-      <text x="72" y="311" font-size="54" font-weight="700">${english ? 'One less click.' : 'ログインの最後のクリックを、'}</text>
-      <text x="72" y="389" font-size="54" font-weight="700">${english ? 'At every login.' : 'なくそう。'}</text>
-      <text x="72" y="472" font-size="23" fill="#53657B">${english ? 'Beyond autofill. Straight to login.' : '入力だけで終わらない、自動ログイン。'}</text>
+      <text x="72" y="311" font-size="54" font-weight="700">${english ? 'Chrome autofills.' : 'Chromeの自動入力。'}</text>
+      <text x="72" y="389" font-size="${english ? 54 : 48}" font-weight="700">${english ? 'Then you sign in. Automatically.' : 'そのあとのログインも、自動で。'}</text>
+      <text x="72" y="472" font-size="23" fill="#53657B">${english ? 'Login Pilot clicks the sign-in button for you.' : 'ログインボタンを、自動で押すChrome拡張機能。'}</text>
       <rect x="72" y="519" width="${english ? 420 : 352}" height="48" rx="8" fill="#E3EBF5" />
       <text x="93" y="550" font-size="18" fill="#14233B">${english ? 'Preparing for Chrome Web Store release' : 'Chromeウェブストア公開準備中'}</text>
     </g>

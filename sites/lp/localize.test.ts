@@ -18,7 +18,7 @@ describe('localized landing pages', () => {
     if (locale === 'en') {
       document.querySelector('[data-language="ja"]')!.remove();
       expect(document.body.textContent).not.toMatch(/[\u3040-\u30ff\u3400-\u9fff]/);
-      expect(document.title).toContain('One less click.');
+      expect(document.title).toContain('Chrome autofills.');
       expect(document.querySelector('[property="og:image"]')!.getAttribute('content')).toMatch(/social-en\.png$/);
     }
   });

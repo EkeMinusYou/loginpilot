@@ -10,8 +10,8 @@ export function localizeHtml(template: string, locale: Locale, depth = 0): strin
   document.documentElement.lang = locale;
   const path = `/${locale}/`;
   const title = locale === 'ja'
-    ? 'Login Pilot — ログインの最後のクリックを、なくそう。'
-    : 'Login Pilot — One less click. At every login.';
+    ? 'Login Pilot — Chromeの自動入力。そのあとのログインも、自動で。'
+    : 'Login Pilot — Chrome autofills. Then you sign in. Automatically.';
   document.title = title;
   const meta = (selector: string, content: string) => document.querySelector(selector)!.setAttribute('content', content);
   meta('[property="og:title"]', title);
@@ -38,8 +38,8 @@ export function localizeHtml(template: string, locale: Locale, depth = 0): strin
   }
 
   if (locale === 'en') {
-    meta('[name="description"]', 'A Chrome extension that uses Google Password Manager to automatically submit login forms on sites you register. Never stores your ID or password. Preparing for Chrome Web Store release.');
-    meta('[property="og:description"]', 'Go beyond autofill. Go straight to login. A Chrome extension that works with Google Password Manager.');
+    meta('[name="description"]', 'A Chrome extension that automatically clicks sign in on registered sites after your saved details are filled in. Also starts passkey authentication. Never stores your ID or password. Preparing for Chrome Web Store release.');
+    meta('[property="og:description"]', 'Go beyond Chrome autofill. Login Pilot automatically clicks the sign-in button on sites you register.');
     for (const [marker, attribute] of [['data-i18n', null], ['data-i18n-aria-label', 'aria-label']] as const) {
       for (const node of document.querySelectorAll(`[${marker}]`)) {
         const key = node.getAttribute(marker)!;

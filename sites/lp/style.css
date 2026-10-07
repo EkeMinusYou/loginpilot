@@ -14,12 +14,48 @@
   --color-dark-body: #b5c6d9;
   --color-success: #237350;
   --color-demo-field: #f5f8fc;
-  --color-demo-panel: #f5f9fd;
   --color-demo-line: #d6e5f3;
   --color-demo-value: #3b536f;
+  --color-demo-border: #d6e0ec;
+  --color-demo-active: #9bbfef;
+  --color-demo-button: #e8eef5;
+  --color-demo-arrow: #8ca1b8;
+  --color-passkey-prompt: #f1f6fd;
+  --color-passkey-verification: #f1f7f4;
   --color-chrome: #ebf0f6;
   --color-badge: #e3ebf5;
   --color-cta: #eaf3ff;
+}
+
+@keyframes demo-open {
+  0%, 22% { box-shadow: 0 0 0 2px var(--color-demo-active); }
+  35%, 100% { box-shadow: none; }
+}
+
+@keyframes demo-fill {
+  0%, 25% { opacity: 0.35; }
+  40%, 100% { opacity: 1; }
+}
+
+@keyframes demo-click {
+  0%, 55% { opacity: 0; transform: translate(8px, 8px); }
+  70%, 100% { opacity: 1; transform: translate(0, 0); }
+}
+
+@keyframes demo-submit {
+  0%, 60% { background: var(--color-demo-button); color: var(--color-secondary); }
+  72% { transform: scale(0.97); }
+  82%, 100% { background: var(--color-accent); color: white; transform: scale(1); }
+}
+
+@keyframes passkey-open {
+  0% { opacity: 0.35; transform: translateY(4px); }
+  30%, 100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes passkey-verify {
+  0%, 35% { opacity: 0.35; }
+  65%, 100% { opacity: 1; }
 }
 
 @layer base {

@@ -145,11 +145,11 @@
           "width": "fill_container",
           "fill": "#F4F8FC",
           "layout": "vertical",
-          "gap": 28,
+          "gap": 22,
           "padding": [
-            70,
+            42,
             80,
-            0,
+            40,
             80
           ],
           "alignItems": "center",
@@ -159,22 +159,22 @@
               "id": "uzGdD",
               "name": "Eyebrow",
               "fill": "#46637E",
-              "content": "ONE LESS CLICK. MORE FLOW.",
+              "content": "CHROMEの自動入力、その先へ",
               "fontFamily": "Geist Mono",
               "fontSize": 13,
               "fontWeight": "normal",
-              "letterSpacing": 2
+              "letterSpacing": 1.4
             },
             {
               "type": "text",
               "id": "So9Pz",
               "name": "Headline",
               "fill": "#14233B",
-              "content": "ログインの最後のクリックを、\nなくそう。",
-              "lineHeight": 1.35,
+              "content": "Chromeの自動入力。\nそのあとのログインも、自動で。",
+              "lineHeight": 1.4,
               "textAlign": "center",
               "fontFamily": "Noto Sans JP",
-              "fontSize": 58,
+              "fontSize": 48,
               "fontWeight": "700"
             },
             {
@@ -182,11 +182,11 @@
               "id": "z3iP8",
               "name": "Value proposition",
               "fill": "#53657B",
-              "content": "Google パスワード マネージャーの保存済み情報を、Chromeの標準APIで。\nLogin Pilot が、登録したサイトのログインフォームを自動送信します。",
+              "content": "一度登録したサイトでは、保存済みのログイン情報が入力されたあと、\nLogin Pilotがログインボタンを自動で押します。",
               "lineHeight": 1.8,
               "textAlign": "center",
               "fontFamily": "Noto Sans JP",
-              "fontSize": 18,
+              "fontSize": 17,
               "fontWeight": "normal"
             },
             {
@@ -248,7 +248,7 @@
               "id": "DItc8",
               "name": "Compatibility",
               "fill": "#64758A",
-              "content": "Chrome 拡張機能  ·  使うサイトは自分で選べます",
+              "content": "最初にサイトを登録するだけ。ログインのたびに拡張機能を開く必要はありません。",
               "fontFamily": "Noto Sans JP",
               "fontSize": 13,
               "fontWeight": "normal"
@@ -256,384 +256,1046 @@
             {
               "type": "frame",
               "id": "hMjng",
-              "name": "Editable product demonstration",
-              "width": 1050,
+              "name": "Password login / three-frame animation storyboard",
+              "width": "fill_container",
               "fill": "#FFFFFF",
-              "cornerRadius": [
-                16,
-                16,
-                0,
-                0
-              ],
+              "cornerRadius": 12,
               "stroke": "#D6E0EC",
               "strokeWidth": 1,
               "layout": "vertical",
+              "gap": 20,
+              "padding": 24,
               "children": [
                 {
                   "type": "frame",
-                  "id": "C71jTw",
-                  "name": "Browser chrome",
+                  "id": "a0ED0",
+                  "name": "Password demo heading",
                   "width": "fill_container",
-                  "fill": "#EBF0F6",
-                  "gap": 20,
-                  "padding": [
-                    18,
-                    24
-                  ],
+                  "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
-                      "id": "oWmrJ",
-                      "name": "Window controls",
-                      "fill": "#8193A7",
-                      "content": "●  ●  ●",
+                      "id": "AcCST",
+                      "name": "Password mode",
+                      "fill": "#14233B",
+                      "content": "保存済みパスワードでログイン",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 17,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xCDwt",
+                      "name": "Demo disclaimer",
+                      "fill": "#607086",
+                      "content": "動作イメージ · 登録済みサイト",
                       "fontFamily": "Noto Sans JP",
                       "fontSize": 12,
                       "fontWeight": "normal"
-                    },
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "MQqr5",
+                  "name": "Animation sequence / open fill click",
+                  "width": "fill_container",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
                     {
                       "type": "frame",
-                      "id": "Z4rds",
-                      "name": "Address bar",
+                      "id": "qBQwp",
+                      "name": "Scene 1 / ページを開く",
                       "width": "fill_container",
-                      "fill": "#FFFFFF",
-                      "cornerRadius": 6,
-                      "gap": 10,
-                      "padding": [
-                        8,
-                        16
-                      ],
-                      "alignItems": "center",
+                      "layout": "vertical",
+                      "gap": 12,
                       "children": [
                         {
-                          "type": "icon",
-                          "id": "jyMWl",
-                          "name": "Secure connection",
-                          "width": 14,
-                          "height": 14,
-                          "icon": "lock",
-                          "library": "lucide",
-                          "fill": "#687C93"
+                          "type": "frame",
+                          "id": "UlU6c",
+                          "name": "Scene 1 label",
+                          "width": "fill_container",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "W3fF7w",
+                              "name": "Scene 1 number",
+                              "fill": "#1468D4",
+                              "content": "01",
+                              "fontFamily": "Noto Sans JP",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "K8BXCq",
+                              "name": "Scene 1 title",
+                              "fill": "#14233B",
+                              "content": "ページを開く",
+                              "fontFamily": "Noto Sans JP",
+                              "fontSize": 15,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "sMI0T",
+                          "name": "Scene 1 browser",
+                          "clip": true,
+                          "width": "fill_container",
+                          "cornerRadius": 8,
+                          "stroke": "#DFE6EF",
+                          "strokeWidth": 1,
+                          "layout": "vertical",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "SgJGd",
+                              "name": "Scene 1 address bar",
+                              "width": "fill_container",
+                              "fill": "#EBF0F6",
+                              "gap": 8,
+                              "padding": [
+                                8,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "t3m7pA",
+                                  "name": "Secure example site",
+                                  "width": 12,
+                                  "height": 12,
+                                  "icon": "lock",
+                                  "library": "lucide",
+                                  "fill": "#607086"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "wN3AV",
+                                  "name": "Example URL",
+                                  "fill": "#607086",
+                                  "content": "workspace.example/login",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Y5XJi",
+                              "name": "Scene 1 login form",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 8,
+                              "padding": 16,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "yNJwJ",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "Demo label",
+                                  "enabled": false,
+                                  "fill": "#75859A",
+                                  "content": "動作イメージ",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "TyRSs",
+                                  "name": "Form title",
+                                  "fill": "#14233B",
+                                  "content": "おかえりなさい",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 16,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Oyve8",
+                                  "name": "メールアドレス",
+                                  "fill": "#62738A",
+                                  "content": "メールアドレス",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "gtejS",
+                                  "name": "メールアドレス field",
+                                  "width": "fill_container",
+                                  "fill": "#F5F8FC",
+                                  "cornerRadius": 6,
+                                  "stroke": "#D9E4EF",
+                                  "strokeWidth": 1,
+                                  "layout": "vertical",
+                                  "padding": [
+                                    8,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "i6gGPi",
+                                      "name": "Autofilled メールアドレス",
+                                      "fill": "#8493A5",
+                                      "content": "メールアドレス",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "I34rgm",
+                                  "name": "パスワード",
+                                  "fill": "#62738A",
+                                  "content": "パスワード",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "I0LOq",
+                                  "name": "パスワード field",
+                                  "width": "fill_container",
+                                  "fill": "#F5F8FC",
+                                  "cornerRadius": 6,
+                                  "stroke": "#D9E4EF",
+                                  "strokeWidth": 1,
+                                  "layout": "vertical",
+                                  "padding": [
+                                    8,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "LVayc",
+                                      "name": "Autofilled パスワード",
+                                      "fill": "#8493A5",
+                                      "content": "パスワード",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "xgLQP",
+                                  "name": "Submit illustration",
+                                  "width": "fill_container",
+                                  "fill": "#E8EEF5",
+                                  "cornerRadius": 6,
+                                  "layout": "vertical",
+                                  "padding": 8,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "utH02",
+                                      "name": "Login label",
+                                      "fill": "#53657B",
+                                      "content": "ログイン",
+                                      "fontFamily": "Noto Sans JP",
+                                      "fontSize": 12,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
                         },
                         {
                           "type": "text",
-                          "id": "p7ZYMt",
-                          "name": "Example domain",
-                          "fill": "#52677F",
-                          "content": "workspace.example / login",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 12,
+                          "id": "lvzZO",
+                          "name": "Scene 1 actor",
+                          "fill": "#607086",
+                          "content": "あなた：いつものサイトへ",
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 11,
                           "fontWeight": "normal"
                         }
                       ]
                     },
                     {
                       "type": "icon",
-                      "id": "IkBr1",
-                      "name": "Extensions",
-                      "width": 18,
-                      "height": 18,
-                      "icon": "puzzle",
+                      "id": "R24Sj",
+                      "name": "Next scene 2",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "arrow-right",
                       "library": "lucide",
-                      "fill": "#52677F"
+                      "fill": "#8CA1B8"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vmogB",
+                      "name": "Scene 2 / 保存済み情報が入力される",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "NpUFS",
+                          "name": "Scene 2 label",
+                          "width": "fill_container",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "TTlsa",
+                              "name": "Scene 2 number",
+                              "fill": "#1468D4",
+                              "content": "02",
+                              "fontFamily": "Noto Sans JP",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "tolHJ",
+                              "name": "Scene 2 title",
+                              "fill": "#14233B",
+                              "content": "保存済み情報が入力される",
+                              "fontFamily": "Noto Sans JP",
+                              "fontSize": 15,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Y7AOkl",
+                          "name": "Scene 2 browser",
+                          "clip": true,
+                          "width": "fill_container",
+                          "cornerRadius": 8,
+                          "stroke": "#DFE6EF",
+                          "strokeWidth": 1,
+                          "layout": "vertical",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "DDRfx",
+                              "name": "Scene 2 address bar",
+                              "width": "fill_container",
+                              "fill": "#EBF0F6",
+                              "gap": 8,
+                              "padding": [
+                                8,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "iF6ik",
+                                  "name": "Secure example site",
+                                  "width": 12,
+                                  "height": 12,
+                                  "icon": "lock",
+                                  "library": "lucide",
+                                  "fill": "#607086"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "tdvES",
+                                  "name": "Example URL",
+                                  "fill": "#607086",
+                                  "content": "workspace.example/login",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "RaEGD",
+                              "name": "Scene 2 login form",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 8,
+                              "padding": 16,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "EonsK",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "Demo label",
+                                  "enabled": false,
+                                  "fill": "#75859A",
+                                  "content": "動作イメージ",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "z1KSlf",
+                                  "name": "Form title",
+                                  "fill": "#14233B",
+                                  "content": "おかえりなさい",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 16,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "PNl2r",
+                                  "name": "メールアドレス",
+                                  "fill": "#62738A",
+                                  "content": "メールアドレス",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "pgK71",
+                                  "name": "メールアドレス field",
+                                  "width": "fill_container",
+                                  "fill": "#F5F8FC",
+                                  "cornerRadius": 6,
+                                  "stroke": "#D9E4EF",
+                                  "strokeWidth": 1,
+                                  "layout": "vertical",
+                                  "padding": [
+                                    8,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "HI2Ko",
+                                      "name": "Autofilled メールアドレス",
+                                      "fill": "#3B536F",
+                                      "content": "you@example.com",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "qTOFN",
+                                  "name": "パスワード",
+                                  "fill": "#62738A",
+                                  "content": "パスワード",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "ye1O0",
+                                  "name": "パスワード field",
+                                  "width": "fill_container",
+                                  "fill": "#F5F8FC",
+                                  "cornerRadius": 6,
+                                  "stroke": "#D9E4EF",
+                                  "strokeWidth": 1,
+                                  "layout": "vertical",
+                                  "padding": [
+                                    8,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "HwOJa",
+                                      "name": "Autofilled パスワード",
+                                      "fill": "#3B536F",
+                                      "content": "••••••••••••",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "p83s1",
+                                  "name": "Submit illustration",
+                                  "width": "fill_container",
+                                  "fill": "#E8EEF5",
+                                  "cornerRadius": 6,
+                                  "layout": "vertical",
+                                  "padding": 8,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "P3j4b4",
+                                      "name": "Login label",
+                                      "fill": "#53657B",
+                                      "content": "ログイン",
+                                      "fontFamily": "Noto Sans JP",
+                                      "fontSize": 12,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "IIro9",
+                          "name": "Scene 2 actor",
+                          "fill": "#607086",
+                          "content": "Chrome：いつもの自動入力",
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "icon",
+                      "id": "gwqy0",
+                      "name": "Next scene 3",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "arrow-right",
+                      "library": "lucide",
+                      "fill": "#8CA1B8"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "jixuc",
+                      "name": "Scene 3 / ボタンが自動で押される",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "e7uxpt",
+                          "name": "Scene 3 label",
+                          "width": "fill_container",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "FqYUL",
+                              "name": "Scene 3 number",
+                              "fill": "#1468D4",
+                              "content": "03",
+                              "fontFamily": "Noto Sans JP",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "UXGID",
+                              "name": "Scene 3 title",
+                              "fill": "#14233B",
+                              "content": "ボタンが自動で押される",
+                              "fontFamily": "Noto Sans JP",
+                              "fontSize": 15,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "OfDPS",
+                          "name": "Scene 3 browser",
+                          "clip": true,
+                          "width": "fill_container",
+                          "cornerRadius": 8,
+                          "stroke": "#9BBFEF",
+                          "strokeWidth": 1,
+                          "layout": "vertical",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "NtE6E",
+                              "name": "Scene 3 address bar",
+                              "width": "fill_container",
+                              "fill": "#EBF0F6",
+                              "gap": 8,
+                              "padding": [
+                                8,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "h9nehk",
+                                  "name": "Secure example site",
+                                  "width": 12,
+                                  "height": 12,
+                                  "icon": "lock",
+                                  "library": "lucide",
+                                  "fill": "#607086"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "OQrNi",
+                                  "name": "Example URL",
+                                  "fill": "#607086",
+                                  "content": "workspace.example/login",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "H1x2f",
+                              "name": "Scene 3 login form",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 8,
+                              "padding": 16,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "yhoms",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "Demo label",
+                                  "enabled": false,
+                                  "fill": "#75859A",
+                                  "content": "動作イメージ",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "cbFvt",
+                                  "name": "Form title",
+                                  "fill": "#14233B",
+                                  "content": "おかえりなさい",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 16,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "hlnPt",
+                                  "name": "メールアドレス",
+                                  "fill": "#62738A",
+                                  "content": "メールアドレス",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "Qk6si",
+                                  "name": "メールアドレス field",
+                                  "width": "fill_container",
+                                  "fill": "#F5F8FC",
+                                  "cornerRadius": 6,
+                                  "stroke": "#D9E4EF",
+                                  "strokeWidth": 1,
+                                  "layout": "vertical",
+                                  "padding": [
+                                    8,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "e55wa",
+                                      "name": "Autofilled メールアドレス",
+                                      "fill": "#3B536F",
+                                      "content": "you@example.com",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "eiinU",
+                                  "name": "パスワード",
+                                  "fill": "#62738A",
+                                  "content": "パスワード",
+                                  "fontFamily": "Noto Sans JP",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "OeaTN",
+                                  "name": "パスワード field",
+                                  "width": "fill_container",
+                                  "fill": "#F5F8FC",
+                                  "cornerRadius": 6,
+                                  "stroke": "#D9E4EF",
+                                  "strokeWidth": 1,
+                                  "layout": "vertical",
+                                  "padding": [
+                                    8,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "Rz0W8",
+                                      "name": "Autofilled パスワード",
+                                      "fill": "#3B536F",
+                                      "content": "••••••••••••",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 12,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "G0B4f",
+                                  "name": "Submit illustration",
+                                  "width": "fill_container",
+                                  "fill": "#1468D4",
+                                  "cornerRadius": 6,
+                                  "gap": 8,
+                                  "padding": 8,
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "LLRao",
+                                      "name": "Login label",
+                                      "fill": "#FFFFFF",
+                                      "content": "ログイン  ✓",
+                                      "fontFamily": "Noto Sans JP",
+                                      "fontSize": 12,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "dUUG6",
+                                      "name": "Automatic click indicator",
+                                      "width": 16,
+                                      "height": 16,
+                                      "icon": "mouse-pointer-2",
+                                      "library": "lucide",
+                                      "fill": "#FFFFFF"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "ShM77",
+                          "name": "Scene 3 actor",
+                          "fill": "#1468D4",
+                          "content": "Login Pilot：自動クリック → ログインへ",
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "pb5PP",
+              "name": "Passkey / separate authentication example",
+              "metadata": {
+                "type": "animation-spec",
+                "sequence": [
+                  "認証画面が自動で開く",
+                  "ユーザーが本人確認を行う"
+                ],
+                "note": "本人確認は自動化しない。パスワードの動作例とは独立して再生"
+              },
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 12,
+              "stroke": "#D6E0EC",
+              "strokeWidth": 1,
+              "gap": 32,
+              "padding": 24,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "V1ANF",
+                  "name": "Passkey introduction",
+                  "width": 290,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "u0yOTq",
+                      "name": "Passkey eyebrow",
+                      "fill": "#607086",
+                      "content": "もうひとつの動作例",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "QFY2p",
+                      "name": "Passkey title",
+                      "fill": "#14233B",
+                      "content": "パスキーの場合",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 20,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "KbZ7c",
+                      "name": "Passkey boundary",
+                      "fill": "#53657B",
+                      "content": "認証画面を開くところまで自動。\n本人確認は、あなた自身で。",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "zpD3C",
-                  "name": "Login demo content",
+                  "id": "RNefH",
+                  "name": "Passkey step 1",
                   "width": "fill_container",
-                  "gap": 64,
-                  "padding": [
-                    38,
-                    56
-                  ],
-                  "alignItems": "center",
+                  "layout": "vertical",
+                  "gap": 10,
                   "children": [
                     {
                       "type": "frame",
-                      "id": "O5heha",
-                      "name": "Example login form",
-                      "width": "fill_container",
-                      "layout": "vertical",
-                      "gap": 14,
+                      "id": "nGs8X",
+                      "name": "Passkey step 1 heading",
+                      "gap": 8,
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "uSlLs",
-                          "name": "Demo label",
-                          "fill": "#75859A",
-                          "content": "動作イメージ",
+                          "id": "rkbF5",
+                          "name": "Step number",
+                          "fill": "#1468D4",
+                          "content": "01",
                           "fontFamily": "Noto Sans JP",
                           "fontSize": 12,
-                          "fontWeight": "normal"
-                        },
-                        {
-                          "type": "text",
-                          "id": "ZT9BO",
-                          "name": "Form title",
-                          "fill": "#14233B",
-                          "content": "おかえりなさい",
-                          "fontFamily": "Noto Sans JP",
-                          "fontSize": 24,
                           "fontWeight": "700"
                         },
                         {
                           "type": "text",
-                          "id": "WHoRJ",
-                          "name": "メールアドレス",
-                          "fill": "#62738A",
-                          "content": "メールアドレス",
+                          "id": "dP3bI",
+                          "name": "Step title",
+                          "fill": "#14233B",
+                          "content": "認証画面が自動で開く",
                           "fontFamily": "Noto Sans JP",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "kVmLH",
+                      "name": "Passkey 1 illustration",
+                      "width": "fill_container",
+                      "fill": "#F1F6FD",
+                      "cornerRadius": 8,
+                      "gap": 12,
+                      "padding": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "p8KqG",
+                          "name": "Passkey 1 icon",
+                          "width": 28,
+                          "height": 28,
+                          "icon": "key-round",
+                          "library": "lucide",
+                          "fill": "#1468D4"
                         },
                         {
                           "type": "frame",
-                          "id": "k1Xm3",
-                          "name": "メールアドレス field",
-                          "width": "fill_container",
-                          "fill": "#F5F8FC",
-                          "cornerRadius": 6,
-                          "stroke": "#D9E4EF",
-                          "strokeWidth": 1,
+                          "id": "KYeQQ",
+                          "name": "Authentication copy",
                           "layout": "vertical",
-                          "padding": [
-                            12,
-                            16
-                          ],
+                          "gap": 4,
                           "children": [
                             {
                               "type": "text",
-                              "id": "DjMf9",
-                              "name": "Autofilled メールアドレス",
-                              "fill": "#3B536F",
-                              "content": "you@example.com",
-                              "fontFamily": "Geist",
-                              "fontSize": 15,
-                              "fontWeight": "normal"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "TwsoW",
-                          "name": "パスワード",
-                          "fill": "#62738A",
-                          "content": "パスワード",
-                          "fontFamily": "Noto Sans JP",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
-                        },
-                        {
-                          "type": "frame",
-                          "id": "QWmtu",
-                          "name": "パスワード field",
-                          "width": "fill_container",
-                          "fill": "#F5F8FC",
-                          "cornerRadius": 6,
-                          "stroke": "#D9E4EF",
-                          "strokeWidth": 1,
-                          "layout": "vertical",
-                          "padding": [
-                            12,
-                            16
-                          ],
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "sAUtc",
-                              "name": "Autofilled パスワード",
-                              "fill": "#3B536F",
-                              "content": "••••••••••••",
-                              "fontFamily": "Geist",
-                              "fontSize": 15,
-                              "fontWeight": "normal"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "SMC7Q",
-                          "name": "Submit illustration",
-                          "width": "fill_container",
-                          "fill": "#1468D4",
-                          "cornerRadius": 6,
-                          "layout": "vertical",
-                          "padding": 12,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "GC68L",
-                              "name": "Login label",
-                              "fill": "#FFFFFF",
-                              "content": "ログイン",
+                              "id": "BhjDv",
+                              "name": "Authentication prompt",
+                              "fill": "#14233B",
+                              "content": "パスキーでログイン",
                               "fontFamily": "Noto Sans JP",
                               "fontSize": 14,
-                              "fontWeight": "600"
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "YGlZR",
+                              "name": "Authentication owner",
+                              "fill": "#1468D4",
+                              "content": "認証画面を表示",
+                              "fontFamily": "Noto Sans JP",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
                       ]
                     },
                     {
+                      "type": "text",
+                      "id": "ZcK0i",
+                      "name": "Step description",
+                      "fill": "#607086",
+                      "content": "Login Pilotが認証の開始をお手伝い",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "icon",
+                  "id": "CST6m",
+                  "name": "Passkey sequence arrow",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "arrow-right",
+                  "library": "lucide",
+                  "fill": "#8CA1B8"
+                },
+                {
+                  "type": "frame",
+                  "id": "a0IFM",
+                  "name": "Passkey step 2",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "children": [
+                    {
                       "type": "frame",
-                      "id": "s5ZKtV",
-                      "name": "Pilot status panel",
-                      "width": 390,
-                      "fill": "#F5F9FD",
-                      "cornerRadius": 12,
-                      "stroke": "#D6E5F3",
-                      "strokeWidth": 1,
-                      "layout": "vertical",
-                      "gap": 20,
-                      "padding": 28,
+                      "id": "pkSOP",
+                      "name": "Passkey step 2 heading",
+                      "gap": 8,
+                      "alignItems": "center",
                       "children": [
                         {
-                          "type": "frame",
-                          "id": "JKJ38",
-                          "name": "Login Pilot brand",
-                          "gap": 12,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "rectangle",
-                              "id": "orfbf",
-                              "name": "Existing Pilot logo",
-                              "fill": {
-                                "type": "image",
-                                "enabled": true,
-                                "url": "public/icon/128.png",
-                                "mode": "contain"
-                              },
-                              "width": 36,
-                              "height": 36
-                            },
-                            {
-                              "type": "text",
-                              "id": "o9MlD",
-                              "name": "Wordmark",
-                              "fill": "#14233B",
-                              "content": "Login Pilot",
-                              "fontFamily": "Geist",
-                              "fontSize": 23,
-                              "fontWeight": "600",
-                              "letterSpacing": -0.7
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "ohOns",
-                          "name": "Registered indicator",
-                          "width": "fill_container",
-                          "gap": 8,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "T4KTpr",
-                              "name": "Check",
-                              "width": 18,
-                              "height": 18,
-                              "icon": "circle-check",
-                              "library": "lucide",
-                              "fill": "#237350"
-                            },
-                            {
-                              "type": "text",
-                              "id": "JDADf",
-                              "name": "Registered copy",
-                              "fill": "#237350",
-                              "content": "このサイトは登録済み",
-                              "fontFamily": "Noto Sans JP",
-                              "fontSize": 14,
-                              "fontWeight": "normal"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "rectangle",
-                          "id": "BXYvz",
-                          "name": "Divider",
-                          "fill": "#DFE6EF",
-                          "width": "fill_container",
-                          "height": 1
-                        },
-                        {
-                          "type": "frame",
-                          "id": "bOhOo",
-                          "name": "自動入力を検知",
-                          "width": "fill_container",
-                          "gap": 12,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "vFtnd",
-                              "name": "Step check",
-                              "width": 18,
-                              "height": 18,
-                              "icon": "check",
-                              "library": "lucide",
-                              "fill": "#1468D4"
-                            },
-                            {
-                              "type": "text",
-                              "id": "aEm5f",
-                              "name": "Step label",
-                              "fill": "#14233B",
-                              "content": "自動入力を検知",
-                              "fontFamily": "Noto Sans JP",
-                              "fontSize": 15,
-                              "fontWeight": "normal"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "kWngs",
-                          "name": "ログインフォームを自動送信",
-                          "width": "fill_container",
-                          "gap": 12,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "tGevf",
-                              "name": "Step check",
-                              "width": 18,
-                              "height": 18,
-                              "icon": "check",
-                              "library": "lucide",
-                              "fill": "#1468D4"
-                            },
-                            {
-                              "type": "text",
-                              "id": "d1XtY",
-                              "name": "Step label",
-                              "fill": "#14233B",
-                              "content": "ログインフォームを自動送信",
-                              "fontFamily": "Noto Sans JP",
-                              "fontSize": 15,
-                              "fontWeight": "normal"
-                            }
-                          ]
+                          "type": "text",
+                          "id": "z2QMR",
+                          "name": "Step number",
+                          "fill": "#237350",
+                          "content": "02",
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 12,
+                          "fontWeight": "700"
                         },
                         {
                           "type": "text",
-                          "id": "lht5R",
-                          "name": "Privacy copy",
-                          "fill": "#687C93",
-                          "content": "ID・パスワードは保存しません。",
+                          "id": "ylOWN",
+                          "name": "Step title",
+                          "fill": "#14233B",
+                          "content": "本人確認は自分で行う",
                           "fontFamily": "Noto Sans JP",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
+                          "fontSize": 15,
+                          "fontWeight": "700"
                         }
                       ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "azRnk",
+                      "name": "Passkey 2 illustration",
+                      "width": "fill_container",
+                      "fill": "#F1F7F4",
+                      "cornerRadius": 8,
+                      "gap": 12,
+                      "padding": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "vk0mV",
+                          "name": "User identity verification",
+                          "width": 28,
+                          "height": 28,
+                          "icon": "scan-face",
+                          "library": "lucide",
+                          "fill": "#237350"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "bjiyM",
+                          "name": "Authentication copy",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "V3ZZ6X",
+                              "name": "Authentication prompt",
+                              "fill": "#14233B",
+                              "content": "本人確認をしてください",
+                              "fontFamily": "Noto Sans JP",
+                              "fontSize": 14,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "e35WT",
+                              "name": "Authentication owner",
+                              "fill": "#237350",
+                              "content": "ここは自動化されません",
+                              "fontFamily": "Noto Sans JP",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "oGN8M",
+                      "name": "Step description",
+                      "fill": "#607086",
+                      "content": "指紋・顔認証などで確認",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -713,7 +1375,7 @@
                       "fill": "#607086",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "Chromeの標準APIと自動入力を利用。\n登録サイトのフォームを自動送信。",
+                      "content": "Chromeが保存済み情報を入力したら、\n最後のログインボタンは自動で。",
                       "lineHeight": 1.8,
                       "fontFamily": "Noto Sans JP",
                       "fontSize": 16,

@@ -36,6 +36,37 @@ async function settle(page: import('@playwright/test').Page) {
   await page.waitForTimeout(1200);
 }
 
+test('can scroll to the last registered site with a tall registration candidate', async ({ extension }) => {
+  const sites = Array.from({ length: 30 }, (_, index) => `https://site-${String(index).padStart(2, '0')}.example.com`);
+  const popup = await extension.context.newPage();
+  await popup.setViewportSize({ width: 360, height: 600 });
+  await popup.addInitScript(({ sites }) => {
+    // Render the production popup/CSS in a fixed popup-sized tab. Background
+    // mutations remain forbidden in ordinary extension tabs; mock only the state read.
+    const sendMessage = chrome.runtime.sendMessage.bind(chrome.runtime);
+    chrome.runtime.sendMessage = ((message: { type: string }) => message.type === 'get-popup-state'
+      ? Promise.resolve({ ok: true, currentOrigin: null, registeredOrigins: sites, passkeyOrigins: [],
+        passkeyFrameOrigins: {}, federatedProviders: {}, pendingSite: {
+          origin: 'https://login.example.com', method: 'passkey', passkeyUsed: true, detectedAt: Date.now(),
+          authenticationOrigin: 'https://authentication.example.com',
+        } }) : sendMessage(message)) as typeof chrome.runtime.sendMessage;
+  }, { sites });
+  await popup.goto(`chrome-extension://${extension.id}/popup.html`);
+  const list = popup.locator('#registered-site-list');
+  await expect(list.locator('li')).toHaveCount(sites.length);
+  const pointer = await list.evaluate((list) => {
+    const bounds = list.getBoundingClientRect();
+    const content = document.querySelector('.popup-content')!.getBoundingClientRect();
+    return { x: bounds.left + bounds.width / 2, y: Math.min(bounds.top + 20, content.bottom - 12) };
+  });
+  // Move directly: locator.hover/click would auto-scroll and hide the original bug.
+  await popup.mouse.move(pointer.x, pointer.y);
+  await popup.mouse.wheel(0, 5000);
+  const last = popup.locator(`[data-focus-key="remove:${sites.at(-1)}"]`);
+  await expect(last).toBeInViewport({ ratio: 1 });
+  await expect(last).toBeEnabled();
+});
+
 test('does not suggest registration on ordinary pages or unused provider and passkey buttons', async ({ extension }) => {
   const page = await extension.context.newPage();
   for (const query of ['plain', 'manual', 'federated-single', 'passkey']) {

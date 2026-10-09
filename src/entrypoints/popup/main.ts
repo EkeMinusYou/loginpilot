@@ -178,7 +178,7 @@ function registeredSites(): HTMLElement {
   search.dataset.focusKey = 'site-search';
   searchField.append(icon('search', 'size-3.5 shrink-0 text-muted'), search);
   node.append(searchField);
-  const list = element('ul', 'site-list min-h-[52px] max-h-[208px] overflow-y-auto overscroll-contain');
+  const list = element('ul', 'site-list min-h-[52px]');
   list.id = 'registered-site-list';
   list.tabIndex = 0;
   list.setAttribute('aria-label', t('siteList'));

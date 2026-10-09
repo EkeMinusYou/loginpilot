@@ -68,7 +68,7 @@ input[type='search']:focus-visible,
   outline-offset: -2px;
 }
 
-.site-list {
+.popup-content {
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
 }

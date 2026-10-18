@@ -29,7 +29,7 @@
     "check": "npm run check:release && npm run lp:build"
   },
   "devDependencies": {
-    "@playwright/test": "1.64.0",
+    "@playwright/test": "1.64.1",
     "@resvg/resvg-js": "2.6.2",
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "24.19.2",
@@ -37,8 +37,8 @@
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
     "vite": "8.3.4",
-    "vitest": "5.0.4",
-    "wrangler": "4.149.0",
+    "vitest": "5.0.5",
+    "wrangler": "4.151.0",
     "wxt": "0.21.4"
   },
   "overrides": {

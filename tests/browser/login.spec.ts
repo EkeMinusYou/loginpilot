@@ -182,6 +182,21 @@ test('removal and manual input stop external login before the button becomes ava
   }
 });
 
+for (const autocomplete of ['', '&autocomplete=on']) {
+  test(`submits an IAM-shaped form using the username rather than the account ID (${autocomplete || 'no autocomplete'})`, async ({ extension }) => {
+    await register(extension.worker, 'password');
+    const page = await extension.context.newPage();
+    await page.goto(`${origin}/?iam${autocomplete}`);
+    await expect(page.locator('#auth')).toHaveText('success');
+    await expect(page.locator('#username')).toHaveAttribute('autocomplete', autocomplete ? 'on' : 'username');
+    await expect(page.locator('#account')).not.toHaveAttribute('autocomplete', 'username');
+    await settle(page);
+    await expect(page.locator('#clicks')).toHaveText('1');
+    await expect(page.locator('#submits')).toHaveText('1');
+    await expect(page.locator('#account')).toHaveValue('123456789012');
+  });
+}
+
 test('waits for an enabled submit button and submits exactly once', async ({ extension }) => {
   await register(extension.worker, 'password');
   const page = await extension.context.newPage();

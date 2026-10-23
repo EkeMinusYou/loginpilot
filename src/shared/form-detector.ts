@@ -1,6 +1,6 @@
 import { isControlAvailable } from './control-availability';
 
-const USERNAME_TOKENS = ['user', 'email', 'login', 'account', 'identifier', 'username'];
+const USERNAME_TOKENS = ['user', 'email', 'login', 'identifier', 'username'];
 const PASSWORD_TOKENS = ['pass', 'password', 'credential'];
 
 export interface LoginFormCandidate {
@@ -42,6 +42,10 @@ function scoreUsernameInput(input: HTMLInputElement): number {
   }
   if (USERNAME_TOKENS.some((token) => tokens.includes(token))) {
     score += 50;
+  } else if (tokens.includes('account')) {
+    // A separate account/tenant ID (for example AWS IAM) is only a fallback
+    // when the form has no more specific username field.
+    score += 20;
   }
 
   return score;

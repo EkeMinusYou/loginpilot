@@ -44,6 +44,15 @@ describe('findLoginForm', () => {
     expect(findLoginForm(root('<form><input type="text" name="username"><input type="password" name="password"></form>'))).not.toBeNull();
   });
 
+  it.each(['', 'autocomplete="on"'])('prefers the IAM username over the preceding AWS account ID with %s', (autocomplete) => {
+    const candidate = findLoginForm(root(`<form><input type="text" id="account" name="account" value="123456789012" ${autocomplete}><input type="text" id="username" name="username" ${autocomplete}><input type="password" id="password" name="password" ${autocomplete}></form>`));
+    expect(candidate?.usernameInput.id).toBe('username');
+  });
+
+  it('still supports an account field when it is the only login identifier', () => {
+    expect(findLoginForm(root('<form><input type="text" name="account"><input type="password"></form>'))?.usernameInput.name).toBe('account');
+  });
+
   it.each(['new-password', 'disabled', 'readonly', 'hidden'])('rejects a retained candidate after its password field changes to %s', (attribute) => {
     const { document } = loginPage('<form><input type="email"><input type="password" autocomplete="current-password"></form>');
     const candidate = findLoginForm(document)!;

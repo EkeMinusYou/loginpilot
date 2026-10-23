@@ -175,6 +175,16 @@ describe('passkey usage content bridge', () => {
     expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledExactlyOnceWith({ type: 'passkey-used', origin: 'https://example.com' });
   });
 
+  it('handles a synchronous extension disconnection while reporting usage and allows a retry', async () => {
+    await start();
+    mocks.browser.runtime.sendMessage.mockImplementationOnce(() => {
+      throw new Error('Extension context invalidated.');
+    });
+    expect(() => document.dispatchEvent(new event(PASSKEY_USAGE_EVENT))).not.toThrow();
+    document.dispatchEvent(new event(PASSKEY_USAGE_EVENT));
+    expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledTimes(2);
+  });
+
   it('does not report from hidden or invalidated documents', async () => {
     await start();
     Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
@@ -192,5 +202,22 @@ describe('passkey usage content bridge', () => {
     expect(mocks.browser.runtime.sendMessage).not.toHaveBeenCalled();
     expect(mocks.disconnect).toHaveBeenCalledOnce();
     expect(mocks.browser.runtime.onMessage.removeListener).toHaveBeenCalledOnce();
+  });
+
+  it.each(['storage', 'runtime'] as const)('finishes DOM cleanup when the %s listener API is disconnected', async (api) => {
+    document.body.innerHTML = '<input type="email">';
+    await start();
+    const listener = api === 'storage' ? mocks.browser.storage.onChanged : mocks.browser.runtime.onMessage;
+    listener.removeListener.mockImplementationOnce(() => {
+      throw new Error('Extension context invalidated.');
+    });
+    expect(() => ctx.onInvalidated.mock.calls[0]![0]()).not.toThrow();
+    document.dispatchEvent(new event(PASSKEY_USAGE_EVENT));
+    const typing = new event('beforeinput', { bubbles: true });
+    Object.defineProperty(typing, 'isTrusted', { value: true });
+    document.querySelector('input')!.dispatchEvent(typing);
+    expect(mocks.browser.runtime.sendMessage).not.toHaveBeenCalled();
+    expect(ctx.setTimeout).not.toHaveBeenCalled();
+    expect(mocks.disconnect).toHaveBeenCalledOnce();
   });
 });

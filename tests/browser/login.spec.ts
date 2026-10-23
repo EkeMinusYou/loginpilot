@@ -235,9 +235,15 @@ test('registration removal and navigation prevent stale automatic login', async 
   await expect(page.locator('#submits')).toHaveText('0');
 });
 
-test('extension reload does not leave the old content script submitting', async ({ extension }) => {
+test('extension reload stops old content scripts without uncaught errors or submission', async ({ extension }) => {
   await register(extension.worker, 'password');
   const page = await extension.context.newPage();
+  const session = await extension.context.newCDPSession(page);
+  const errors: string[] = [];
+  session.on('Runtime.exceptionThrown', ({ exceptionDetails }) => {
+    errors.push(exceptionDetails.exception?.description ?? exceptionDetails.text);
+  });
+  await session.send('Runtime.enable');
   await page.goto(origin);
   const workerClosed = extension.worker.waitForEvent('close');
   await extension.worker.evaluate(() => { setTimeout(() => chrome.runtime.reload(), 0); });
@@ -245,6 +251,7 @@ test('extension reload does not leave the old content script submitting', async 
   await page.locator('button').evaluate((button) => { (button as HTMLButtonElement).disabled = false; });
   await settle(page);
   await expect(page.locator('#submits')).toHaveText('0');
+  expect(errors).toEqual([]);
 });
 
 for (const cancel of [false, true]) {

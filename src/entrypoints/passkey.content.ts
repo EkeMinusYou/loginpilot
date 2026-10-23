@@ -24,14 +24,17 @@ export default defineContentScript({
       accountInputTimer = undefined;
     };
     let usageReported = false;
-    const onPasskeyUsed = (): void => {
+    const onPasskeyUsed = async (): Promise<void> => {
       if (usageReported || ctx.isInvalid || document.visibilityState !== 'visible') return;
       usageReported = true;
       // Page-world events are untrusted hints. Derive the origin here, and let
       // the background validate the sender; only the popup may approve a site.
-      void browser.runtime.sendMessage({ type: MESSAGE_TYPES.passkeyUsed, origin }).catch(() => {
+      try {
+        await browser.runtime.sendMessage({ type: MESSAGE_TYPES.passkeyUsed, origin });
+      } catch {
+        // A disconnected runtime can throw before sendMessage returns a promise.
         usageReported = false;
-      });
+      }
     };
     document.addEventListener(PASSKEY_USAGE_EVENT, onPasskeyUsed);
     const onUserInteraction = (event: Event): void => {
@@ -96,10 +99,18 @@ export default defineContentScript({
       document.removeEventListener('visibilitychange', evaluate);
       document.removeEventListener(PASSKEY_USAGE_EVENT, onPasskeyUsed);
       observer.disconnect();
-      browser.storage.onChanged.removeListener(onStorageChanged);
-      browser.runtime.onMessage.removeListener(onMessage);
       for (const type of ['keydown', 'beforeinput', 'paste', 'click']) {
         document.removeEventListener(type, onUserInteraction, true);
+      }
+      for (const removeListener of [
+        () => browser.storage.onChanged.removeListener(onStorageChanged),
+        () => browser.runtime.onMessage.removeListener(onMessage),
+      ]) {
+        try {
+          removeListener();
+        } catch {
+          // Extension APIs may already be unavailable during invalidation.
+        }
       }
     });
   },

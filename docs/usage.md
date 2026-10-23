@@ -10,7 +10,19 @@ An origin consists of the scheme, host, and port. Registration applies to other 
 
 If there is no candidate, sign in normally on a supported login page and reopen the popup. There is no manual registration or method selector. A candidate remains associated with the origin where the activity was detected, even after a redirect. Registering a usage candidate enables the next visit without repeating authentication immediately. A registered site's method is read-only: remove it, use the desired login method, and register the resulting candidate to change methods. Existing registrations remain unchanged when another method is used.
 
-Remove a site from the registered list to disable automatic login. Reload the extension and login page after updating the extension.
+Open **Site management & settings** from the popup. Remove a site from the registered list to disable automatic login. Reload the extension and login page after updating the extension.
+
+## Pause automatic login
+
+Open **Site management & settings** and enable **Pause automatic login**. This pauses password retrieval/submission, passkey button activation, and external-provider activation on every registered site. Registrations are preserved, and the pause persists across browser restarts. Turn it off in settings or choose **Resume automatic login** in the popup.
+
+Changing the pause state invalidates pending automation and cached policy. Resuming rechecks open login pages; manual input protection and the one-attempt-per-page limit still apply. Authentication that has already started is not cancelled. Login detection and registration suggestions remain available while paused.
+
+## Exclude registration suggestions
+
+Choose **Don’t suggest this site** beneath a popup candidate. Its badge and candidate are cleared, and subsequent login activity on that exact origin does not produce a registration suggestion. Other origins are unaffected, and existing automatic-login registrations are preserved.
+
+In **Site management & settings**, find **Excluded registration candidates** and choose **Restore suggestions** to remove an exclusion. A new suggestion appears after login activity is detected again. Login Pilot uses badge and popup suggestions; it does not send desktop notifications.
 
 ## Password login
 
@@ -68,18 +80,17 @@ Form intent cannot always be identified accurately. Review the site and login fo
 | --- | --- |
 | Content scripts on HTTP/HTTPS sites | Detect login forms, autofill, and passkey candidates, including on unregistered sites. Password retrieval and automatic login are restricted to registered origins. |
 | `activeTab` | Read the active tab's URL when opening the popup. |
-| `notifications` | Notify you of registration candidates. |
-| `storage` | Keep registrations, login methods, approved authentication origins, the latest candidate, and language preferences on the device. |
+| `storage` | Keep registrations, login methods, approved authentication origins, the latest candidate, language preferences, the pause flag, and excluded candidate origins on the device. |
 
 Credentials are handled temporarily in the page and passed to the destination site's form handler when submitted. They are not stored by the extension or sent to its background process or a developer-operated service. The extension has no analytics, advertising, or tracking code. See the [privacy policy](privacy.en.md) ([日本語](privacy.md)) for details, including passkey observation and external website services.
 
 ## Find a registered site
 
-Use **Search registered sites** above the registered list to filter origins as you type. Matching ignores case and surrounding spaces. The count shows matching and total sites; clear the search to restore the full list. You can remove a site from the filtered results. The query stays in the open popup while changing language or removing sites and is not saved to extension storage.
+Use **Search registered sites** in **Site management & settings** to filter origins as you type. Matching ignores case and surrounding spaces. The count shows matching and total sites; clear the search to restore the full list. You can remove a site from the filtered results. The query stays in the open settings page while changing language or removing sites and is not saved to extension storage.
 
 ## Language
 
-Choose Automatic, English, or Japanese in the popup's footer. Automatic follows Chrome's display language. The preference is stored locally and also applies to notifications.
+Choose Automatic, English, or Japanese in **Site management & settings**. Automatic follows Chrome's display language. The preference is stored locally and applies to the popup and settings.
 
 The landing page has its own language selector and stored preference; it is independent of the extension.
 

@@ -8,13 +8,29 @@ Run `npm run build` and load `.output/chrome-mv3` through `chrome://extensions`.
 
 Run `npm run zip`, `npm run package:verify`, `npx playwright install chromium`, and `npm run test:browser`. On Linux, install browser dependencies with `npx playwright install --with-deps chromium` first. CI and Prepare release run these checks automatically.
 
-Tests use a fresh Chromium profile, localhost fixtures on ports 4175 and 4176, and generated dummy WebAuthn credentials. They cover disabled/hidden controls and enabled-state transitions, synchronous form mutation, duplicate submission, removal and navigation, content-script invalidation during extension reload, automatic passkey activation/completion/cancellation, visible approved authentication frames without tab URL access, and rejection of registration commands from an ordinary extension tab. Unit regressions cover concurrent authorized popup registration/removal and method/frame consistency. A popup layout regression renders the production popup and CSS in a 360 × 600 tab, mocking only the state response, and checks that mouse-wheel scrolling reveals the last remove button below a tall registration candidate and 30 registered sites. Other popup behavior is covered by unit tests and the manual keyboard checks below.
+Tests use a fresh Chromium profile, localhost fixtures on ports 4175 and 4176, and generated dummy WebAuthn credentials. They cover disabled/hidden controls and enabled-state transitions, synchronous form mutation, duplicate submission, removal and navigation, content-script invalidation during extension reload, automatic passkey activation/completion/cancellation, visible approved authentication frames without tab URL access, rejection of registration commands from an ordinary extension tab, pause/resume of password, passkey, and external login from settings, and excluded-candidate suppression/restoration. Unit regressions cover concurrent authorized popup registration/removal and method/frame consistency. Popup layout regressions render the production popup and CSS in a 360 × 600 tab, mocking only the state read. Settings tests check opening the real options page, searching/removing registrations, switching language, and scrolling to the final entry in a list of 30 sites. Other popup behavior is covered by unit tests and the manual keyboard checks below.
 
 The test harness installs only the production build through Chromium's [Extensions protocol](https://chromedevtools.github.io/devtools-protocol/tot/Extensions/). It closes the browser and removes its temporary profile after each test. Test-installed unpacked extensions can be unloaded by `runtime.reload`; the lifecycle test verifies that the old script stops. A separate page-reload check confirms that a fresh document can submit once. The extension itself does not use the debugger API. Failure traces in `test-results/` contain only fixtures and are not packaged.
 
 Virtual WebAuthn verifies the authentication request and cancellation path; it does not reproduce the actual Chrome/OS account chooser or biometric screen. The tests use dummy prefilled password fields, not Google Password Manager's real native autofill. Complete the manual checks below for those behaviors before a release.
 
+## Pause and registration exclusions
+
+| Scenario | Expected behavior |
+| --- | --- |
+| Enable Pause automatic login in settings | Registered password, passkey, and external login do not start; registrations remain saved |
+| Restart Chrome while paused | The pause remains enabled |
+| Resume from settings or the popup | Open login pages are rechecked; manual input protection and one attempt per page remain in effect |
+| Exclude a candidate in the popup | The candidate and badge are cleared; later login activity on that origin does not suggest registration |
+| Restore suggestions in settings | Subsequent login activity on that origin can produce a candidate again |
+| Log in on another origin | Its registration suggestions remain available |
+| Exclude an already registered origin | Its existing automatic-login registration remains enabled unless globally paused |
+
+Confirm that no desktop notification appears when a candidate is detected. Exclusions are exact origins, not domain wildcards.
+
 ## Password fixture
+
+The automated IAM fixture mirrors AWS's public account ID, username, and password field order with absent or generic `autocomplete="on"` hints. It checks that Login Pilot selects the username, not the preceding account ID, notifies the form's input handlers, preserves the account ID, and submits once. This is a local regression fixture, not a real AWS authentication check.
 
 Run `npm run browser:fixture` and open `http://127.0.0.1:4174`. The fixture does not send entered values externally; it displays a submission count. Add a dummy account for that origin to Chrome's password manager to test browser autofill.
 

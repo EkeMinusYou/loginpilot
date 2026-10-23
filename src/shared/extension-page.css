@@ -1,4 +1,4 @@
-@import 'tailwindcss' source('../../');
+@import 'tailwindcss' source('../');
 
 :root {
   --bg: #ffffff;
@@ -47,11 +47,17 @@
   }
 }
 
-html,
-body {
+html:not(.options-page),
+html:not(.options-page) body {
   width: 360px;
   overflow: hidden;
   border-radius: 12px;
+}
+
+html.options-page,
+.options-page body {
+  min-height: 100%;
+  background: var(--soft);
 }
 
 button,

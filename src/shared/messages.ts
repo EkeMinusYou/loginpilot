@@ -4,6 +4,10 @@ export const MESSAGE_TYPES = {
   autofillDetected: 'autofill-detected',
   passwordUsed: 'password-used',
   getPopupState: 'get-popup-state',
+  getSettingsState: 'get-settings-state',
+  setAutoLoginPaused: 'set-auto-login-paused',
+  excludeOrigin: 'exclude-origin',
+  restoreOrigin: 'restore-origin',
   registerOrigin: 'register-origin',
   removeOrigin: 'remove-origin',
   siteRegistered: 'site-registered',
@@ -29,6 +33,9 @@ export type ErrorCode =
 export type ErrorResponse = { ok: false; error: ErrorCode };
 
 export type RuntimeMessage =
+  | { type: typeof MESSAGE_TYPES.getSettingsState }
+  | { type: typeof MESSAGE_TYPES.setAutoLoginPaused; paused: boolean; currentOrigin?: string | null }
+  | { type: typeof MESSAGE_TYPES.excludeOrigin | typeof MESSAGE_TYPES.restoreOrigin; origin: string; currentOrigin?: string | null }
   | { type: typeof MESSAGE_TYPES.passwordUsed; origin: string }
   | { type: typeof MESSAGE_TYPES.federatedDetected | typeof MESSAGE_TYPES.federatedUsed; origin: string; provider: FederatedProvider }
   | { type: typeof MESSAGE_TYPES.getFederatedPolicy; origin: string }
@@ -87,6 +94,8 @@ export interface PendingSite {
 }
 
 export interface PopupState {
+  autoLoginPaused: boolean;
+  excludedOrigins: string[];
   registeredOrigins: string[];
   passkeyOrigins: string[];
   passkeyFrameOrigins: Record<string, string>;

@@ -8,6 +8,7 @@ interface FormState {
   generation: number;
   inFlight: boolean;
   credentialAttempted: boolean;
+  policyVersion: number;
   previewReported: boolean;
   completed: boolean;
   idle?: Promise<void>;
@@ -65,8 +66,13 @@ export class PasswordLoginController {
   private state(form: HTMLFormElement): FormState {
     let state = this.states.get(form);
     if (!state) {
-      state = { interacted: false, generation: 0, inFlight: false, credentialAttempted: false, previewReported: false, completed: false };
+      state = { interacted: false, generation: 0, inFlight: false, credentialAttempted: false, policyVersion: this.policyVersion, previewReported: false, completed: false };
       this.states.set(form, state);
+    }
+    if (state.policyVersion !== this.policyVersion) {
+      state.policyVersion = this.policyVersion;
+      state.credentialAttempted = false;
+      state.previewReported = false;
     }
     return state;
   }

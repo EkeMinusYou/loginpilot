@@ -8,7 +8,6 @@ const mocks = vi.hoisted(() => ({ browser: {
   i18n: { getUILanguage: () => 'en' },
   tabs: { get: vi.fn(), sendMessage: vi.fn() },
   action: { setBadgeText: vi.fn(), setBadgeBackgroundColor: vi.fn() },
-  notifications: { create: vi.fn(), clear: vi.fn(), onClicked: { addListener: vi.fn() } },
 } }));
 vi.mock('wxt/browser', () => ({ browser: mocks.browser }));
 
@@ -269,4 +268,39 @@ it('waits for an explicit disabled submit control associated outside the form', 
   mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, action: 'submit' });
   await startAutofill(); await flush();
   expect(requestSubmit).not.toHaveBeenCalled();
+});
+
+it('invalidates an outstanding password submission when automatic login is paused', async () => {
+  const document = page(populated);
+  const click = vi.spyOn(document.querySelector('button')!, 'click');
+  const policy = Promise.withResolvers<unknown>();
+  mocks.browser.runtime.sendMessage.mockReturnValue(policy.promise);
+  await startAutofill();
+  mocks.browser.storage.onChanged.addListener.mock.calls[0]![0]({ autoLoginPaused: { newValue: true } }, 'local');
+  policy.resolve({ ok: true, action: 'submit' });
+  await flush();
+  expect(click).not.toHaveBeenCalled();
+});
+
+it('retries credential retrieval after a pause is lifted without resetting manual input protection', async () => {
+  const document = page('<form><input type="email"><input type="password"><button>Log in</button></form>');
+  const get = vi.fn().mockResolvedValue({ type: 'password', id: 'dummy@example.com', password: 'dummy-password' });
+  vi.stubGlobal('navigator', { credentials: { get } });
+  vi.stubGlobal('isSecureContext', true);
+  const { PasswordLoginController } = await import('./password-login');
+  const getPolicy = vi.fn().mockResolvedValue({ ok: true, action: 'ignore' });
+  const login = new PasswordLoginController({ canStart: () => true, getPolicy,
+    reportCandidate: vi.fn().mockResolvedValue({ ok: true, action: 'ignore' }), schedule: vi.fn() });
+  await login.evaluate();
+  expect(get).not.toHaveBeenCalled();
+  getPolicy.mockResolvedValue({ ok: true, action: 'submit' });
+  login.invalidatePolicy();
+  await login.evaluate();
+  expect(get).toHaveBeenCalledOnce();
+  expect(document.querySelector<HTMLInputElement>('input[type="email"]')!.value).toBe('dummy@example.com');
+  login.markUserInteraction(document.querySelector('form')!);
+  document.querySelector<HTMLInputElement>('input[type="password"]')!.value = '';
+  login.invalidatePolicy();
+  await login.evaluate();
+  expect(get).toHaveBeenCalledOnce();
 });

@@ -37,6 +37,16 @@ function frameOrigins(value: unknown): Record<string, string> {
   ));
 }
 
+export interface AutomationPreferences {
+  autoLoginPaused: boolean;
+  excludedOrigins: string[];
+}
+
+export async function getAutomationPreferences(): Promise<AutomationPreferences> {
+  const state = await browser.storage.local.get(['autoLoginPaused', 'excludedOrigins']);
+  return { autoLoginPaused: state.autoLoginPaused === true, excludedOrigins: origins(state.excludedOrigins) };
+}
+
 export async function getRegistrationState(): Promise<RegistrationState> {
   const state = await browser.storage.local.get([REGISTERED_ORIGINS_KEY, PASSKEY_ORIGINS_KEY, PASSKEY_FRAME_ORIGINS_KEY, FEDERATED_PROVIDERS_KEY]) as StoredState;
   const registeredOrigins = origins(state.registeredOrigins);

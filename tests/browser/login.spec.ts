@@ -36,35 +36,89 @@ async function settle(page: import('@playwright/test').Page) {
   await page.waitForTimeout(1200);
 }
 
-test('can scroll to the last registered site with a tall registration candidate', async ({ extension }) => {
+test('can scroll to the last registered site in settings', async ({ extension }) => {
   const sites = Array.from({ length: 30 }, (_, index) => `https://site-${String(index).padStart(2, '0')}.example.com`);
-  const popup = await extension.context.newPage();
-  await popup.setViewportSize({ width: 360, height: 600 });
-  await popup.addInitScript(({ sites }) => {
-    // Render the production popup/CSS in a fixed popup-sized tab. Background
-    // mutations remain forbidden in ordinary extension tabs; mock only the state read.
-    const sendMessage = chrome.runtime.sendMessage.bind(chrome.runtime);
-    chrome.runtime.sendMessage = ((message: { type: string }) => message.type === 'get-popup-state'
-      ? Promise.resolve({ ok: true, currentOrigin: null, registeredOrigins: sites, passkeyOrigins: [],
-        passkeyFrameOrigins: {}, federatedProviders: {}, pendingSite: {
-          origin: 'https://login.example.com', method: 'passkey', passkeyUsed: true, detectedAt: Date.now(),
-          authenticationOrigin: 'https://authentication.example.com',
-        } }) : sendMessage(message)) as typeof chrome.runtime.sendMessage;
-  }, { sites });
-  await popup.goto(`chrome-extension://${extension.id}/popup.html`);
-  const list = popup.locator('#registered-site-list');
+  await extension.worker.evaluate((registeredOrigins) => chrome.storage.local.set({ registeredOrigins }), sites);
+  const settings = await extension.context.newPage();
+  await settings.setViewportSize({ width: 1000, height: 840 });
+  await settings.goto(`chrome-extension://${extension.id}/options.html`);
+  const list = settings.locator('#registered-site-list');
   await expect(list.locator('li')).toHaveCount(sites.length);
   const pointer = await list.evaluate((list) => {
     const bounds = list.getBoundingClientRect();
-    const content = document.querySelector('.popup-content')!.getBoundingClientRect();
-    return { x: bounds.left + bounds.width / 2, y: Math.min(bounds.top + 20, content.bottom - 12) };
+    return { x: bounds.left + bounds.width / 2, y: bounds.top + 20 };
   });
   // Move directly: locator.hover/click would auto-scroll and hide the original bug.
-  await popup.mouse.move(pointer.x, pointer.y);
-  await popup.mouse.wheel(0, 5000);
-  const last = popup.locator(`[data-focus-key="remove:${sites.at(-1)}"]`);
+  await settings.mouse.move(pointer.x, pointer.y);
+  await settings.mouse.wheel(0, 5000);
+  const last = settings.locator(`[data-focus-key="remove:${sites.at(-1)}"]`);
   await expect(last).toBeInViewport({ ratio: 1 });
   await expect(last).toBeEnabled();
+});
+
+test('opens settings from the compact popup and manages sites and language', async ({ extension }) => {
+  const sites = ['https://github.com', 'https://www.notion.so', 'https://www.amazon.co.jp'];
+  await extension.worker.evaluate((registeredOrigins) => chrome.storage.local.set({ registeredOrigins,
+    passkeyOrigins: ['https://www.notion.so'], language: 'ja' }), sites);
+  const popup = await extension.context.newPage();
+  await popup.setViewportSize({ width: 360, height: 600 });
+  await popup.addInitScript(({ sites }) => {
+    // A normal extension tab cannot read popup state. Mock only that read to
+    // review its layout; opening settings and all settings operations are real.
+    const sendMessage = chrome.runtime.sendMessage.bind(chrome.runtime);
+    chrome.runtime.sendMessage = ((message: { type: string }) => message.type === 'get-popup-state'
+      ? Promise.resolve({ ok: true, currentOrigin: sites[0], registeredOrigins: sites,
+        passkeyOrigins: [sites[1]], passkeyFrameOrigins: {}, federatedProviders: {}, pendingSite: null })
+      : sendMessage(message)) as typeof chrome.runtime.sendMessage;
+  }, { sites });
+  await popup.goto(`chrome-extension://${extension.id}/popup.html`);
+  await expect(popup.getByText('自動ログイン有効')).toBeVisible();
+  await expect(popup.locator('#registered-site-list, #language')).toHaveCount(0);
+  await popup.locator('.popup-shell').screenshot({ path: '/private/tmp/loginpilot-popup-registered.png' });
+  const [settings] = await Promise.all([
+    extension.context.waitForEvent('page'),
+    popup.getByRole('button', { name: 'サイト管理・設定' }).click(),
+  ]);
+  await settings.setViewportSize({ width: 1000, height: 840 });
+  await expect(settings).toHaveURL(`chrome-extension://${extension.id}/options.html`);
+  await expect(settings.locator('#registered-site-list li')).toHaveCount(3);
+  await expect(settings.getByRole('button', { name: '登録して自動ログイン' })).toHaveCount(0);
+  await settings.screenshot({ path: '/private/tmp/loginpilot-settings.png' });
+  const search = settings.getByRole('searchbox');
+  await search.fill('NOTION');
+  await expect(settings.locator('#registered-site-list li')).toHaveCount(1);
+  await expect(settings.locator('#registered-site-list')).toContainText('パスキー');
+  await settings.locator('#language').selectOption('en');
+  await expect(settings.getByRole('heading', { name: 'Site management & settings' })).toBeVisible();
+  await expect(settings.getByRole('searchbox')).toHaveValue('NOTION');
+  await settings.getByRole('button', { name: 'Remove https://www.notion.so', exact: true }).click();
+  await expect(settings.getByText('No matching sites', { exact: true })).toBeVisible();
+  expect(await extension.worker.evaluate(() => chrome.storage.local.get(['registeredOrigins', 'passkeyOrigins', 'language'])))
+    .toEqual({ registeredOrigins: [sites[0], sites[2]], passkeyOrigins: [], language: 'en' });
+  await settings.getByRole('searchbox').fill('');
+  await settings.setViewportSize({ width: 360, height: 800 });
+  expect(await settings.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await settings.screenshot({ path: '/private/tmp/loginpilot-settings-mobile.png' });
+});
+
+test('shows a detected login in the compact popup with an accessible settings link', async ({ extension }) => {
+  await extension.worker.evaluate(() => chrome.storage.local.set({ language: 'ja' }));
+  const popup = await extension.context.newPage();
+  await popup.setViewportSize({ width: 360, height: 600 });
+  await popup.addInitScript(() => {
+    const sendMessage = chrome.runtime.sendMessage.bind(chrome.runtime);
+    chrome.runtime.sendMessage = ((message: { type: string }) => message.type === 'get-popup-state'
+      ? Promise.resolve({ ok: true, currentOrigin: 'https://github.com', registeredOrigins: [],
+        passkeyOrigins: [], passkeyFrameOrigins: {}, federatedProviders: {}, pendingSite: {
+          origin: 'https://github.com', passwordUsed: true, detectedAt: Date.now(),
+        } }) : sendMessage(message)) as typeof chrome.runtime.sendMessage;
+  });
+  await popup.goto(`chrome-extension://${extension.id}/popup.html`);
+  await expect(popup.getByRole('button', { name: '登録して自動ログイン' })).toBeVisible();
+  await expect(popup.getByText('パスワードログインの開始を検知')).toBeVisible();
+  await expect(popup.getByRole('button', { name: 'サイト管理・設定' })).toBeInViewport({ ratio: 1 });
+  expect(await popup.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
+  await popup.locator('.popup-shell').screenshot({ path: '/private/tmp/loginpilot-popup-detected.png' });
 });
 
 test('does not suggest registration on ordinary pages or unused provider and passkey buttons', async ({ extension }) => {
@@ -330,4 +384,78 @@ test('rejects registration commands from an ordinary extension tab', async ({ ex
   expect(results.every((result) => result.ok === false)).toBe(true);
   expect(await extension.worker.evaluate(() => chrome.storage.local.get(['registeredOrigins', 'passkeyOrigins'])))
     .toEqual({});
+});
+
+for (const method of ['password', 'passkey', 'federated'] as const) {
+  test(`pauses and resumes ${method} from settings on an open login page`, async ({ extension }) => {
+    await extension.worker.evaluate(({ origin, method }) => chrome.storage.local.set({
+      registeredOrigins: [origin], passkeyOrigins: method === 'passkey' ? [origin] : [], passkeyFrameOrigins: {},
+      federatedProviders: method === 'federated' ? { [origin]: 'google' } : {}, language: 'en',
+    }), { origin, method });
+    const page = await extension.context.newPage();
+    const query = method === 'passkey' ? '?passkey' : method === 'federated' ? '?federated&cancel' : '';
+    const selector = method === 'passkey' ? '#passkey' : method === 'federated' ? '#google-login-page' : 'button';
+    await page.goto(`${origin}/${query}`);
+    const settings = await extension.context.newPage();
+    await settings.goto(`chrome-extension://${extension.id}/options.html`);
+    const toggle = settings.getByRole('checkbox', { name: 'Pause automatic login' });
+    await toggle.check();
+    await expect.poll(() => extension.worker.evaluate(() => chrome.storage.local.get('autoLoginPaused')))
+      .toEqual({ autoLoginPaused: true });
+    await page.bringToFront();
+    await page.locator(selector).evaluate((button) => { (button as HTMLButtonElement).disabled = false; });
+    await settle(page);
+    await expect(page.locator('#clicks')).toHaveText('0');
+    await expect(page.locator('#submits')).toHaveText('0');
+    // The preference also applies to a fresh page load, rather than just cached policy.
+    await page.reload();
+    await page.locator(selector).evaluate((button) => { (button as HTMLButtonElement).disabled = false; });
+    await settle(page);
+    await expect(page.locator('#clicks')).toHaveText('0');
+    await expect(page.locator('#submits')).toHaveText('0');
+    await settings.bringToFront();
+    await toggle.uncheck();
+    await expect.poll(() => extension.worker.evaluate(() => chrome.storage.local.get('autoLoginPaused')))
+      .toEqual({ autoLoginPaused: false });
+    await page.bringToFront();
+    await expect(page.locator('#clicks')).toHaveText('1');
+    await expect(page.locator('#submits')).toHaveText(method === 'password' ? '1' : '0');
+    await settle(page);
+    await expect(page.locator('#clicks')).toHaveText('1');
+    expect(await extension.worker.evaluate(() => chrome.storage.local.get('registeredOrigins')))
+      .toEqual({ registeredOrigins: [origin] });
+    if (method === 'passkey') await page.evaluate(() => (window as unknown as { cancelAuthentication(): void }).cancelAuthentication());
+    if (method === 'password') {
+      await settings.bringToFront();
+      await settings.screenshot({ path: '/private/tmp/loginpilot-settings-preferences.png', fullPage: true });
+    }
+  });
+}
+
+test('suppresses an excluded login candidate and restores suggestions from settings', async ({ extension }) => {
+  await extension.worker.evaluate((origin) => chrome.storage.local.set({ excludedOrigins: [origin], language: 'en' }), origin);
+  const page = await extension.context.newPage();
+  await page.goto(`${origin}/?manual`);
+  await page.locator('input[type="email"]').fill('manual@example.com');
+  await page.locator('input[type="password"]').fill('fixture-password');
+  await page.locator('button').evaluate((button) => { (button as HTMLButtonElement).disabled = false; });
+  await page.locator('button').click();
+  await expect(page.locator('#submits')).toHaveText('1');
+  await settle(page);
+  expect(await extension.worker.evaluate(() => chrome.storage.local.get('pendingSite'))).toEqual({});
+  expect(await extension.worker.evaluate(() => chrome.action.getBadgeText({}))).toBe('');
+  const settings = await extension.context.newPage();
+  await settings.goto(`chrome-extension://${extension.id}/options.html`);
+  await settings.getByRole('button', { name: `Restore suggestions for ${origin}`, exact: true }).click();
+  await expect.poll(() => extension.worker.evaluate(() => chrome.storage.local.get('excludedOrigins')))
+    .toEqual({ excludedOrigins: [] });
+  await page.bringToFront();
+  await page.reload();
+  await page.locator('input[type="email"]').fill('manual@example.com');
+  await page.locator('input[type="password"]').fill('fixture-password');
+  await page.locator('button').evaluate((button) => { (button as HTMLButtonElement).disabled = false; });
+  await page.locator('button').click();
+  await expect.poll(() => extension.worker.evaluate(() => chrome.storage.local.get('pendingSite')))
+    .toMatchObject({ pendingSite: { origin, passwordUsed: true } });
+  expect(await extension.worker.evaluate(() => chrome.action.getBadgeText({}))).toBe('1');
 });

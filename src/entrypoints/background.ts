@@ -8,6 +8,8 @@ import {
   getRegistrationState,
   setRegistrationState,
   type RegistrationState,
+  getAutomationPreferences,
+  type AutomationPreferences,
 } from '../shared/storage';
 import {
   MESSAGE_TYPES,
@@ -22,12 +24,8 @@ import {
 import { createMutationQueue, shouldReplaceCandidate } from '../shared/state-mutations';
 import { normalizeOrigin } from '../shared/origins';
 import { isAuthorizedRuntimeMessage, isRuntimeMessage } from '../shared/message-validation';
-import { createTranslator } from '../shared/i18n';
-import { getExtensionLocale } from '../shared/extension-language';
 import { isSecureLoginOrigin } from '../shared/passkey-login';
-import { FEDERATED_PROVIDERS } from '../shared/federated-providers';
 
-const NOTIFICATION_ID = 'auto-signin-site-detected';
 const mutateState = createMutationQueue();
 type Effect = () => Promise<void>;
 
@@ -117,28 +115,27 @@ async function startPasskeyLogin(origin: string, tabId: number): Promise<Credent
   }, target.documentId ? { documentId: target.documentId } : { frameId: target.frameId }) as CredentialSetupResponse;
 }
 
-async function notifySiteDetected(effects: Effect[], candidate: Omit<PendingSite, 'detectedAt'>): Promise<void> {
-  const { origin, passwordUsed, passkeyUsed, provider } = candidate;
+async function updateCandidateBadge(): Promise<void> {
+  try {
+    const pending = await getPendingSite();
+    const { excludedOrigins } = await getAutomationPreferences();
+    const text = pending && !excludedOrigins.includes(pending.origin) ? '1' : '';
+    await browser.action.setBadgeText({ text });
+    if (text) await browser.action.setBadgeBackgroundColor({ color: '#0284c7' });
+  } catch {
+    // Badge failures do not roll back saved preferences or candidates.
+  }
+}
+
+async function suggestSite(candidate: Omit<PendingSite, 'detectedAt'>): Promise<AutofillResponse> {
+  if ((await getAutomationPreferences()).excludedOrigins.includes(candidate.origin)) return { ok: true, action: 'ignore' };
   const pending = await getPendingSite();
   const next = { ...candidate, detectedAt: Date.now() };
-  if (!shouldReplaceCandidate(pending, next)) return;
-  await setPendingSite(next);
-  effects.push(async () => {
-    try {
-      await browser.action.setBadgeText({ text: '1' });
-      await browser.action.setBadgeBackgroundColor({ color: '#0284c7' });
-      const t = createTranslator(await getExtensionLocale());
-      await browser.notifications.create(NOTIFICATION_ID, {
-        type: 'basic',
-        iconUrl: browser.runtime.getURL('/icon/128.png'),
-        title: 'Login Pilot',
-        message: t(provider ? 'federatedNotification' : passwordUsed ? 'passwordUsedNotification' : passkeyUsed ? 'passkeyUsedNotification' : 'notification',
-          { origin, provider: provider ? FEDERATED_PROVIDERS[provider] : '' }),
-      });
-    } catch {
-      return;
-    }
-  });
+  if (shouldReplaceCandidate(pending, next)) {
+    await setPendingSite(next);
+    await updateCandidateBadge();
+  }
+  return { ok: true, action: 'pending' };
 }
 
 async function getPopupState(currentOrigin: string | null): Promise<PopupResponse> {
@@ -147,14 +144,16 @@ async function getPopupState(currentOrigin: string | null): Promise<PopupRespons
   return popupState(currentOrigin, registration, pending);
 }
 
-function popupState(currentOrigin: string | null, registration: RegistrationState, pending: PendingSite | null): PopupResponse {
+async function popupState(currentOrigin: string | null, registration: RegistrationState, pending: PendingSite | null, preferences?: AutomationPreferences): Promise<PopupResponse> {
+  const automation = preferences ?? await getAutomationPreferences();
   const { registeredOrigins, passkeyOrigins, passkeyFrameOrigins, federatedProviders } = registration;
   const state: PopupState = {
+    ...automation,
     registeredOrigins,
     passkeyOrigins,
     passkeyFrameOrigins,
     federatedProviders,
-    pendingSite: pending,
+    pendingSite: pending && !automation.excludedOrigins.includes(pending.origin) ? pending : null,
     currentOrigin,
   };
 
@@ -166,19 +165,35 @@ async function handleMessage(
   sender: Browser.runtime.MessageSender,
   effects: Effect[],
 ): Promise<PopupResponse | CredentialSetupResponse | AutofillResponse> {
-  if (!isAuthorizedRuntimeMessage(message, sender, browser.runtime.id, browser.runtime.getURL('/popup.html'))) {
+  if (!isAuthorizedRuntimeMessage(message, sender, browser.runtime.id, browser.runtime.getURL('/popup.html'), browser.runtime.getURL('/options.html'))) {
     return { ok: false, error: 'operationNotAllowed' };
   }
+  if (message.type === MESSAGE_TYPES.setAutoLoginPaused) {
+    await browser.storage.local.set({ autoLoginPaused: message.paused });
+    return sender.url === browser.runtime.getURL('/options.html')
+      ? popupState(null, await getRegistrationState(), null) : getPopupState(message.currentOrigin ?? null);
+  }
+  if (message.type === MESSAGE_TYPES.excludeOrigin || message.type === MESSAGE_TYPES.restoreOrigin) {
+    const { excludedOrigins } = await getAutomationPreferences();
+    await browser.storage.local.set({ excludedOrigins: message.type === MESSAGE_TYPES.excludeOrigin
+      ? [...new Set([...excludedOrigins, message.origin])].sort()
+      : excludedOrigins.filter((origin) => origin !== message.origin) });
+    if (message.type === MESSAGE_TYPES.excludeOrigin && (await getPendingSite())?.origin === message.origin) await clearPendingSite();
+    await updateCandidateBadge();
+    return sender.url === browser.runtime.getURL('/options.html')
+      ? popupState(null, await getRegistrationState(), null) : getPopupState(message.currentOrigin ?? null);
+  }
+  const automation = await getAutomationPreferences();
+  const { autoLoginPaused } = automation;
   if (message.type === MESSAGE_TYPES.getFederatedPolicy || message.type === MESSAGE_TYPES.federatedDetected || message.type === MESSAGE_TYPES.federatedUsed) {
     if (!isSecureLoginOrigin(message.origin)) return { ok: true, action: 'ignore' };
     const preferences = await getRegistrationState();
     const provider = preferences.federatedProviders[message.origin];
     if (message.type === MESSAGE_TYPES.getFederatedPolicy) {
-      return provider ? { ok: true, action: 'submit', method: 'federated', provider } : { ok: true, action: 'ignore' };
+      return provider && !autoLoginPaused ? { ok: true, action: 'submit', method: 'federated', provider } : { ok: true, action: 'ignore' };
     }
     if (message.type === MESSAGE_TYPES.federatedDetected || preferences.registeredOrigins.includes(message.origin)) return { ok: true, action: 'ignore' };
-    await notifySiteDetected(effects, { origin: message.origin, method: 'federated', provider: message.provider, federatedUsed: true });
-    return { ok: true, action: 'pending' };
+    return suggestSite({ origin: message.origin, method: 'federated', provider: message.provider, federatedUsed: true });
   }
   if (message.type === MESSAGE_TYPES.passkeyDetected || message.type === MESSAGE_TYPES.passkeyUsed || message.type === MESSAGE_TYPES.getPasskeyPolicy) {
     const target = await passkeyContext(message.origin, sender, message.type === MESSAGE_TYPES.passkeyUsed);
@@ -192,11 +207,10 @@ async function handleMessage(
     if (message.type === MESSAGE_TYPES.passkeyUsed) {
       if (registered && (!usesPasskey || frameAllowed)) return { ok: true, action: 'ignore' };
       // Usage only suggests registration or approval of a new authentication origin.
-      await notifySiteDetected(effects, { origin: target.siteOrigin, method: 'passkey', passkeyUsed: true,
+      return suggestSite({ origin: target.siteOrigin, method: 'passkey', passkeyUsed: true,
         ...(target.frameId !== 0 ? { authenticationOrigin: target.authenticationOrigin } : {}) });
-      return { ok: true, action: 'pending' };
     }
-    if (usesPasskey && frameAllowed) return { ok: true, action: 'submit', method: 'passkey' };
+    if (usesPasskey && frameAllowed && !autoLoginPaused) return { ok: true, action: 'submit', method: 'passkey' };
     if (message.type === MESSAGE_TYPES.getPasskeyPolicy) return { ok: true, action: 'ignore' };
     // Button visibility alone does not imply that the user signs in here.
     return { ok: true, action: 'ignore' };
@@ -210,6 +224,7 @@ async function handleMessage(
 
     const preferences = await getRegistrationState();
     if (preferences.registeredOrigins.includes(message.origin)) {
+      if (autoLoginPaused) return { ok: true, action: 'ignore' };
       if (message.type === MESSAGE_TYPES.passwordUsed) return { ok: true, action: 'ignore' };
       if (preferences.federatedProviders[message.origin]) return { ok: true, action: 'ignore', method: 'federated' };
       if (preferences.passkeyOrigins.includes(message.origin)) {
@@ -220,13 +235,15 @@ async function handleMessage(
 
     if (message.type === MESSAGE_TYPES.getLoginPolicy) return { ok: true, action: 'ignore' };
 
-    await notifySiteDetected(effects, { origin: message.origin,
+    return suggestSite({ origin: message.origin,
       ...(message.type === MESSAGE_TYPES.passwordUsed ? { passwordUsed: true as const } : {}) });
-    return { ok: true, action: 'pending' };
   }
 
   if (message.type === MESSAGE_TYPES.getPopupState) {
     return getPopupState(message.currentOrigin);
+  }
+  if (message.type === MESSAGE_TYPES.getSettingsState) {
+    return popupState(null, await getRegistrationState(), null);
   }
 
   const origin = normalizeOrigin(message.origin);
@@ -267,15 +284,14 @@ async function handleMessage(
     const saved = await setRegistrationState(registration);
     if (pendingSite?.origin === origin) {
       await clearPendingSite();
-      effects.push(async () => {
-        await Promise.allSettled([browser.notifications.clear(NOTIFICATION_ID), browser.action.setBadgeText({ text: '' })]);
-      });
+      await updateCandidateBadge();
     }
 
-    if (message.tabId !== undefined) {
+    if (message.tabId !== undefined && !autoLoginPaused) {
       const tabId = message.tabId;
       // Release the mutation queue before a page can wait for Chrome's chooser.
       effects.push(async () => {
+        if ((await getAutomationPreferences()).autoLoginPaused) return;
         const tab = await browser.tabs.get(tabId);
         if (tab.url && normalizeOrigin(tab.url) !== origin) return;
         if (message.method === 'passkey') await startPasskeyLogin(origin, tabId);
@@ -284,7 +300,7 @@ async function handleMessage(
     }
 
     return popupState(message.currentOrigin === undefined ? origin : message.currentOrigin, saved,
-      pendingSite?.origin === origin ? null : pendingSite);
+      pendingSite?.origin === origin ? null : pendingSite, automation);
   }
 
   if (message.type === MESSAGE_TYPES.removeOrigin) {
@@ -294,7 +310,9 @@ async function handleMessage(
     delete frames[origin];
     const pendingSite = await getPendingSite();
     const saved = await setRegistrationState(registration);
-    return popupState(message.currentOrigin === undefined ? origin : message.currentOrigin, saved, pendingSite);
+    return sender.url === browser.runtime.getURL('/options.html')
+      ? popupState(null, saved, null, automation)
+      : popupState(message.currentOrigin === undefined ? origin : message.currentOrigin, saved, pendingSite, automation);
   }
 
   return { ok: false, error: 'unsupportedMessage' };
@@ -307,13 +325,14 @@ export default defineBackground(() => {
       return false;
     }
 
-    const changesState = message.type === MESSAGE_TYPES.registerOrigin || message.type === MESSAGE_TYPES.removeOrigin ||
+    const preferenceChange = message.type === MESSAGE_TYPES.setAutoLoginPaused || message.type === MESSAGE_TYPES.excludeOrigin || message.type === MESSAGE_TYPES.restoreOrigin;
+    const changesState = preferenceChange || message.type === MESSAGE_TYPES.registerOrigin || message.type === MESSAGE_TYPES.removeOrigin ||
       message.type === MESSAGE_TYPES.autofillDetected || message.type === MESSAGE_TYPES.passwordUsed || message.type === MESSAGE_TYPES.passkeyDetected || message.type === MESSAGE_TYPES.passkeyUsed ||
       message.type === MESSAGE_TYPES.federatedDetected || message.type === MESSAGE_TYPES.federatedUsed;
     const effects: Effect[] = [];
     void (changesState ? mutateState(() => handleMessage(message, sender, effects)) : handleMessage(message, sender, effects))
       .then(async (response) => {
-        const returnsState = message.type === MESSAGE_TYPES.registerOrigin || message.type === MESSAGE_TYPES.removeOrigin;
+        const returnsState = preferenceChange || message.type === MESSAGE_TYPES.registerOrigin || message.type === MESSAGE_TYPES.removeOrigin;
         // Return persisted state before a page can wait for Chrome's chooser.
         if (returnsState) sendResponse(response);
         // UI/page failures never roll back or misreport persisted preferences.
@@ -323,13 +342,5 @@ export default defineBackground(() => {
       .catch(() => sendResponse({ ok: false, error: 'processingFailed' }));
 
     return true;
-  });
-
-  browser.notifications.onClicked.addListener((notificationId) => {
-    if (notificationId !== NOTIFICATION_ID) {
-      return;
-    }
-
-    void browser.notifications.clear(NOTIFICATION_ID);
   });
 });

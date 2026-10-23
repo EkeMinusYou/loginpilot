@@ -11,7 +11,7 @@ from zipfile import BadZipFile, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = {
-    'manifest.json', 'popup.html', 'background.js', 'LICENSE.txt', 'THIRD_PARTY_LICENSES.txt',
+    'manifest.json', 'popup.html', 'options.html', 'background.js', 'LICENSE.txt', 'THIRD_PARTY_LICENSES.txt',
     '_locales/en/messages.json', '_locales/ja/messages.json', 'icon.svg',
     'icon/16.png', 'icon/32.png', 'icon/48.png', 'icon/128.png',
     'content-scripts/autofill.js', 'content-scripts/passkey.js', 'content-scripts/passkey-usage.js', 'content-scripts/federated.js',
@@ -51,7 +51,7 @@ def resource_references(name, content):
 
 
 def verify_assets(archive, manifest, generated):
-    roots = [manifest['background']['service_worker'], manifest['action']['default_popup']]
+    roots = [manifest['background']['service_worker'], manifest['action']['default_popup'], manifest['options_ui']['page']]
     roots += [name for script in manifest['content_scripts'] for name in script.get('js', []) + script.get('css', [])]
     pending = list(roots)
     visited = set()
@@ -89,13 +89,14 @@ def verify(path, root=ROOT):
         package = json.loads((root / 'package.json').read_text())
         require(manifest.get('manifest_version') == 3, 'Expected Manifest V3')
         require(manifest.get('name') == 'Login Pilot' and manifest.get('version') == package['version'], 'Unexpected name/version')
-        require(sorted(manifest.get('permissions', [])) == ['activeTab', 'notifications', 'storage'], 'Unexpected permissions')
+        require(sorted(manifest.get('permissions', [])) == ['activeTab', 'storage'], 'Unexpected permissions')
         require(not any(key in manifest for key in ['host_permissions', 'optional_permissions', 'optional_host_permissions',
                 'externally_connectable', 'oauth2', 'key', 'web_accessible_resources', 'content_security_policy']), 'Unexpected manifest capability')
         require(manifest.get('default_locale') == 'en', 'Unexpected default locale')
         require(manifest.get('description') == '__MSG_extensionDescription__', 'Description is not localized')
         require(manifest.get('background') == {'service_worker': 'background.js'}, 'Unexpected background worker')
         require(manifest.get('action', {}).get('default_popup') == 'popup.html', 'Unexpected popup')
+        require(manifest.get('options_ui') == {'page': 'options.html', 'open_in_tab': True}, 'Unexpected options page')
         expected_scripts = {
             'content-scripts/federated.js': (['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*'], False, 'ISOLATED'),
             'content-scripts/autofill.js': (['http://*/*', 'https://*/*'], False, 'ISOLATED'),

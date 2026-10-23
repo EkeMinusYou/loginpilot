@@ -8,7 +8,8 @@ A Chrome extension that submits login forms after Google Password Manager autofi
 - Start password, passkey, or external login automatically on future visits.
 - Choose a provider such as Google, Apple, Facebook, X / Twitter, Microsoft, or GitHub for each external-login site.
 - Keep passkey verification and account selection in Chrome or your operating system.
-- Use the popup and notifications in English or Japanese.
+- Use the popup and settings in English or Japanese.
+- Pause automatic login while keeping your registrations, and exclude sites from registration suggestions.
 
 Chrome Web Store release is in preparation. You can currently build and load the extension from source.
 

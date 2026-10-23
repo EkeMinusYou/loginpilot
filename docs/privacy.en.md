@@ -6,11 +6,13 @@ Login Pilot monitors forms on HTTP and HTTPS pages. Its content script runs on a
 
 | Key | Contents | When removed |
 | --- | --- | --- |
-| `registeredOrigins` | Origins allowed to use automatic login | When removed in the popup, or when the extension is uninstalled |
+| `registeredOrigins` | Origins allowed to use automatic login | When removed in settings, or when the extension is uninstalled |
 | `passkeyOrigins` | Registered origins whose passkey sign-in button may be activated automatically | When removed from registered sites or the extension is uninstalled |
 | `passkeyFrameOrigins` | The authentication frame origin approved for each parent site | When site registration is removed, replaced with another authentication origin or a top-level flow, or the extension is uninstalled |
 | `federatedProviders` | The external login provider approved for each registered origin | When site registration is removed or the extension is uninstalled |
-| `pendingSite` | The latest candidate origin, detection time, and method; password submission or passkey completion and frame-origin hints; or the external provider and whether its sign-in button was manually clicked | When that origin is registered, another candidate replaces it, or the extension is uninstalled |
+| `pendingSite` | The latest candidate origin, detection time, and method; password submission or passkey completion and frame-origin hints; or the external provider and whether its sign-in button was manually clicked | When that origin is registered or excluded, another candidate replaces it, or the extension is uninstalled |
+| `autoLoginPaused` | Whether automatic login is paused globally | When replaced with another preference or the extension is uninstalled |
+| `excludedOrigins` | Origins excluded from registration suggestions | When restored in settings or the extension is uninstalled |
 | `language` | Display language preference: automatic, Japanese, or English | When replaced with another preference, or when the extension is uninstalled |
 
 These values are stored in `chrome.storage.local`. They are not synchronized through Chrome Sync or sent to a developer-operated server. Browser and operating system backups follow their own settings. Login Pilot does not store complete forms, a list of browsing history, IDs, or passwords.

@@ -25,7 +25,7 @@ export default defineConfig({
     name: 'Login Pilot',
     description: '__MSG_extensionDescription__',
     default_locale: 'en',
-    permissions: ['activeTab', 'notifications', 'storage'],
+    permissions: ['activeTab', 'storage'],
     icons,
     action: {
       default_title: 'Login Pilot',

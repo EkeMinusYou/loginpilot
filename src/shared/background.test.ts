@@ -8,7 +8,6 @@ const mocks = vi.hoisted(() => ({
     storage: { local: { get: vi.fn(), set: vi.fn(), remove: vi.fn() } },
     tabs: { get: vi.fn(), sendMessage: vi.fn() },
     action: { setBadgeText: vi.fn(), setBadgeBackgroundColor: vi.fn() },
-    notifications: { create: vi.fn(), clear: vi.fn(), onClicked: { addListener: vi.fn() } },
   },
 }));
 vi.mock('wxt/browser', () => ({ browser: mocks.browser }));
@@ -42,6 +41,19 @@ beforeEach(() => {
 });
 
 describe('background message handling', () => {
+  it('loads settings registrations without a pending candidate and permits removal but not registration', async () => {
+    const settings = { id: 'test-extension', url: 'chrome-extension://test-extension/options.html', tab: { id: 2 }, frameId: 0 };
+    stored.pendingSite = { origin: 'https://pending.example', passwordUsed: true, detectedAt: Date.now() };
+    expect(await dispatch({ type: MESSAGE_TYPES.getSettingsState }, settings)).toMatchObject({
+      ok: true, registeredOrigins: [origin], currentOrigin: null, pendingSite: null,
+    });
+    expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin: 'https://other.example' }, settings))
+      .toEqual({ ok: false, error: 'operationNotAllowed' });
+    expect(await dispatch({ type: MESSAGE_TYPES.removeOrigin, origin, currentOrigin: null }, settings))
+      .toMatchObject({ ok: true, registeredOrigins: [], currentOrigin: null, pendingSite: null });
+    expect(stored.registeredOrigins).toEqual([]);
+    expect(stored.pendingSite).toMatchObject({ origin: 'https://pending.example' });
+  });
   it.each([
     { type: MESSAGE_TYPES.passkeyDetected, origin },
     { type: MESSAGE_TYPES.federatedDetected, origin, provider: 'google' },
@@ -49,7 +61,7 @@ describe('background message handling', () => {
     stored.registeredOrigins = [];
     expect(await dispatch(message, content)).toEqual({ ok: true, action: 'ignore' });
     expect(await dispatch({ type: MESSAGE_TYPES.getPopupState, currentOrigin: origin })).toMatchObject({ pendingSite: null });
-    expect(mocks.browser.notifications.create).not.toHaveBeenCalled();
+    expect(mocks.browser.action.setBadgeText).not.toHaveBeenCalled();
     expect(mocks.browser.storage.local.set).not.toHaveBeenCalled();
   });
 
@@ -69,14 +81,14 @@ describe('background message handling', () => {
     await dispatch({ type: MESSAGE_TYPES.autofillDetected, origin }, content);
     expect(stored.pendingSite).toMatchObject({ origin, passwordUsed: true });
     expect(stored.registeredOrigins).toEqual([]);
-    expect(mocks.browser.notifications.create).toHaveBeenCalledOnce();
+    expect(mocks.browser.action.setBadgeText).toHaveBeenCalledOnce();
     expect(mocks.browser.tabs.get).not.toHaveBeenCalled();
   });
 
   it('ignores manual password submission on registered sites', async () => {
     expect(await dispatch({ type: MESSAGE_TYPES.passwordUsed, origin }, content)).toEqual({ ok: true, action: 'ignore' });
     expect(stored.pendingSite).toBeUndefined();
-    expect(mocks.browser.notifications.create).not.toHaveBeenCalled();
+    expect(mocks.browser.action.setBadgeText).not.toHaveBeenCalled();
   });
   it('registers an external provider and denies password and passkey automation on that site', async () => {
     stored.registeredOrigins = [];
@@ -133,19 +145,6 @@ describe('background message handling', () => {
     stored.pendingSite = { origin, method: 'federated', detectedAt: 1, provider: 'unknown' };
     expect(await dispatch({ type: MESSAGE_TYPES.getPopupState, currentOrigin: origin })).toMatchObject({ pendingSite: null });
   });
-  it('uses the saved display language for site notifications', async () => {
-    stored.registeredOrigins = [];
-    stored.language = 'en';
-    await dispatch({ type: MESSAGE_TYPES.autofillDetected, origin }, content);
-    expect(mocks.browser.notifications.create).toHaveBeenCalledWith('auto-signin-site-detected', expect.objectContaining({
-      message: `Login autofill detected on ${origin}. Open Login Pilot to register this site.`,
-    }));
-    stored.language = 'auto';
-    await dispatch({ type: MESSAGE_TYPES.autofillDetected, origin }, content);
-    expect(mocks.browser.notifications.create).toHaveBeenLastCalledWith('auto-signin-site-detected', expect.objectContaining({
-      message: `${origin} でログイン情報の自動入力を検知しました。拡張機能を開いて登録できます。`,
-    }));
-  });
   it.each([MESSAGE_TYPES.registerOrigin, MESSAGE_TYPES.removeOrigin, MESSAGE_TYPES.getPopupState])(
     'rejects %s from content scripts without reading or changing storage', async (type) => {
       expect(await dispatch({ type, origin, currentOrigin: origin }, content)).toEqual({ ok: false, error: 'operationNotAllowed' });
@@ -190,7 +189,7 @@ describe('background message handling', () => {
     const state = await dispatch({ type: MESSAGE_TYPES.getPopupState, currentOrigin: origin });
     expect(state).toMatchObject({ registeredOrigins: [origin], passkeyOrigins: [] });
     expect(await dispatch({ type: MESSAGE_TYPES.passkeyDetected, origin }, content)).toEqual({ ok: true, action: 'ignore' });
-    expect(mocks.browser.notifications.create).not.toHaveBeenCalled();
+    expect(mocks.browser.action.setBadgeText).not.toHaveBeenCalled();
   });
 
   it('registers a passkey site and blocks password submission on it', async () => {
@@ -236,7 +235,7 @@ describe('background message handling', () => {
     });
     await dispatch({ type: MESSAGE_TYPES.passkeyDetected, origin }, content);
     expect(stored.pendingSite).toMatchObject({ passkeyUsed: true });
-    expect(mocks.browser.notifications.create).toHaveBeenCalledOnce();
+    expect(mocks.browser.action.setBadgeText).toHaveBeenCalledOnce();
   });
 
   it('ignores passkey usage on a registered password site without offering a switch', async () => {
@@ -246,7 +245,7 @@ describe('background message handling', () => {
     expect(stored.passkeyOrigins).toBeUndefined();
     expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin }, content)).toEqual({ ok: true, action: 'submit' });
     expect(stored.pendingSite).toBeUndefined();
-    expect(mocks.browser.notifications.create).not.toHaveBeenCalled();
+    expect(mocks.browser.action.setBadgeText).not.toHaveBeenCalled();
   });
 
   it('does not offer a passkey frame candidate for a registered password site', async () => {
@@ -256,7 +255,7 @@ describe('background message handling', () => {
     expect(await dispatch({ type: MESSAGE_TYPES.passkeyDetected, origin: auth }, frame)).toEqual({ ok: true, action: 'ignore' });
     expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin: auth }, frame)).toEqual({ ok: true, action: 'ignore' });
     expect(await dispatch({ type: MESSAGE_TYPES.getPopupState, currentOrigin: origin })).toMatchObject({ pendingSite: null });
-    expect(mocks.browser.notifications.create).not.toHaveBeenCalled();
+    expect(mocks.browser.action.setBadgeText).not.toHaveBeenCalled();
   });
 
   it('keeps the authenticating origin as the candidate when login immediately redirects the tab', async () => {
@@ -272,7 +271,7 @@ describe('background message handling', () => {
     stored.passkeyOrigins = [origin];
     expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin }, content)).toEqual({ ok: true, action: 'ignore' });
     expect(stored.pendingSite).toBeUndefined();
-    expect(mocks.browser.notifications.create).not.toHaveBeenCalled();
+    expect(mocks.browser.action.setBadgeText).not.toHaveBeenCalled();
     expect(mocks.browser.tabs.sendMessage).not.toHaveBeenCalled();
   });
 
@@ -412,9 +411,9 @@ it('gets the parent origin and frame visibility from the top-level script withou
   expect(await dispatch({ type: MESSAGE_TYPES.passkeyUsed, origin: auth }, { ...frame, documentId: 'different-document' })).toEqual({ ok: true, action: 'ignore' });
 });
 
-it('does not let notification failures turn a completed registration into a failure', async () => {
+it('does not let badge failures turn a completed registration into a failure', async () => {
   stored.pendingSite = { origin, detectedAt: 1 };
-  mocks.browser.notifications.clear.mockRejectedValueOnce(new Error('Notification unavailable'));
+  mocks.browser.action.setBadgeText.mockRejectedValueOnce(new Error('Badge unavailable'));
   expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: 'password' })).toMatchObject({ ok: true, registeredOrigins: [origin], pendingSite: null });
   expect(stored.registeredOrigins).toContain(origin);
   expect(stored.pendingSite).toBeUndefined();
@@ -443,4 +442,80 @@ it('returns saved registration state and allows removal while Chrome credential 
   setup.resolve({ ok: true, filled: false });
   expect(await registration).toMatchObject({ ok: true, registeredOrigins: [origin] });
   expect(stored.registeredOrigins).toEqual([]);
+});
+
+describe('automatic login preferences', () => {
+  const settings = { id: 'test-extension', url: 'chrome-extension://test-extension/options.html', tab: { id: 2 }, frameId: 0 };
+
+  it.each(['password', 'passkey', 'federated'] as const)('pauses and resumes %s without changing registrations', async (method) => {
+    stored.passkeyOrigins = method === 'passkey' ? [origin] : [];
+    stored.federatedProviders = method === 'federated' ? { [origin]: 'google' } : {};
+    const registration = { registeredOrigins: stored.registeredOrigins, passkeyOrigins: stored.passkeyOrigins, federatedProviders: stored.federatedProviders };
+    stored.pendingSite = { origin: 'https://pending.example', detectedAt: 1, passwordUsed: true };
+    const type = method === 'passkey' ? MESSAGE_TYPES.getPasskeyPolicy : method === 'federated' ? MESSAGE_TYPES.getFederatedPolicy : MESSAGE_TYPES.getLoginPolicy;
+    expect(await dispatch({ type: MESSAGE_TYPES.setAutoLoginPaused, paused: true }, settings))
+      .toMatchObject({ ok: true, autoLoginPaused: true, ...registration, pendingSite: null, currentOrigin: null });
+    expect(await dispatch({ type, origin }, content)).toEqual({ ok: true, action: 'ignore' });
+    if (method === 'password') expect(await dispatch({ type: MESSAGE_TYPES.autofillDetected, origin }, content)).toEqual({ ok: true, action: 'ignore' });
+    expect(stored).toMatchObject(registration);
+    expect(await dispatch({ type: MESSAGE_TYPES.setAutoLoginPaused, paused: false }, settings)).toMatchObject({ autoLoginPaused: false });
+    expect(await dispatch({ type, origin }, content)).toMatchObject({ ok: true, action: 'submit' });
+  });
+
+  it('saves registration while paused without starting authentication', async () => {
+    stored.registeredOrigins = [];
+    stored.autoLoginPaused = true;
+    expect(await dispatch({ type: MESSAGE_TYPES.registerOrigin, origin, method: 'password', tabId: 1 }))
+      .toMatchObject({ ok: true, autoLoginPaused: true, registeredOrigins: [origin] });
+    await vi.waitFor(() => expect(mocks.browser.tabs.sendMessage).not.toHaveBeenCalled());
+  });
+
+  it.each([
+    { type: MESSAGE_TYPES.setAutoLoginPaused, paused: true },
+    { type: MESSAGE_TYPES.excludeOrigin, origin },
+    { type: MESSAGE_TYPES.restoreOrigin, origin },
+  ])('rejects preference changes from content scripts (%j)', async (message) => {
+    expect(await dispatch(message, content)).toEqual({ ok: false, error: 'operationNotAllowed' });
+    expect(mocks.browser.storage.local.get).not.toHaveBeenCalled();
+    expect(mocks.browser.storage.local.set).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { type: MESSAGE_TYPES.autofillDetected, origin },
+    { type: MESSAGE_TYPES.passwordUsed, origin },
+    { type: MESSAGE_TYPES.passkeyUsed, origin },
+    { type: MESSAGE_TYPES.federatedUsed, origin, provider: 'google' },
+  ])('suppresses excluded candidates and restores future suggestions (%j)', async (message) => {
+    stored.registeredOrigins = [];
+    expect(await dispatch(message, content)).toEqual({ ok: true, action: 'pending' });
+    expect(mocks.browser.action.setBadgeText).toHaveBeenLastCalledWith({ text: '1' });
+    expect(await dispatch({ type: MESSAGE_TYPES.excludeOrigin, origin, currentOrigin: origin }))
+      .toMatchObject({ ok: true, excludedOrigins: [origin], pendingSite: null });
+    expect(mocks.browser.action.setBadgeText).toHaveBeenLastCalledWith({ text: '' });
+    expect(stored.pendingSite).toBeUndefined();
+    expect(await dispatch(message, content)).toEqual({ ok: true, action: 'ignore' });
+    expect(stored.pendingSite).toBeUndefined();
+    await dispatch({ type: MESSAGE_TYPES.restoreOrigin, origin }, settings);
+    expect(stored.excludedOrigins).toEqual([]);
+    expect(await dispatch(message, content)).toEqual({ ok: true, action: 'pending' });
+  });
+
+  it('keeps an unrelated candidate and registered automation when an origin is excluded', async () => {
+    const other = 'https://other.example';
+    stored.pendingSite = { origin: other, passwordUsed: true, detectedAt: 1 };
+    expect(await dispatch({ type: MESSAGE_TYPES.excludeOrigin, origin }))
+      .toMatchObject({ pendingSite: { origin: other }, registeredOrigins: [origin] });
+    expect(await dispatch({ type: MESSAGE_TYPES.getLoginPolicy, origin }, content)).toEqual({ ok: true, action: 'submit' });
+    stored.registeredOrigins = [];
+    expect(await dispatch({ type: MESSAGE_TYPES.passwordUsed, origin: 'https://sub.example.com' }, { ...content, url: 'https://sub.example.com/login' }))
+      .toEqual({ ok: true, action: 'pending' });
+  });
+
+  it('normalizes malformed saved preferences and hides an excluded legacy candidate', async () => {
+    stored.autoLoginPaused = 'true';
+    stored.excludedOrigins = [origin, origin, `${origin}/login`, 'javascript:alert(1)', 42];
+    stored.pendingSite = { origin, passwordUsed: true, detectedAt: 1 };
+    expect(await dispatch({ type: MESSAGE_TYPES.getPopupState, currentOrigin: origin }))
+      .toMatchObject({ autoLoginPaused: false, excludedOrigins: [origin], pendingSite: null });
+  });
 });

@@ -20,9 +20,10 @@ class PackageVerification(unittest.TestCase):
         self.root.joinpath('THIRD_PARTY_LICENSES.txt').write_bytes(b'notices')
         manifest = {
             'manifest_version': 3, 'name': 'Login Pilot', 'version': '0.1.0',
-            'permissions': ['activeTab', 'notifications', 'storage'], 'default_locale': 'en',
+            'permissions': ['activeTab', 'storage'], 'default_locale': 'en',
             'description': '__MSG_extensionDescription__', 'background': {'service_worker': 'background.js'},
             'action': {'default_popup': 'popup.html'},
+            'options_ui': {'page': 'options.html', 'open_in_tab': True},
             'content_scripts': [
                 {'js': ['content-scripts/federated.js'], 'matches': ['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*'], 'run_at': 'document_start'},
                 {'js': ['content-scripts/autofill.js'], 'matches': ['http://*/*', 'https://*/*'], 'run_at': 'document_start'},
@@ -49,6 +50,15 @@ class PackageVerification(unittest.TestCase):
 
     def test_accepts_complete_package(self):
         self.check()
+
+    def test_follows_options_page_dependencies(self):
+        self.files['options.html'] = b'<script src="/chunks/options-test.js"></script>'
+        self.files['chunks/options-test.js'] = b'import "./options-shared.js";'
+        self.files['chunks/options-shared.js'] = b'code'
+        self.check()
+        del self.files['chunks/options-shared.js']
+        with self.assertRaisesRegex(ValueError, 'Missing referenced asset'):
+            self.check()
 
     def test_accepts_renamed_split_assets_and_relative_dependencies(self):
         del self.files['chunks/popup-test.js']
@@ -100,7 +110,7 @@ class PackageVerification(unittest.TestCase):
 
     def test_rejects_added_permission_or_incorrect_version(self):
         original = self.files['manifest.json']
-        for change in [{'permissions': ['activeTab', 'notifications', 'storage', 'debugger']}, {'version': '9.9.9'},
+        for change in [{'permissions': ['activeTab', 'storage', 'notifications']}, {'permissions': ['activeTab', 'storage', 'debugger']}, {'version': '9.9.9'},
                        {'host_permissions': ['<all_urls>']}]:
             with self.subTest(change=change):
                 manifest = json.loads(original)

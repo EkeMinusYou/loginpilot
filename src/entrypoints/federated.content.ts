@@ -35,7 +35,7 @@ export default defineContentScript({
       }
     };
     const onStorageChanged = (changes: Record<string, unknown>, area: string): void => {
-      if (area !== 'local' || !['registeredOrigins', 'passkeyOrigins', 'federatedProviders'].some((key) => key in changes)) return;
+      if (area !== 'local' || !['autoLoginPaused', 'excludedOrigins', 'registeredOrigins', 'passkeyOrigins', 'federatedProviders'].some((key) => key in changes)) return;
       login.invalidatePolicy();
       evaluate();
     };

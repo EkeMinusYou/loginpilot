@@ -5,9 +5,9 @@ import { en, ja } from './i18n';
 const mocks = vi.hoisted(() => ({
   browser: {
     i18n: { getUILanguage: vi.fn() },
-    storage: { local: { get: vi.fn(), set: vi.fn() } },
+    storage: { local: { get: vi.fn(), set: vi.fn() }, onChanged: { addListener: vi.fn() } },
     tabs: { query: vi.fn() },
-    runtime: { sendMessage: vi.fn() },
+    runtime: { sendMessage: vi.fn(), openOptionsPage: vi.fn() },
   },
 }));
 vi.mock('wxt/browser', () => ({ browser: mocks.browser }));
@@ -28,13 +28,16 @@ beforeEach(() => {
   mocks.browser.i18n.getUILanguage.mockReturnValue('en-US');
   mocks.browser.storage.local.get.mockImplementation(async () => ({ language: preference }));
   mocks.browser.storage.local.set.mockImplementation(async (values: { language: string }) => { preference = values.language; });
+  mocks.browser.runtime.openOptionsPage.mockResolvedValue(undefined);
   mocks.browser.tabs.query.mockResolvedValue([{ id: 1, url: 'https://example.com/login' }]);
   mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, currentOrigin: 'https://example.com', passkeyFrameOrigins: {}, registeredOrigins: [], passkeyOrigins: [], pendingSite: null });
 });
 afterEach(() => vi.unstubAllGlobals());
 
-async function openPopup(): Promise<void> {
-  await import('../entrypoints/popup/main');
+async function openPopup(settings = false): Promise<void> {
+  document.querySelector<HTMLElement>('#app')!.dataset.page = settings ? 'options' : 'popup';
+  if (settings) await import('../entrypoints/options/main');
+  else await import('../entrypoints/popup/main');
   await vi.waitFor(() => expect(document.querySelector('[aria-busy]')?.getAttribute('aria-busy')).toBe('false'));
 }
 
@@ -46,12 +49,38 @@ function selectLanguage(value: string): void {
   select.dispatchEvent(new event('change'));
 }
 
-describe('popup language controls', () => {
+describe('extension popup and settings', () => {
+  it('keeps management controls in settings and opens them from the compact popup', async () => {
+    await openPopup();
+    expect(document.querySelector('#registered-title')).toBeNull();
+    expect(document.querySelector('#language')).toBeNull();
+    expect(document.querySelector('[data-focus-key="support"]')).toBeNull();
+    document.querySelector<HTMLButtonElement>('[data-focus-key="open-settings"]')!.click();
+    expect(mocks.browser.runtime.openOptionsPage).toHaveBeenCalledOnce();
+  });
+
+  it('reports a failure to open settings in the popup', async () => {
+    mocks.browser.runtime.openOptionsPage.mockRejectedValueOnce(new Error('Unavailable'));
+    await openPopup();
+    document.querySelector<HTMLButtonElement>('[data-focus-key="open-settings"]')!.click();
+    await vi.waitFor(() => expect(document.querySelector('[role="alert"]')!.textContent).toContain(en.settingsOpenFailed));
+  });
+
+  it('loads settings without querying the active browser tab and refreshes registrations after changes', async () => {
+    await openPopup(true);
+    expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'get-settings-state' });
+    expect(mocks.browser.tabs.query).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-focus-key="register"]')).toBeNull();
+    expect(document.querySelector('[data-focus-key="support"]')?.getAttribute('href')).toBe('https://buymeacoffee.com/euonymuslke');
+    mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, currentOrigin: null, registeredOrigins: ['https://new.example'], passkeyOrigins: [], passkeyFrameOrigins: {}, pendingSite: null });
+    mocks.browser.storage.onChanged.addListener.mock.calls[0]![0]({ registeredOrigins: { newValue: ['https://new.example'] } }, 'local');
+    await vi.waitFor(() => expect(document.querySelector('#registered-site-list')?.textContent).toContain('https://new.example'));
+  });
   it('filters registered origins without replacing the search input or writing settings', async () => {
     mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, currentOrigin: 'https://example.com',
       registeredOrigins: ['https://alpha.example.com', 'https://beta.example.com', 'https://other.test'],
       passkeyOrigins: [], passkeyFrameOrigins: {}, pendingSite: null });
-    await openPopup();
+    await openPopup(true);
     const search = document.querySelector<HTMLInputElement>('[data-focus-key="site-search"]')!;
     const list = document.querySelector<HTMLUListElement>('#registered-site-list')!;
     search.value = '  EXAMPLE.COM  ';
@@ -80,7 +109,7 @@ describe('popup language controls', () => {
       if (message.type === 'remove-origin') registeredOrigins = registeredOrigins.filter((origin) => origin !== message.origin);
       return { ok: true, currentOrigin: 'https://example.com', registeredOrigins, passkeyOrigins: [], passkeyFrameOrigins: {}, pendingSite: null };
     });
-    await openPopup();
+    await openPopup(true);
     const search = document.querySelector<HTMLInputElement>('[data-focus-key="site-search"]')!;
     search.value = 'alpha';
     search.dispatchEvent(new event('input'));
@@ -96,18 +125,18 @@ describe('popup language controls', () => {
     expect(document.querySelector('[data-focus-key="remove:https://beta.example.com"]')).toBeNull();
   });
 
-  it('shows guidance without registration actions when no login activity has been detected', async () => {
+  it.each(['en-US', 'ja'])('shows guidance without registration actions when no login activity has been detected (%s)', async (language) => {
+    mocks.browser.i18n.getUILanguage.mockReturnValue(language);
+    const messages = language === 'ja' ? ja : en;
     await openPopup();
-    expect(document.body.textContent).toContain(en.loginActivityHint);
-    expect(document.body.textContent).not.toContain(en.currentSite);
+    expect(document.body.textContent).toContain(messages.loginActivityHint);
+    expect(document.body.textContent).not.toContain(messages.currentSite);
     expect(document.body.textContent).not.toContain('https://example.com');
     expect(document.querySelector('[data-focus-key="register"]')).toBeNull();
     expect(document.querySelector('[data-focus-key="register-current-site"]')).toBeNull();
     expect(document.querySelector('[role="radiogroup"]')).toBeNull();
     expect(document.querySelector('[data-focus-key="site-search"]')).toBeNull();
-    selectLanguage('ja');
-    await vi.waitFor(() => expect(document.body.textContent).toContain(ja.loginActivityHint));
-    expect(document.body.textContent).not.toContain(ja.currentSite);
+    expect(document.querySelector('#language')).toBeNull();
     expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledTimes(1);
   });
 
@@ -141,12 +170,12 @@ describe('popup language controls', () => {
     await vi.waitFor(() => expect(document.body.textContent).toContain(en.registeredNext));
   });
   it('uses the browser language and persists a manual override without changing registered sites', async () => {
-    await openPopup();
+    await openPopup(true);
     expect(document.documentElement.lang).toBe('en');
-    expect(document.body.textContent).toContain(en.loginActivityHint);
+    expect(document.body.textContent).toContain(en.settingsDescription);
     selectLanguage('ja');
     await vi.waitFor(() => expect(document.documentElement.lang).toBe('ja'));
-    expect(document.body.textContent).toContain(ja.loginActivityHint);
+    expect(document.body.textContent).toContain(ja.settingsDescription);
     expect(mocks.browser.storage.local.set).toHaveBeenCalledWith({ language: 'ja' });
     expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledTimes(1);
     selectLanguage('auto');
@@ -158,7 +187,7 @@ describe('popup language controls', () => {
     preference = 'en';
     mocks.browser.i18n.getUILanguage.mockReturnValue('ja');
     mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: false, error: 'operationNotAllowed' });
-    await openPopup();
+    await openPopup(true);
     expect(document.documentElement.lang).toBe('en');
     expect(document.querySelector('[role="alert"]')!.textContent).toContain(en.operationNotAllowed);
     selectLanguage('ja');
@@ -176,29 +205,27 @@ describe('popup language controls', () => {
     });
     document.querySelector<HTMLButtonElement>('[data-focus-key="register"]')!.click();
     await vi.waitFor(() => expect(document.body.textContent).toContain(en.registeredCurrent));
-    expect(document.querySelector('[data-focus-key="remove:https://another.example"]')).not.toBeNull();
-    expect(document.body.textContent).toContain('Login method: Password');
+    expect(document.querySelector('[data-focus-key="remove:https://another.example"]')).toBeNull();
+    expect(document.querySelector('[aria-label="Login method: Password"]')).not.toBeNull();
     expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledTimes(2);
-    selectLanguage('ja');
-    await vi.waitFor(() => expect(document.body.textContent).toContain(ja.registeredCurrent));
-    expect(document.body.textContent).not.toContain(en.registeredCurrent);
+    expect(document.querySelector('#language')).toBeNull();
   });
 
   it('keeps registered state after a failed removal and translates the error code', async () => {
     mocks.browser.runtime.sendMessage.mockResolvedValueOnce({ ok: true, currentOrigin: 'https://example.com',
       registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'],
       passkeyFrameOrigins: {}, pendingSite: null });
-    await openPopup();
+    await openPopup(true);
     mocks.browser.runtime.sendMessage.mockResolvedValueOnce({ ok: false, error: 'processingFailed' });
     document.querySelector<HTMLButtonElement>('[data-focus-key="remove:https://example.com"]')!.click();
     await vi.waitFor(() => expect(document.querySelector('[role="alert"]')!.textContent).toContain(en.processingFailed));
-    expect(document.body.textContent).toContain('Login method: Passkey');
-    expect(document.body.textContent).toContain(en.currentSite);
+    expect(document.body.textContent).toContain(en.passkeyMethod);
+    expect(document.body.textContent).not.toContain(en.currentSite);
     expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledTimes(2);
   });
 
   it('keeps the current language and shows an error when saving fails', async () => {
-    await openPopup();
+    await openPopup(true);
     mocks.browser.storage.local.set.mockRejectedValueOnce(new Error('Storage unavailable'));
     selectLanguage('ja');
     await vi.waitFor(() => expect(document.querySelector('[role="alert"]')!.textContent).toContain(en.languageSaveFailed));
@@ -224,13 +251,10 @@ describe('popup language controls', () => {
     await openPopup();
     expect(document.querySelector('[data-focus-key="setup"]')).toBeNull();
     expect(document.body.textContent).not.toContain('Start auto login');
-    expect(document.body.textContent).toContain('Login method: Passkey');
+    expect(document.body.textContent).toContain(en.passkeyMethod);
     expect(document.querySelector('[role="radiogroup"]')).toBeNull();
-    selectLanguage('ja');
-    await vi.waitFor(() => expect(document.documentElement.lang).toBe('ja'));
-    expect(document.body.textContent).not.toContain('自動ログインを開始');
-    expect(document.body.textContent).toContain('ログイン方式: パスキー');
-    expect(document.querySelector('[role="radiogroup"]')).toBeNull();
+    expect(document.querySelector('#language')).toBeNull();
+    expect(document.querySelector('#registered-site-list')).toBeNull();
     expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledTimes(1);
   });
 
@@ -253,7 +277,7 @@ describe('popup language controls', () => {
         origin: 'https://example.com', detectedAt: 1, method: 'passkey', passkeyUsed: true, authenticationOrigin,
       } } : { ok: true, currentOrigin: 'https://example.com', registeredOrigins: ['https://example.com'], passkeyOrigins: ['https://example.com'], passkeyFrameOrigins: {}, pendingSite: null });
     await openPopup();
-    expect(document.body.textContent).toContain('Login method: Password');
+    expect(document.querySelector('[aria-label="Login method: Password"]')).not.toBeNull();
     expect(document.querySelector('[data-focus-key="register"]')).toBeNull();
     expect(document.querySelector('[role="radiogroup"]')).toBeNull();
     expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledTimes(1);
@@ -278,4 +302,65 @@ describe('popup language controls', () => {
     document.querySelector<HTMLButtonElement>('[data-focus-key="register"]')!.click();
     await vi.waitFor(() => expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'register-origin', currentOrigin: 'https://example.com', origin: 'https://example.com', method: 'passkey', authenticationOrigin }));
   });
+});
+
+it.each(['ja', 'en'] as const)('saves the pause setting in %s while keeping registrations', async (language) => {
+  preference = language;
+  const state = { ok: true, currentOrigin: null, registeredOrigins: ['https://example.com'], passkeyOrigins: [], passkeyFrameOrigins: {}, pendingSite: null, autoLoginPaused: false };
+  mocks.browser.runtime.sendMessage.mockResolvedValue(state);
+  await openPopup(true);
+  const toggle = document.querySelector<HTMLInputElement>('#pause-auto-login')!;
+  expect(toggle.checked).toBe(false);
+  mocks.browser.runtime.sendMessage.mockResolvedValue({ ...state, autoLoginPaused: true });
+  toggle.checked = true;
+  toggle.dispatchEvent(new event('change'));
+  await vi.waitFor(() => expect(document.querySelector('[role="status"]')?.textContent).toBe((language === 'ja' ? ja : en).pausedSaved));
+  expect(mocks.browser.runtime.sendMessage).toHaveBeenLastCalledWith({ type: 'set-auto-login-paused', paused: true, currentOrigin: null });
+  expect(document.querySelector<HTMLInputElement>('#pause-auto-login')!.checked).toBe(true);
+  expect(document.querySelector('#registered-site-list')?.textContent).toContain('https://example.com');
+});
+
+it('excludes the detected origin even after navigating to another site', async () => {
+  const candidate = 'https://detected.example';
+  const state = { ok: true, currentOrigin: 'https://example.com', registeredOrigins: [], passkeyOrigins: [], passkeyFrameOrigins: {}, pendingSite: { origin: candidate, passwordUsed: true, detectedAt: 1 } };
+  mocks.browser.runtime.sendMessage.mockResolvedValue(state);
+  await openPopup();
+  mocks.browser.runtime.sendMessage.mockResolvedValue({ ...state, excludedOrigins: [candidate], pendingSite: null });
+  document.querySelector<HTMLButtonElement>('[data-focus-key="exclude-candidate"]')!.click();
+  await vi.waitFor(() => expect(document.querySelector('[data-focus-key="register"]')).toBeNull());
+  expect(mocks.browser.runtime.sendMessage).toHaveBeenLastCalledWith({ type: 'exclude-origin', origin: candidate, currentOrigin: 'https://example.com' });
+  expect(document.querySelector('[role="status"]')!.textContent).toBe(en.excludedSaved);
+});
+
+it('restores an excluded origin in settings without changing registered sites', async () => {
+  const state = { ok: true, currentOrigin: null, registeredOrigins: ['https://example.com'], passkeyOrigins: [], passkeyFrameOrigins: {}, pendingSite: null, excludedOrigins: ['https://excluded.example'] };
+  mocks.browser.runtime.sendMessage.mockResolvedValue(state);
+  await openPopup(true);
+  mocks.browser.runtime.sendMessage.mockResolvedValue({ ...state, excludedOrigins: [] });
+  document.querySelector<HTMLButtonElement>('[data-focus-key="restore:https://excluded.example"]')!.click();
+  await vi.waitFor(() => expect(document.querySelector('[data-focus-key="restore:https://excluded.example"]')).toBeNull());
+  expect(mocks.browser.runtime.sendMessage).toHaveBeenLastCalledWith({ type: 'restore-origin', origin: 'https://excluded.example' });
+  expect(document.querySelector('#registered-site-list')!.textContent).toContain('https://example.com');
+});
+
+it('shows a paused status and resumes from the popup', async () => {
+  const state = { ok: true, currentOrigin: 'https://example.com', registeredOrigins: ['https://example.com'], passkeyOrigins: [], passkeyFrameOrigins: {}, pendingSite: null, autoLoginPaused: true };
+  mocks.browser.runtime.sendMessage.mockResolvedValue(state);
+  await openPopup();
+  expect(document.body.textContent).toContain(en.pausedStatus);
+  expect(document.body.textContent).not.toContain(en.enabled);
+  mocks.browser.runtime.sendMessage.mockResolvedValue({ ...state, autoLoginPaused: false });
+  document.querySelector<HTMLButtonElement>('[data-focus-key="resume-auto-login"]')!.click();
+  await vi.waitFor(() => expect(document.body.textContent).toContain(en.enabled));
+  expect(mocks.browser.runtime.sendMessage).toHaveBeenLastCalledWith({ type: 'set-auto-login-paused', paused: false, currentOrigin: 'https://example.com' });
+});
+
+it('reports a pause persistence failure and returns the control to its saved state', async () => {
+  await openPopup(true);
+  mocks.browser.runtime.sendMessage.mockRejectedValueOnce(new Error('Storage unavailable'));
+  const toggle = document.querySelector<HTMLInputElement>('#pause-auto-login')!;
+  toggle.checked = true;
+  toggle.dispatchEvent(new event('change'));
+  await vi.waitFor(() => expect(document.querySelector('[role="alert"]')!.textContent).toBe(en.preferencesSaveFailed));
+  expect(document.querySelector<HTMLInputElement>('#pause-auto-login')!.checked).toBe(false);
 });

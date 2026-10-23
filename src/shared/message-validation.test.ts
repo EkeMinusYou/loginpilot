@@ -5,16 +5,19 @@ import { isAuthorizedRuntimeMessage, isContentMessage, isRuntimeMessage } from '
 
 const extensionId = 'test-extension';
 const popupUrl = `chrome-extension://${extensionId}/popup.html`;
+const optionsUrl = `chrome-extension://${extensionId}/options.html`;
+const options = { id: extensionId, url: optionsUrl, tab: { id: 2 }, frameId: 0 };
 const popup = { id: extensionId, url: popupUrl };
 const content = { id: extensionId, url: 'https://example.com/login', tab: { id: 1 }, frameId: 0 };
 const origin = 'https://example.com';
 
 function authorized(message: RuntimeMessage, sender: object): boolean {
-  return isAuthorizedRuntimeMessage(message, sender as Browser.runtime.MessageSender, extensionId, popupUrl);
+  return isAuthorizedRuntimeMessage(message, sender as Browser.runtime.MessageSender, extensionId, popupUrl, optionsUrl);
 }
 
 describe('runtime message validation', () => {
   it.each([
+    { type: MESSAGE_TYPES.getSettingsState },
     { type: MESSAGE_TYPES.autofillDetected, origin },
     { type: MESSAGE_TYPES.passwordUsed, origin },
     { type: MESSAGE_TYPES.passkeyDetected, origin },
@@ -34,6 +37,19 @@ describe('runtime message validation', () => {
     { type: MESSAGE_TYPES.removeOrigin, origin, currentOrigin: null },
   ])('accepts a supported message (%j)', (message) => {
     expect(isRuntimeMessage(message)).toBe(true);
+  });
+
+  it('allows only reading registrations and removal from the active top-level settings page', () => {
+    for (const message of [{ type: MESSAGE_TYPES.getSettingsState }, { type: MESSAGE_TYPES.removeOrigin, origin }] as RuntimeMessage[]) {
+      expect(authorized(message, options)).toBe(true);
+      for (const sender of [content, { ...options, id: 'other-extension' }, { ...options, frameId: 1 },
+        { ...options, documentLifecycle: 'prerender' }, { ...options, url: `${optionsUrl}?forged` }]) {
+        expect(authorized(message, sender)).toBe(false);
+      }
+    }
+    expect(authorized({ type: MESSAGE_TYPES.registerOrigin, origin }, options)).toBe(false);
+    expect(authorized({ type: MESSAGE_TYPES.getPopupState, currentOrigin: origin }, options)).toBe(false);
+    expect(authorized({ type: MESSAGE_TYPES.getSettingsState }, popup)).toBe(false);
   });
 
   it.each([
@@ -120,5 +136,34 @@ describe('content message validation', () => {
     expect(isContentMessage({ type: MESSAGE_TYPES.registerOrigin, origin })).toBe(false);
     expect(isContentMessage({ type: MESSAGE_TYPES.siteRegistered, origin: null })).toBe(false);
     expect(isContentMessage({ type: MESSAGE_TYPES.siteRegistered, origin: `${origin}/login` })).toBe(false);
+  });
+});
+
+describe('preference message authorization', () => {
+  it.each([
+    { type: MESSAGE_TYPES.setAutoLoginPaused, paused: 'true' },
+    { type: MESSAGE_TYPES.setAutoLoginPaused },
+    { type: MESSAGE_TYPES.setAutoLoginPaused, paused: true, currentOrigin: `${origin}/login` },
+    { type: MESSAGE_TYPES.excludeOrigin, origin: `${origin}/login` },
+    { type: MESSAGE_TYPES.restoreOrigin, origin: 'chrome://settings' },
+  ])('rejects malformed preferences (%j)', (message) => expect(isRuntimeMessage(message)).toBe(false));
+
+  it('restricts pause and restoration to trusted extension controls', () => {
+    const pause: RuntimeMessage = { type: MESSAGE_TYPES.setAutoLoginPaused, paused: true };
+    const exclude: RuntimeMessage = { type: MESSAGE_TYPES.excludeOrigin, origin };
+    const restore: RuntimeMessage = { type: MESSAGE_TYPES.restoreOrigin, origin };
+    expect(authorized(pause, popup)).toBe(true);
+    expect(authorized(pause, options)).toBe(true);
+    expect(authorized(exclude, popup)).toBe(true);
+    expect(authorized(exclude, options)).toBe(false);
+    expect(authorized(restore, options)).toBe(true);
+    expect(authorized(restore, popup)).toBe(false);
+    for (const message of [pause, exclude, restore]) {
+      expect(isRuntimeMessage(message)).toBe(true);
+      for (const sender of [content, { ...options, id: 'other' }, { ...options, frameId: 1 },
+        { ...options, documentLifecycle: 'prerender' }, { ...popup, tab: { id: 1 } }]) {
+        expect(authorized(message, sender)).toBe(false);
+      }
+    }
   });
 });

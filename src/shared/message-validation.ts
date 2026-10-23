@@ -13,12 +13,13 @@ function isTabId(value: unknown): value is number {
 
 export function isRuntimeMessage(value: unknown): value is RuntimeMessage {
   if (!value || typeof value !== 'object' || !('type' in value)) return false;
+  if (value.type === MESSAGE_TYPES.getSettingsState) return true;
+  if ('currentOrigin' in value && value.currentOrigin !== undefined && value.currentOrigin !== null && !isOrigin(value.currentOrigin)) return false;
+  if (value.type === MESSAGE_TYPES.setAutoLoginPaused) return 'paused' in value && typeof value.paused === 'boolean';
   if (value.type === MESSAGE_TYPES.getPopupState) {
     return 'currentOrigin' in value && (value.currentOrigin === null || isOrigin(value.currentOrigin));
   }
   if (!('origin' in value) || !isOrigin(value.origin)) return false;
-  if ((value.type === MESSAGE_TYPES.registerOrigin || value.type === MESSAGE_TYPES.removeOrigin) &&
-    'currentOrigin' in value && value.currentOrigin !== undefined && value.currentOrigin !== null && !isOrigin(value.currentOrigin)) return false;
   switch (value.type) {
     case MESSAGE_TYPES.autofillDetected:
     case MESSAGE_TYPES.passkeyDetected:
@@ -27,6 +28,8 @@ export function isRuntimeMessage(value: unknown): value is RuntimeMessage {
     case MESSAGE_TYPES.getLoginPolicy:
     case MESSAGE_TYPES.passwordUsed:
     case MESSAGE_TYPES.getFederatedPolicy:
+    case MESSAGE_TYPES.excludeOrigin:
+    case MESSAGE_TYPES.restoreOrigin:
     case MESSAGE_TYPES.removeOrigin:
       return true;
     case MESSAGE_TYPES.federatedDetected:
@@ -50,8 +53,16 @@ export function isAuthorizedRuntimeMessage(
   sender: Browser.runtime.MessageSender,
   extensionId: string,
   popupUrl: string,
+  optionsUrl?: string,
 ): boolean {
   if (sender.id !== extensionId) return false;
+  if (optionsUrl && sender.url === optionsUrl) {
+    return (sender.frameId === undefined || sender.frameId === 0) &&
+      (sender.documentLifecycle === undefined || sender.documentLifecycle === 'active') &&
+      (message.type === MESSAGE_TYPES.getSettingsState || message.type === MESSAGE_TYPES.removeOrigin ||
+        message.type === MESSAGE_TYPES.setAutoLoginPaused || message.type === MESSAGE_TYPES.restoreOrigin);
+  }
+  if (message.type === MESSAGE_TYPES.getSettingsState || message.type === MESSAGE_TYPES.restoreOrigin) return false;
   if (message.type === MESSAGE_TYPES.passkeyDetected || message.type === MESSAGE_TYPES.passkeyUsed || message.type === MESSAGE_TYPES.getPasskeyPolicy) {
     return isTabId(sender.tab?.id) && isTabId(sender.frameId) &&
       (sender.documentLifecycle === undefined || sender.documentLifecycle === 'active') &&

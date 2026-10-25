@@ -33,12 +33,12 @@
     "@resvg/resvg-js": "2.6.2",
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "24.19.2",
-    "linkedom": "0.18.13",
+    "linkedom": "0.18.14",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
-    "vite": "8.3.4",
+    "vite": "8.3.5",
     "vitest": "5.0.5",
-    "wrangler": "4.151.2",
+    "wrangler": "4.152.0",
     "wxt": "0.21.4"
   },
   "overrides": {

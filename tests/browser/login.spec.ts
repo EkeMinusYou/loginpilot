@@ -1,5 +1,6 @@
 import { test as base, expect, chromium, type BrowserContext, type Worker } from '@playwright/test';
-import { resolve } from 'node:path';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 type ExtensionBrowser = typeof import('wxt/browser').browser;
 declare const chrome: ExtensionBrowser;
 
@@ -74,7 +75,7 @@ test('opens settings from the compact popup and manages sites and language', asy
   await popup.goto(`chrome-extension://${extension.id}/popup.html`);
   await expect(popup.getByText('自動ログイン有効')).toBeVisible();
   await expect(popup.locator('#registered-site-list, #language')).toHaveCount(0);
-  await popup.locator('.popup-shell').screenshot({ path: '/private/tmp/loginpilot-popup-registered.png' });
+  await popup.locator('.popup-shell').screenshot({ path: join(tmpdir(), 'loginpilot-popup-registered.png') });
   const [settings] = await Promise.all([
     extension.context.waitForEvent('page'),
     popup.getByRole('button', { name: 'サイト管理・設定' }).click(),
@@ -83,7 +84,7 @@ test('opens settings from the compact popup and manages sites and language', asy
   await expect(settings).toHaveURL(`chrome-extension://${extension.id}/options.html`);
   await expect(settings.locator('#registered-site-list li')).toHaveCount(3);
   await expect(settings.getByRole('button', { name: '登録して自動ログイン' })).toHaveCount(0);
-  await settings.screenshot({ path: '/private/tmp/loginpilot-settings.png' });
+  await settings.screenshot({ path: join(tmpdir(), 'loginpilot-settings.png') });
   const search = settings.getByRole('searchbox');
   await search.fill('NOTION');
   await expect(settings.locator('#registered-site-list li')).toHaveCount(1);
@@ -98,7 +99,7 @@ test('opens settings from the compact popup and manages sites and language', asy
   await settings.getByRole('searchbox').fill('');
   await settings.setViewportSize({ width: 360, height: 800 });
   expect(await settings.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-  await settings.screenshot({ path: '/private/tmp/loginpilot-settings-mobile.png' });
+  await settings.screenshot({ path: join(tmpdir(), 'loginpilot-settings-mobile.png') });
 });
 
 test('shows a detected login in the compact popup with an accessible settings link', async ({ extension }) => {
@@ -118,7 +119,7 @@ test('shows a detected login in the compact popup with an accessible settings li
   await expect(popup.getByText('パスワードログインの開始を検知')).toBeVisible();
   await expect(popup.getByRole('button', { name: 'サイト管理・設定' })).toBeInViewport({ ratio: 1 });
   expect(await popup.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
-  await popup.locator('.popup-shell').screenshot({ path: '/private/tmp/loginpilot-popup-detected.png' });
+  await popup.locator('.popup-shell').screenshot({ path: join(tmpdir(), 'loginpilot-popup-detected.png') });
 });
 
 test('does not suggest registration on ordinary pages or unused provider and passkey buttons', async ({ extension }) => {
@@ -427,7 +428,7 @@ for (const method of ['password', 'passkey', 'federated'] as const) {
     if (method === 'passkey') await page.evaluate(() => (window as unknown as { cancelAuthentication(): void }).cancelAuthentication());
     if (method === 'password') {
       await settings.bringToFront();
-      await settings.screenshot({ path: '/private/tmp/loginpilot-settings-preferences.png', fullPage: true });
+      await settings.screenshot({ path: join(tmpdir(), 'loginpilot-settings-preferences.png'), fullPage: true });
     }
   });
 }

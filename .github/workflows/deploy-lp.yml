@@ -29,6 +29,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Generate production wrangler config
+        run: sed -e "s/YOUR_CLOUDFLARE_ACCOUNT_ID/${{ vars.CLOUDFLARE_ACCOUNT_ID }}/" -e "s/YOUR_DOMAIN/loginpilot.ekeminusyou.com/" sites/lp/wrangler.production.example.jsonc > sites/lp/wrangler.production.jsonc
       - name: Build and deploy LP
         run: npm run lp:deploy:production
         env:

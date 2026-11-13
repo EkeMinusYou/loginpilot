@@ -13,7 +13,8 @@ describe('localized landing pages', () => {
     expect(document.querySelector('[rel="canonical"]')!.getAttribute('href')).toBe(`https://loginpilot.ekeminusyou.com/${locale}/`);
     expect(document.querySelectorAll('[rel="alternate"][hreflang]')).toHaveLength(3);
     expect(document.querySelector('[data-language][aria-current="page"]')!.getAttribute('data-language')).toBe(locale);
-    expect(document.querySelector('a[href="https://buymeacoffee.com/euonymuslke"]')).not.toBeNull();
+    expect(document.querySelector('a[href="https://donate.stripe.com/bJe5kDfer06K7A04fs9k401"]')).not.toBeNull();
+    expect(document.querySelector('a[href="https://www.paypal.com/paypalme/ekeminusyou"]')).not.toBeNull();
     expect(document.querySelector(`a[href="/${locale}/privacy/"]`)).not.toBeNull();
     if (locale === 'en') {
       document.querySelector('[data-language="ja"]')!.remove();

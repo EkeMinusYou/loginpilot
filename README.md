@@ -64,7 +64,7 @@ Load the generated extension in Chrome as described above. See the [development 
 | Landing page deployment | [Deployment](docs/deployment.md) |
 | Vulnerability reporting | [Security policy](SECURITY.md) |
 
-If you find Login Pilot useful, you can [support development on Buy Me a Coffee](https://buymeacoffee.com/euonymuslke).
+If you find Login Pilot useful, you can support development via [Stripe](https://donate.stripe.com/bJe5kDfer06K7A04fs9k401) or [PayPal](https://www.paypal.com/paypalme/ekeminusyou).
 
 ## Project policy
 

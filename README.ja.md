@@ -64,7 +64,7 @@ npm run dev
 | LPのデプロイ | [Deployment](docs/deployment.md) |
 | 脆弱性の報告 | [Security policy](SECURITY.md) |
 
-開発を支援いただける場合は、[Buy Me a Coffee](https://buymeacoffee.com/euonymuslke)をご利用ください。
+開発を支援いただける場合は、[Stripe](https://donate.stripe.com/bJe5kDfer06K7A04fs9k401)または[PayPal](https://www.paypal.com/paypalme/ekeminusyou)をご利用ください。
 
 ## プロジェクトの方針
 

@@ -316,7 +316,7 @@ function languageSettings(): HTMLElement {
 function settingsFooter(): HTMLElement {
   const footer = element('footer', 'border-t border-line py-[18px]');
   const support = element('a', 'flex min-h-5 w-fit items-center gap-2 rounded-sm text-xs text-secondary underline-offset-4 hover:text-accent hover:underline', t('support'));
-  support.href = 'https://buymeacoffee.com/euonymuslke';
+  support.href = 'https://donate.stripe.com/bJe5kDfer06K7A04fs9k401';
   support.target = '_blank';
   support.rel = 'noopener noreferrer';
   support.setAttribute('aria-label', t('supportLabel'));

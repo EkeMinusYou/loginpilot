@@ -71,7 +71,7 @@ describe('extension popup and settings', () => {
     expect(mocks.browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'get-settings-state' });
     expect(mocks.browser.tabs.query).not.toHaveBeenCalled();
     expect(document.querySelector('[data-focus-key="register"]')).toBeNull();
-    expect(document.querySelector('[data-focus-key="support"]')?.getAttribute('href')).toBe('https://buymeacoffee.com/euonymuslke');
+    expect(document.querySelector('[data-focus-key="support"]')?.getAttribute('href')).toBe('https://donate.stripe.com/bJe5kDfer06K7A04fs9k401');
     mocks.browser.runtime.sendMessage.mockResolvedValue({ ok: true, currentOrigin: null, registeredOrigins: ['https://new.example'], passkeyOrigins: [], passkeyFrameOrigins: {}, pendingSite: null });
     mocks.browser.storage.onChanged.addListener.mock.calls[0]![0]({ registeredOrigins: { newValue: ['https://new.example'] } }, 'local');
     await vi.waitFor(() => expect(document.querySelector('#registered-site-list')?.textContent).toContain('https://new.example'));

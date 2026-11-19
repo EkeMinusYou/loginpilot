@@ -38,7 +38,7 @@ export function localizeHtml(template: string, locale: Locale, depth = 0): strin
   }
 
   if (locale === 'en') {
-    meta('[name="description"]', 'A Chrome extension that automatically clicks sign in on registered sites after your saved details are filled in. Also starts passkey authentication. Never stores your ID or password. Preparing for Chrome Web Store release.');
+    meta('[name="description"]', 'A Chrome extension that automatically clicks sign in on registered sites after your saved details are filled in. Also starts passkey authentication. Never stores your ID or password. Available on the Chrome Web Store.');
     meta('[property="og:description"]', 'Go beyond Chrome autofill. Login Pilot automatically clicks the sign-in button on sites you register.');
     for (const [marker, attribute] of [['data-i18n', null], ['data-i18n-aria-label', 'aria-label']] as const) {
       for (const node of document.querySelectorAll(`[${marker}]`)) {

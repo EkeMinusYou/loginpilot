@@ -11,7 +11,7 @@ A Chrome extension that submits login forms after Google Password Manager autofi
 - Use the popup and settings in English or Japanese.
 - Pause automatic login while keeping your registrations, and exclude sites from registration suggestions.
 
-Chrome Web Store release is in preparation. You can currently build and load the extension from source.
+Available on the Chrome Web Store: [Install Login Pilot](https://chromewebstore.google.com/detail/loginpilot/dejlpjfgonneblhkedoichilhdlgmeko). You can also build and load it from source.
 
 ## Install from source
 

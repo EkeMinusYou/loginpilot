@@ -1,6 +1,6 @@
 # User guide
 
-See the [README](../README.md#install-from-source) for installation. The Chrome Web Store release is still in preparation.
+See the [README](../README.md#install-from-source) for installation. It is also available on the [Chrome Web Store](https://chromewebstore.google.com/detail/loginpilot/dejlpjfgonneblhkedoichilhdlgmeko).
 
 ## Register a site
 

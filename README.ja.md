@@ -11,7 +11,7 @@ Googleパスワードマネージャーによる自動入力後のフォーム�
 - ポップアップと設定画面は日本語・英語に対応しています。
 - 登録情報を保持したまま自動ログインを一時停止し、サイトごとに登録候補の表示を除外できます。
 
-Chromeウェブストアでの公開は準備中です。現在はソースからビルドして利用できます。
+Chromeウェブストアで公開中です：[Login Pilotをインストール](https://chromewebstore.google.com/detail/loginpilot/dejlpjfgonneblhkedoichilhdlgmeko)。ソースからビルドして利用することもできます。
 
 ## ソースからインストール
 
